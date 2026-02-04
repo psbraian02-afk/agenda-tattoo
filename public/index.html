@@ -33,6 +33,19 @@
   .save-btn:hover { background:#1c7a31; }
   .time-input { width:70px; padding:5px; border-radius:6px; border:1px solid #ccc; text-align:center; outline:none; }
   img { border-radius:8px; border:1px solid #ddd; }
+
+  /* === LOGO AGREGADO === */
+  .home-logo {
+    position:absolute;
+    top:20px;
+    left:20px;
+  }
+  .home-logo img {
+    width:90px;
+    height:auto;
+    border-radius:12px;
+    box-shadow:0 4px 12px rgba(0,0,0,.15);
+  }
 </style>
 </head>
 
@@ -40,6 +53,12 @@
 <div class="app">
 
   <div class="screen active" id="home">
+
+    <!-- LOGO -->
+    <div class="home-logo">
+      <img src="logo.png" alt="Logo Richard Tattoo">
+    </div>
+
     <h1 class="brand">RichardTattoo</h1>
     <button onclick="tryGoAgenda()">Reservar tatuaje</button>
     <button onclick="promptAdmin()">Panel tatuador</button>

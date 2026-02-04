@@ -1,97 +1,157 @@
 const express = require("express");
 const path = require("path");
-const fs = require("fs/promises"); // versión asíncrona
-const { v4: uuidv4 } = require("uuid"); // para id único de cada reserva
+const fs = require("fs/promises");
+const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 
-// Middleware para JSON grande
+/* =====================
+   Middleware
+===================== */
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Archivos estáticos
+/* =====================
+   Archivos estáticos
+===================== */
 app.use(express.static(path.join(__dirname, "public")));
 
+/* =====================
+   Archivo de datos
+===================== */
 const BOOKINGS_FILE = path.join(__dirname, "bookings.json");
 
-// Leer reservas asíncrono
-async function readBookings() {
+/* =====================
+   Helpers
+===================== */
+async function ensureBookingsFile() {
   try {
-    const data = await fs.readFile(BOOKINGS_FILE, "utf-8");
-    return JSON.parse(data);
+    await fs.access(BOOKINGS_FILE);
   } catch {
-    return [];
+    await fs.writeFile(BOOKINGS_FILE, "[]");
   }
 }
 
-// Escribir reservas asíncrono
+async function readBookings() {
+  await ensureBookingsFile();
+  const data = await fs.readFile(BOOKINGS_FILE, "utf-8");
+  return JSON.parse(data);
+}
+
 async function writeBookings(bookings) {
-  await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookings, null, 2));
+  await fs.writeFile(
+    BOOKINGS_FILE,
+    JSON.stringify(bookings, null, 2),
+    "utf-8"
+  );
 }
 
-// GET /api/bookings -> últimas 50 reservas
+/* =====================
+   API
+===================== */
+
+// GET últimas 50 reservas
 app.get("/api/bookings", async (req, res) => {
-  const bookings = await readBookings();
-  // Orden descendente por fecha de creación y limitar
-  const latest = bookings
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 50);
-  res.json(latest);
+  try {
+    const bookings = await readBookings();
+    const latest = bookings
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 50);
+    res.json(latest);
+  } catch (err) {
+    res.status(500).json({ error: "Error leyendo reservas" });
+  }
 });
 
-// POST /api/bookings -> nueva reserva
+// POST nueva reserva
 app.post("/api/bookings", async (req, res) => {
-  const bookings = await readBookings();
-  const newBooking = { id: uuidv4(), ...req.body, createdAt: new Date().toISOString() };
+  try {
+    const bookings = await readBookings();
 
-  if (!newBooking.date || newBooking.start == null || newBooking.end == null || !newBooking.phone) {
-    return res.status(400).json({ error: "Datos incompletos" });
-  }
+    const newBooking = {
+      id: uuidv4(),
+      ...req.body,
+      createdAt: new Date().toISOString()
+    };
 
-  if (newBooking.tattoo) {
-    const t = newBooking.tattoo;
-    if (!t.image || !t.size || !t.place) {
-      return res.status(400).json({ error: "Datos del tatuaje incompletos" });
+    if (
+      !newBooking.date ||
+      newBooking.start == null ||
+      newBooking.end == null ||
+      !newBooking.phone
+    ) {
+      return res.status(400).json({ error: "Datos incompletos" });
     }
+
+    if (newBooking.tattoo) {
+      const t = newBooking.tattoo;
+      if (!t.image || !t.size || !t.place) {
+        return res
+          .status(400)
+          .json({ error: "Datos del tatuaje incompletos" });
+      }
+    }
+
+    bookings.push(newBooking);
+    await writeBookings(bookings);
+
+    res.status(201).json(newBooking);
+  } catch (err) {
+    res.status(500).json({ error: "Error guardando reserva" });
   }
-
-  bookings.push(newBooking);
-  await writeBookings(bookings);
-  res.status(201).json(newBooking);
 });
 
-// DELETE /api/bookings/:id -> eliminar reserva
+// DELETE eliminar reserva
 app.delete("/api/bookings/:id", async (req, res) => {
-  const id = req.params.id;
-  let bookings = await readBookings();
-  const index = bookings.findIndex(b => b.id === id);
-  if (index === -1) return res.status(404).json({ error: "Reserva no encontrada" });
+  try {
+    const bookings = await readBookings();
+    const index = bookings.findIndex(b => b.id === req.params.id);
 
-  bookings.splice(index, 1);
-  await writeBookings(bookings);
-  res.json({ message: "Reserva eliminada" });
+    if (index === -1) {
+      return res.status(404).json({ error: "Reserva no encontrada" });
+    }
+
+    bookings.splice(index, 1);
+    await writeBookings(bookings);
+
+    res.json({ message: "Reserva eliminada" });
+  } catch (err) {
+    res.status(500).json({ error: "Error eliminando reserva" });
+  }
 });
 
-// PATCH /api/bookings/:id -> actualizar horario
+// PATCH actualizar horario
 app.patch("/api/bookings/:id", async (req, res) => {
-  const id = req.params.id;
-  const { start, end } = req.body;
-  let bookings = await readBookings();
-  const booking = bookings.find(b => b.id === id);
-  if (!booking) return res.status(404).json({ error: "Reserva no encontrada" });
+  try {
+    const { start, end } = req.body;
+    const bookings = await readBookings();
+    const booking = bookings.find(b => b.id === req.params.id);
 
-  if (start != null) booking.start = start;
-  if (end != null) booking.end = end;
+    if (!booking) {
+      return res.status(404).json({ error: "Reserva no encontrada" });
+    }
 
-  await writeBookings(bookings);
-  res.json(booking);
+    if (start != null) booking.start = start;
+    if (end != null) booking.end = end;
+
+    await writeBookings(bookings);
+    res.json(booking);
+  } catch (err) {
+    res.status(500).json({ error: "Error actualizando reserva" });
+  }
 });
 
-// Todas las demás rutas -> index.html
+/* =====================
+   SPA fallback
+===================== */
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Puerto
+/* =====================
+   Server
+===================== */
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});

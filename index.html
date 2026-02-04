@@ -7,143 +7,26 @@
 
 <style>
   *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Arial}
-  body{
-    margin:0;
-    background:#f4f4f4;
-    color:#111;
-    height:100vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    overflow:hidden;
-  }
-
-  .app{
-    width:100%;
-    max-width:900px;
-    height:600px;
-    background:#fff;
-    border-radius:24px;
-    box-shadow:0 20px 60px rgba(0,0,0,.12);
-    padding:40px;
-    position:relative;
-    overflow:hidden;
-  }
-
-  .screen{
-    position:absolute;
-    inset:40px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:24px;
-    opacity:0;
-    transform:translateY(20px);
-    pointer-events:none;
-    transition:.5s ease;
-  }
-  .screen.active{
-    opacity:1;
-    transform:translateY(0);
-    pointer-events:auto;
-  }
-
+  body{margin:0;background:#f4f4f4;color:#111;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .app{width:100%;max-width:900px;height:600px;background:#fff;border-radius:24px;box-shadow:0 20px 60px rgba(0,0,0,.12);padding:40px;position:relative;overflow:hidden;}
+  .screen{position:absolute;inset:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;opacity:0;transform:translateY(20px);pointer-events:none;transition:.5s ease;}
+  .screen.active{opacity:1;transform:translateY(0);pointer-events:auto;}
   h1,h2{font-weight:500;letter-spacing:-.5px;margin:0}
   .brand{font-size:42px;font-weight:600}
-
-  input{
-    padding:14px;
-    border-radius:12px;
-    border:1px solid #ddd;
-    width:260px;
-    font-size:16px;
-  }
-
-  button{
-    padding:14px 22px;
-    border-radius:999px;
-    border:1px solid #ddd;
-    background:#fff;
-    cursor:pointer;
-    transition:.25s ease;
-  }
+  input{padding:14px;border-radius:12px;border:1px solid #ddd;width:260px;font-size:16px;}
+  button{padding:14px 22px;border-radius:999px;border:1px solid #ddd;background:#fff;cursor:pointer;transition:.25s ease;}
   button:hover{background:#eee}
-  button.selected{
-    background:#111;
-    color:#fff;
-    transform:scale(1.06);
-  }
-  button:disabled{
-    opacity:.35;
-    cursor:not-allowed;
-  }
-
-  .grid{
-    display:grid;
-    grid-template-columns:repeat(7,1fr);
-    gap:10px;
-  }
-
-  .times{
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px;
-    justify-content:center;
-  }
-
-  .sizes{
-    display:flex;
-    gap:16px;
-  }
-
-  .nav{
-    position:absolute;
-    bottom:24px;
-    right:24px;
-    display:flex;
-    gap:12px;
-  }
-
-  .social{
-    display:flex;
-    gap:16px;
-  }
-
-  .social-btn{
-    width:52px;
-    height:52px;
-    border-radius:50%;
-    border:1px solid #ddd;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
-    transition:.25s ease;
-  }
-  .social-btn:hover{
-    background:#f2f2f2;
-    transform:scale(1.05);
-  }
-
-  .admin-list{
-    width:100%;
-    max-height:360px;
-    overflow:auto;
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-  }
-
-  .admin-card{
-    border:1px solid #ddd;
-    border-radius:12px;
-    padding:12px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:12px;
-  }
+  button.selected{background:#111;color:#fff;transform:scale(1.06);}
+  button:disabled{opacity:.35;cursor:not-allowed;}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;}
+  .times{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
+  .sizes{display:flex;gap:16px;}
+  .nav{position:absolute;bottom:24px;right:24px;display:flex;gap:12px;}
+  .social{display:flex;gap:16px;}
+  .social-btn{width:52px;height:52px;border-radius:50%;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.25s ease;}
+  .social-btn:hover{background:#f2f2f2;transform:scale(1.05);}
+  .admin-list{width:100%;max-height:360px;overflow:auto;display:flex;flex-direction:column;gap:12px;}
+  .admin-card{border:1px solid #ddd;border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
 </style>
 </head>
 
@@ -206,7 +89,7 @@
 </div>
 
 <script>
-const SERVER_URL = "https://tu-servidor.com/api/bookings"; // Cambialo por tu backend
+const SERVER_URL = "/api/bookings"; // Ahora apunta a tu backend en Render
 const WORK_HOURS = [9,10,11,13,14,15,16,17,18,19,20,21];
 const DURATIONS = { small:1, medium:2, large:3 };
 const END_HOUR = 22;
@@ -215,28 +98,18 @@ let selectedMonth, selectedDay, selectedHour=null, selectedSize=null;
 let bookings = [];
 let userPhone = localStorage.getItem("whatsapp");
 
-function nowUY(){
-  return new Date(new Date().toLocaleString("en-US",{timeZone:"America/Montevideo"}));
-}
+function nowUY(){ return new Date(new Date().toLocaleString("en-US",{timeZone:"America/Montevideo"})); }
 
-function openInsta(){
-  window.open("https://www.instagram.com/richardtattooartigas/","_blank");
-}
-function openWhatsApp(){
-  window.open("https://wa.me/59892528388","_blank");
-}
+function openInsta(){ window.open("https://www.instagram.com/richardtattooartigas/","_blank"); }
+function openWhatsApp(){ window.open("https://wa.me/59892528388","_blank"); }
 
 function go(id){
-  if(!userPhone && !["home","login","admin"].includes(id)){
-    id = "login";
-  }
+  if(!userPhone && !["home","login","admin"].includes(id)) id = "login";
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
 }
 
-function tryGoAgenda(){
-  userPhone ? go("month") : go("login");
-}
+function tryGoAgenda(){ userPhone ? go("month") : go("login"); }
 
 function login(){
   const phone = document.getElementById("phoneInput").value.trim();

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
@@ -151,15 +151,17 @@ button:disabled{
   align-items:center;
   justify-content:center;
   cursor:pointer;
-  background:var(--dark-3);
-  color:var(--yellow);
-  font-weight:600;
   transition:.25s ease;
+}
+
+.social-btn img{
+  display:block;
+  width:24px;
+  height:24px;
 }
 
 .social-btn:hover{
   background:var(--yellow);
-  color:#111;
   transform:scale(1.1);
 }
 
@@ -253,6 +255,39 @@ img{
   background:#45a049;
   transform:translateY(-2px);
 }
+
+/* NUEVA INTERFAZ DE TAMAÑO DE TATUAJE */
+.tattoo-options{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:20px;
+  width:100%;
+  max-width:800px;
+}
+
+.tattoo-card{
+  background:var(--dark-3);
+  border-radius:14px;
+  padding:16px;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+}
+
+.tattoo-card img{
+  width:80px;
+  height:80px;
+  object-fit:cover;
+  border-radius:8px;
+}
+
+.tattoo-card button{
+  padding:8px 16px;
+  border-radius:20px;
+  font-size:14px;
+}
 </style>
 </head>
 
@@ -269,8 +304,15 @@ img{
     <button onclick="promptAdmin()">Panel tatuador</button>
 
     <div class="social">
-      <div class="social-btn" onclick="openInsta()">IG</div>
-      <div class="social-btn" onclick="openWhatsApp()">WA</div>
+      <a class="social-btn" href="https://www.instagram.com/richardtattooartigas/" target="_blank">
+        <img src="iconsinstagram.png" alt="Instagram">
+      </a>
+      <a class="social-btn" href="https://wa.me/59892528388" target="_blank">
+        <img src="iconswhatsapp.png" alt="WhatsApp">
+      </a>
+      <a class="social-btn" href="https://www.facebook.com/richardtattoo/?locale=es_LA" target="_blank">
+        <img src="iconsfacebook.png" alt="Facebook">
+      </a>
     </div>
 
     <div id="mapButton" onclick="openMap()">📍 Cómo llegar</div>
@@ -296,16 +338,15 @@ img{
   </div>
 
   <div class="screen" id="tattooDetails">
-    <h2>Detalles del tatuaje</h2>
-    <input type="file" id="tattooImage" accept="image/*">
-    <input type="number" id="tattooSize" placeholder="Tamaño en cm" min="1">
-    <input type="text" id="tattooPlace" placeholder="Lugar del cuerpo">
-    <select id="timeSlot">
-      <option value="small">Pequeño (1h)</option>
-      <option value="medium">Mediano (2h)</option>
-      <option value="large">Grande (3h)</option>
-    </select>
-    <button id="confirmBtn" onclick="confirmBooking()" disabled>Confirmar reserva</button>
+    <h2>Elegí el tamaño del tatuaje</h2>
+    <div class="tattoo-options" id="tattooOptions"></div>
+
+    <div id="tattooUpload" style="display:none; flex-direction:column; gap:10px; margin-top:20px;">
+      <input type="file" id="tattooImage" accept="image/*">
+      <p id="selectedTattooInfo"></p>
+      <button id="confirmBtn" onclick="confirmBooking()" disabled>Confirmar reserva</button>
+    </div>
+
     <div class="nav"><button onclick="go('day')">Volver</button></div>
   </div>
 
@@ -324,8 +365,8 @@ img{
 
 <script>
 const SERVER_URL = "/api/bookings";
-const DURATIONS = { small:1, medium:2, large:3 };
-let selectedMonth, selectedDay;
+const DURATIONS = { "muy-pequeño":0.5, small:1, medium:2, large:3, "muy-grande":4 };
+let selectedMonth, selectedDay, selectedTattoo;
 let bookings = [];
 let userPhone = localStorage.getItem("whatsapp");
 
@@ -333,6 +374,7 @@ let userPhone = localStorage.getItem("whatsapp");
 function nowUY(){ return new Date(new Date().toLocaleString("en-US",{timeZone:"America/Montevideo"})); }
 function openInsta(){ window.open("https://www.instagram.com/richardtattooartigas/","_blank"); }
 function openWhatsApp(){ window.open("https://wa.me/59892528388","_blank"); }
+function openFacebook(){ window.open("https://www.facebook.com/richardtattoo/?locale=es_LA","_blank"); }
 
 function go(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
@@ -340,7 +382,7 @@ function go(id){
   if(screen) screen.classList.add("active");
 }
 
-// --- ABRIR GOOGLE MAPS CON COORDENADAS EXACTAS ---
+// --- ABRIR GOOGLE MAPS ---
 function openMap(){
   const lat = -30.4266613;
   const lng = -56.4663316;
@@ -383,31 +425,58 @@ function renderDays(){
     const b = document.createElement("button");
     b.textContent = d;
     if(date < new Date(today.getFullYear(),today.getMonth(),today.getDate())) b.disabled = true;
-    b.onclick = ()=>{ selectedDay=d; enableConfirmButton(); go('tattooDetails'); };
+    b.onclick = ()=>{ selectedDay=d; renderTattooOptions(); go('tattooDetails'); };
     daysEl.appendChild(b);
   }
+}
+
+// --- NUEVAS OPCIONES DE TATUAJE ---
+const TATTOO_SIZES = [
+  { id:"muy-pequeño", label:"Muy pequeño", price:"$500", duration:"30 min", img:"muy-pequeño.png" },
+  { id:"small", label:"Pequeño", price:"$1000", duration:"1h", img:"pequeño.png" },
+  { id:"medium", label:"Mediano", price:"$2000", duration:"2h", img:"mediano.png" },
+  { id:"large", label:"Grande", price:"$3000", duration:"3h", img:"grande.png" },
+  { id:"muy-grande", label:"Muy grande", price:"$4000", duration:"4h", img:"muy-grande.png" }
+];
+
+function renderTattooOptions(){
+  const container = document.getElementById("tattooOptions");
+  container.innerHTML="";
+  selectedTattoo=null;
+  document.getElementById("tattooUpload").style.display="none";
+  TATTOO_SIZES.forEach(t=>{
+    const card = document.createElement("div");
+    card.className="tattoo-card";
+    card.innerHTML = `
+      <img src="${t.img}" alt="${t.label}">
+      <strong>${t.label}</strong>
+      <p>${t.price}</p>
+      <p>Duración: ${t.duration}</p>
+      <button onclick="selectTattoo('${t.id}')">Seleccionar</button>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function selectTattoo(id){
+  selectedTattoo = TATTOO_SIZES.find(t=>t.id===id);
+  document.getElementById("tattooUpload").style.display="flex";
+  document.getElementById("selectedTattooInfo").innerHTML=`<strong>${selectedTattoo.label}</strong> - ${selectedTattoo.price} - ${selectedTattoo.duration}`;
 }
 
 // --- CONFIRMAR RESERVA ---
 function enableConfirmButton(){
   const btn = document.getElementById("confirmBtn");
   const img = document.getElementById("tattooImage");
-  const size = document.getElementById("tattooSize");
-  const place = document.getElementById("tattooPlace");
-  const timeSlot = document.getElementById("timeSlot");
-  btn.disabled = !(img.files.length && size.value && place.value && timeSlot.value);
+  btn.disabled = !(img.files.length && selectedTattoo);
 }
 
 document.getElementById("tattooImage").addEventListener("change", enableConfirmButton);
-document.getElementById("tattooSize").addEventListener("input", enableConfirmButton);
-document.getElementById("tattooPlace").addEventListener("input", enableConfirmButton);
-document.getElementById("timeSlot").addEventListener("change", enableConfirmButton);
 
+// --- EL RESTO DE FUNCIONES QUEDAN IGUAL ---
 async function confirmBooking(){
   const imgInput = document.getElementById("tattooImage");
-  const size = document.getElementById("tattooSize").value;
-  const place = document.getElementById("tattooPlace").value;
-  const slot = document.getElementById("timeSlot").value;
+  const slot = selectedTattoo.id;
   const duration = DURATIONS[slot];
 
   const reader = new FileReader();
@@ -417,7 +486,7 @@ async function confirmBooking(){
       start:9,
       end:9+duration,
       phone:userPhone,
-      tattoo:{ image:e.target.result, size:size, place:place, slot:slot },
+      tattoo:{ image:e.target.result, size:selectedTattoo.label, place:"-", slot:slot, price:selectedTattoo.price, duration:selectedTattoo.duration },
       createdAt:new Date().toISOString()
     };
     try{
@@ -430,8 +499,7 @@ async function confirmBooking(){
       bookings.push(booking);
       go("done");
 
-      // --- NOTIFICACION VIA WHATSAPP ---
-      window.open(`https://wa.me/59892528388?text=Nueva reserva de ${booking.phone} para ${booking.date} (${booking.tattoo.place})`,'_blank');
+      window.open(`https://wa.me/59892528388?text=Nueva reserva de ${booking.phone} para ${booking.date} (${booking.tattoo.size})`,'_blank');
 
     }catch(err){
       alert("Error al guardar la reserva: " + err.message);
@@ -471,7 +539,7 @@ function renderAdmin(){
     div.innerHTML=`
       <div>
         <strong>${res.date}</strong><br>
-        📏 ${res.tattoo.size}cm - ${res.tattoo.place}<br>
+        📏 ${res.tattoo.size} - ${res.tattoo.place}<br>
         <img src="${res.tattoo.image}" width="80"><br>
         📲 ${res.phone}<br>
         Horario: <input class="time-input" type="text" value="${res.start || '9:00'}" onchange="updateTime(${index}, this.value)">

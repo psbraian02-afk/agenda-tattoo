@@ -6,46 +6,231 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <style>
-  * { box-sizing: border-box; font-family: 'Inter', system-ui, 'Segoe UI', Arial; }
-  body { margin:0; background:#e8e8e8; color:#222; height:100vh; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-  .app { width:100%; max-width:900px; height:600px; background:#fff; border-radius:20px; box-shadow:0 15px 40px rgba(0,0,0,.1); padding:40px; position:relative; overflow:hidden; }
-  .screen { position:absolute; inset:40px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; opacity:0; transform:translateY(20px); pointer-events:none; transition:.4s ease; }
-  .screen.active { opacity:1; transform:translateY(0); pointer-events:auto; }
-  h1,h2 { font-weight:600; margin:0; }
-  .brand { font-size:42px; color:#222; }
-  input, select { padding:12px 14px; border-radius:10px; border:1px solid #ccc; width:260px; font-size:15px; outline:none; transition:.3s ease; }
-  input:focus, select:focus { border-color:#444; box-shadow:0 0 5px rgba(0,0,0,.1); }
-  button { padding:12px 24px; border-radius:30px; border:none; background:linear-gradient(90deg,#ff4b2b,#ff416c); color:#fff; font-weight:500; cursor:pointer; transition:.3s ease; }
-  button:hover { transform:scale(1.05); box-shadow:0 5px 15px rgba(0,0,0,.2); }
-  button:disabled { opacity:.5; cursor:not-allowed; }
-  .grid { display:grid; grid-template-columns:repeat(7,1fr); gap:10px; }
-  .nav { position:absolute; bottom:20px; right:20px; display:flex; gap:12px; }
-  .social { display:flex; gap:16px; }
-  .social-btn { width:50px; height:50px; border-radius:50%; border:1px solid #ccc; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.25s ease; background:#fff; }
-  .social-btn:hover { background:#ff416c; color:#fff; transform:scale(1.1); }
-  .admin-list { width:100%; max-height:360px; overflow:auto; display:flex; flex-direction:column; gap:12px; }
-  .admin-card { background:#fafafa; border-radius:12px; padding:15px; display:flex; justify-content:space-between; align-items:center; gap:12px; box-shadow:0 5px 15px rgba(0,0,0,.05); }
-  .admin-card div { flex:1; }
-  .admin-actions { display:flex; gap:10px; align-items:center; }
-  .delete-btn { background:#ff4b2b; color:#fff; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; transition:.3s ease; }
-  .delete-btn:hover { background:#ff1c00; }
-  .save-btn { background:#28a745; color:#fff; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; transition:.3s ease; }
-  .save-btn:hover { background:#1c7a31; }
-  .time-input { width:70px; padding:5px; border-radius:6px; border:1px solid #ccc; text-align:center; outline:none; }
-  img { border-radius:8px; border:1px solid #ddd; }
+:root{
+  --dark:#1f1f1f;
+  --dark-2:#2b2b2b;
+  --dark-3:#111;
+  --light:#e6e6e6;
+  --white:#f9f9f9;
+  --yellow:#f2c94c;
+  --yellow-hover:#d4aa2a;
+  --border:#3a3a3a;
+}
 
-  /* === LOGO AGREGADO === */
-  .home-logo {
-    position:absolute;
-    top:20px;
-    left:20px;
-  }
-  .home-logo img {
-    width:90px;
-    height:auto;
-    border-radius:0px;
-    box-shadow:none;
-  }
+*{
+  box-sizing:border-box;
+  font-family:'Inter',system-ui,'Segoe UI',Arial;
+}
+
+body{
+  margin:0;
+  background:var(--dark);
+  color:var(--white);
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+
+.app{
+  width:100%;
+  max-width:900px;
+  height:600px;
+  background:var(--dark-2);
+  border-radius:22px;
+  box-shadow:0 25px 60px rgba(0,0,0,.7);
+  padding:40px;
+  position:relative;
+  overflow:hidden;
+}
+
+.screen{
+  position:absolute;
+  inset:40px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:20px;
+  opacity:0;
+  transform:translateY(20px);
+  pointer-events:none;
+  transition:.4s ease;
+}
+
+.screen.active{
+  opacity:1;
+  transform:translateY(0);
+  pointer-events:auto;
+}
+
+h1,h2{
+  font-weight:600;
+  margin:0;
+  letter-spacing:.5px;
+}
+
+.brand{
+  font-size:42px;
+  color:var(--yellow);
+}
+
+input,select{
+  padding:12px 14px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  width:260px;
+  font-size:15px;
+  background:var(--dark-3);
+  color:var(--white);
+  outline:none;
+  transition:.3s ease;
+}
+
+input::placeholder{
+  color:#aaa;
+}
+
+input:focus,select:focus{
+  border-color:var(--yellow);
+  box-shadow:0 0 0 2px rgba(242,201,76,.25);
+}
+
+button{
+  padding:12px 28px;
+  border-radius:30px;
+  border:none;
+  background:var(--yellow);
+  color:#111;
+  font-weight:600;
+  cursor:pointer;
+  transition:.3s ease;
+}
+
+button:hover{
+  background:var(--yellow-hover);
+  transform:translateY(-2px);
+  box-shadow:0 10px 25px rgba(0,0,0,.5);
+}
+
+button:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:10px;
+}
+
+.grid button{
+  padding:10px 0;
+  border-radius:10px;
+}
+
+.nav{
+  position:absolute;
+  bottom:20px;
+  right:20px;
+}
+
+.social{
+  display:flex;
+  gap:16px;
+}
+
+.social-btn{
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  background:var(--dark-3);
+  color:var(--yellow);
+  font-weight:600;
+  transition:.25s ease;
+}
+
+.social-btn:hover{
+  background:var(--yellow);
+  color:#111;
+  transform:scale(1.1);
+}
+
+.admin-list{
+  width:100%;
+  max-height:360px;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.admin-card{
+  background:var(--dark-3);
+  border-radius:14px;
+  padding:16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:14px;
+  box-shadow:0 10px 25px rgba(0,0,0,.6);
+}
+
+.admin-actions{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.delete-btn{
+  background:#b00020;
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  padding:6px 10px;
+  cursor:pointer;
+}
+
+.save-btn{
+  background:#2ecc71;
+  color:#111;
+  border:none;
+  border-radius:8px;
+  padding:6px 10px;
+}
+
+.time-input{
+  width:70px;
+  padding:6px;
+  border-radius:6px;
+  border:1px solid var(--border);
+  background:#000;
+  color:#fff;
+  text-align:center;
+}
+
+img{
+  border-radius:8px;
+  border:1px solid var(--border);
+}
+
+/* LOGO */
+.home-logo{
+  position:absolute;
+  top:20px;
+  left:20px;
+}
+
+.home-logo img{
+  width:60px;
+}
 </style>
 </head>
 
@@ -53,8 +238,6 @@
 <div class="app">
 
   <div class="screen active" id="home">
-
-    <!-- LOGO -->
     <div class="home-logo">
       <img src="logo.png" alt="Logo Richard Tattoo">
     </div>
@@ -141,6 +324,7 @@ document.getElementById("yearLabel").textContent = year;
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const monthsEl = document.getElementById("months");
 const daysEl = document.getElementById("days");
+
 MONTHS.forEach((m,i)=>{
   const b = document.createElement("button");
   b.textContent = m;
@@ -148,6 +332,7 @@ MONTHS.forEach((m,i)=>{
   b.onclick = ()=>{ selectedMonth=i; renderDays(); go('day'); };
   monthsEl.appendChild(b);
 });
+
 function renderDays(){
   daysEl.innerHTML="";
   const today = nowUY();
@@ -170,6 +355,7 @@ function enableConfirmButton(){
   const timeSlot = document.getElementById("timeSlot");
   btn.disabled = !(img.files.length && size.value && place.value && timeSlot.value);
 }
+
 document.getElementById("tattooImage").addEventListener("change", enableConfirmButton);
 document.getElementById("tattooSize").addEventListener("input", enableConfirmButton);
 document.getElementById("tattooPlace").addEventListener("input", enableConfirmButton);
@@ -192,33 +378,42 @@ async function confirmBooking(){
       tattoo:{ image:e.target.result, size:size, place:place, slot:slot },
       createdAt:new Date().toISOString()
     };
-    try {
-      const res = await fetch(SERVER_URL, {
-        method: 'POST',
+    try{
+      const res = await fetch(SERVER_URL,{
+        method:'POST',
         headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(booking)
+        body:JSON.stringify(booking)
       });
       if(!res.ok) throw new Error("No se pudo guardar la reserva");
       bookings.push(booking);
       go("done");
-    } catch(err){ alert("Error al guardar la reserva: " + err.message); }
+    }catch(err){
+      alert("Error al guardar la reserva: " + err.message);
+    }
   };
   reader.readAsDataURL(imgInput.files[0]);
 }
 
 function promptAdmin(){
   const pass = prompt("Ingrese la contraseña del tatuador:");
-  if(pass === "tattoo123"){ openAdmin(); } else alert("Contraseña incorrecta");
+  if(pass === "ruchard7392"){ openAdmin(); }
+  else alert("Contraseña incorrecta");
 }
 
 function openAdmin(){
-  fetch(SERVER_URL).then(r=>r.json()).then(data=>{ bookings=data; renderAdmin(); go("admin"); }).catch(err=>console.error(err));
+  fetch(SERVER_URL)
+    .then(r=>r.json())
+    .then(data=>{ bookings=data; renderAdmin(); go("admin"); })
+    .catch(err=>console.error(err));
 }
 
 function renderAdmin(){
   const list = document.getElementById("adminList");
   list.innerHTML="";
-  if(bookings.length===0){ list.innerHTML="<p>No hay reservas.</p>"; return; }
+  if(bookings.length===0){
+    list.innerHTML="<p>No hay reservas.</p>";
+    return;
+  }
 
   bookings.forEach((res,index)=>{
     const clean=res.phone.replace(/\D/g,"");
@@ -251,12 +446,13 @@ function deleteBooking(idx){
 }
 
 function updateTime(idx,value){
-  const booking = bookings[idx];
-  booking.start=value;
-  console.log("Horario actualizado:", value);
+  bookings[idx].start=value;
 }
 
-fetch(SERVER_URL).then(r=>r.json()).then(data=>bookings=data).catch(err=>console.error(err));
+fetch(SERVER_URL)
+  .then(r=>r.json())
+  .then(data=>bookings=data)
+  .catch(err=>console.error(err));
 </script>
 </body>
 </html>

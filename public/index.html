@@ -336,7 +336,7 @@ function openInsta(){ window.open("https://www.instagram.com/richardtattooartiga
 function openWhatsApp(){ window.open("https://wa.me/59892528388","_blank"); }
 function go(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); document.getElementById(id).classList.add("active"); }
 function openMap(){
-  const url = "https://www.google.com/maps/search/?api=1&query=Cerro+Ejido+Calle2+140";
+  const url = "https://www.google.com/maps/place/30°25'35.7"S+56°27'57.9"W/@-30.4268806,-56.4665895,19.25z/data=!4m4!3m3!8m2!3d-30.426595!4d-56.46607?hl=es&entry=ttu&g_ep=EgoyMDI2MDIwMS4wIKXMDSoASAFQAw%3D%3D";
   window.open(url,"_blank");
 }
 
@@ -438,9 +438,19 @@ async function confirmBooking(){
 
 // --- ADMIN ---
 function promptAdmin(){
+  const savedPass = localStorage.getItem("tattooAdminPass");
+  if(savedPass === "richard7392"){
+    openAdmin();
+    return;
+  }
+
   const pass = prompt("Ingrese la contraseña del tatuador:");
-  if(pass === "richard7392"){ openAdmin(); }
-  else alert("Contraseña incorrecta");
+  if(pass === "richard7392"){
+    localStorage.setItem("tattooAdminPass", pass);
+    openAdmin();
+  } else {
+    alert("Contraseña incorrecta");
+  }
 }
 
 function openAdmin(){

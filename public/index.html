@@ -19,8 +19,6 @@
   button.selected{background:#111;color:#fff;transform:scale(1.06);}
   button:disabled{opacity:.35;cursor:not-allowed;}
   .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;}
-  .times{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}
-  .sizes{display:flex;gap:16px;}
   .nav{position:absolute;bottom:24px;right:24px;display:flex;gap:12px;}
   .social{display:flex;gap:16px;}
   .social-btn{width:52px;height:52px;border-radius:50%;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.25s ease;}
@@ -63,12 +61,17 @@
     <div class="nav"><button onclick="go('month')">Volver</button></div>
   </div>
 
-  <!-- NUEVA PANTALLA PARA DATOS DEL TATUAJE -->
+  <!-- NUEVO MENÚ AVANZADO DE TATUAJE -->
   <div class="screen" id="tattooDetails">
     <h2>Detalles del tatuaje</h2>
     <input type="file" id="tattooImage" accept="image/*">
     <input type="number" id="tattooSize" placeholder="Tamaño en cm" min="1">
     <input type="text" id="tattooPlace" placeholder="Lugar del cuerpo">
+    <select id="timeSlot">
+      <option value="small">Pequeño (1h)</option>
+      <option value="medium">Mediano (2h)</option>
+      <option value="large">Grande (3h)</option>
+    </select>
     <button id="confirmBtn" onclick="confirmBooking()" disabled>Confirmar reserva</button>
     <div class="nav"><button onclick="go('day')">Volver</button></div>
   </div>
@@ -88,12 +91,15 @@
 
 <script>
 const SERVER_URL = "/api/bookings";
+const WORK_HOURS = [9,10,11,13,14,15,16,17,18,19,20,21];
+const DURATIONS = { small:1, medium:2, large:3 };
+const END_HOUR = 22;
+
 let selectedMonth, selectedDay;
 let bookings = [];
 let userPhone = localStorage.getItem("whatsapp");
 
 function nowUY(){ return new Date(new Date().toLocaleString("en-US",{timeZone:"America/Montevideo"})); }
-
 function openInsta(){ window.open("https://www.instagram.com/richardtattooartigas/","_blank"); }
 function openWhatsApp(){ window.open("https://wa.me/59892528388","_blank"); }
 
@@ -104,7 +110,6 @@ function go(id){
 }
 
 function tryGoAgenda(){ userPhone ? go("month") : go("login"); }
-
 function login(){
   const phone = document.getElementById("phoneInput").value.trim();
   if(phone.length < 6) return alert("Número inválido");
@@ -115,11 +120,11 @@ function login(){
 
 const year = nowUY().getFullYear();
 document.getElementById("yearLabel").textContent = year;
-
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const monthsEl = document.getElementById("months");
 const daysEl = document.getElementById("days");
 
+// RENDER MESES
 MONTHS.forEach((m,i)=>{
   const b = document.createElement("button");
   b.textContent = m;
@@ -139,49 +144,56 @@ async function loadBookings(){
 }
 loadBookings();
 
+// RENDER DÍAS
 function renderDays(){
   daysEl.innerHTML="";
   const today = nowUY();
   const daysInMonth = new Date(year, selectedMonth+1, 0).getDate();
-
   for(let d=1; d<=daysInMonth; d++){
     const date = new Date(year, selectedMonth, d);
     const b = document.createElement("button");
     b.textContent = d;
     if(date < new Date(today.getFullYear(),today.getMonth(),today.getDate())) b.disabled = true;
-    b.onclick = ()=>{ selectedDay=d; go('tattooDetails'); enableConfirmButton(); };
+    b.onclick = ()=>{ selectedDay=d; enableConfirmButton(); go('tattooDetails'); };
     daysEl.appendChild(b);
   }
 }
 
-// HABILITAR BOTÓN DE CONFIRMAR SOLO SI HAY DATOS
+// HABILITAR BOTÓN DE CONFIRMAR
 function enableConfirmButton(){
   const btn = document.getElementById("confirmBtn");
   const img = document.getElementById("tattooImage");
   const size = document.getElementById("tattooSize");
   const place = document.getElementById("tattooPlace");
-  btn.disabled = !(img.files.length && size.value && place.value);
+  const timeSlot = document.getElementById("timeSlot");
+  btn.disabled = !(img.files.length && size.value && place.value && timeSlot.value);
 }
 
 document.getElementById("tattooImage").addEventListener("change", enableConfirmButton);
 document.getElementById("tattooSize").addEventListener("input", enableConfirmButton);
 document.getElementById("tattooPlace").addEventListener("input", enableConfirmButton);
+document.getElementById("timeSlot").addEventListener("change", enableConfirmButton);
 
 // CONFIRMAR RESERVA
 async function confirmBooking(){
   const imgInput = document.getElementById("tattooImage");
   const size = document.getElementById("tattooSize").value;
   const place = document.getElementById("tattooPlace").value;
+  const slot = document.getElementById("timeSlot").value;
+  const duration = DURATIONS[slot];
 
   const reader = new FileReader();
   reader.onload = async function(e){
     const booking = {
       date:`${year}-${selectedMonth}-${selectedDay}`,
+      start:9,            // se puede ajustar según tu backend
+      end: 9 + duration,  // duración ficticia para que guarde
       phone:userPhone,
       tattoo: {
         image:e.target.result,
         size:size,
-        place:place
+        place:place,
+        slot:slot
       },
       createdAt: new Date().toISOString()
     };
@@ -192,9 +204,7 @@ async function confirmBooking(){
         headers: { 'Content-Type':'application/json' },
         body: JSON.stringify(booking)
       });
-
       if(!res.ok) throw new Error("No se pudo guardar la reserva");
-
       bookings.push(booking);
       go("done");
     } catch(err){

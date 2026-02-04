@@ -341,7 +341,7 @@ function go(id){
 }
 
 function openMap(){
-  const url = "https://www.google.com/maps/place/Richard+Tattoo/@-30.4265752,-56.4663661,19.75z/data=!4m6!3m5!1s0x95ab09003b0062eb:0x52d8bae27fec5a8f!8m2!3d-30.4265772!4d-56.4660584!16s%2Fg%2F11m6l13ypg?entry=ttu&g_ep=EgoyMDI2MDIwMS4wIKXMDSoASAFQAw%3D%3D";
+  const url = "https://www.google.com/maps/place/Richard+Tattoo/@-30.4265752,-56.4663661,19.75z";
   window.open(url,"_blank");
 }
 
@@ -484,7 +484,6 @@ function renderAdmin(){
 function updateTime(idx,value){
   bookings[idx].start=value;
   const booking = bookings[idx];
-  // Guardar cambios en servidor
   fetch(`${SERVER_URL}/${booking.id}`,{
     method:'PUT',
     headers:{'Content-Type':'application/json'},

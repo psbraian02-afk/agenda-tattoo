@@ -99,6 +99,27 @@ app.post("/api/bookings", async (req, res) => {
   }
 });
 
+// PUT actualizar reserva (ej: hora que pone el tatuador)
+app.put("/api/bookings/:id", async (req, res) => {
+  try {
+    const bookings = await readBookings();
+    const index = bookings.findIndex(b => b.id === req.params.id);
+
+    if (index === -1) {
+      return res.status(404).json({ error: "Reserva no encontrada" });
+    }
+
+    // Actualiza solo los campos que envía el front (por ejemplo: start)
+    bookings[index] = { ...bookings[index], ...req.body };
+
+    await writeBookings(bookings);
+    res.json(bookings[index]);
+  } catch (err) {
+    console.error("UPDATE ERROR:", err);
+    res.status(500).json({ error: "No se pudo actualizar la reserva" });
+  }
+});
+
 // DELETE reserva
 app.delete("/api/bookings/:id", async (req, res) => {
   try {

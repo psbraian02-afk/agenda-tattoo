@@ -6,30 +6,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <style>
-  *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Arial}
-  body{margin:0;background:#f4f4f4;color:#111;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-  .app{width:100%;max-width:900px;height:600px;background:#fff;border-radius:24px;box-shadow:0 20px 60px rgba(0,0,0,.12);padding:40px;position:relative;overflow:hidden;}
-  .screen{position:absolute;inset:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;opacity:0;transform:translateY(20px);pointer-events:none;transition:.5s ease;}
-  .screen.active{opacity:1;transform:translateY(0);pointer-events:auto;}
-  h1,h2{font-weight:500;letter-spacing:-.5px;margin:0}
-  .brand{font-size:42px;font-weight:600}
-  input, select{padding:14px;border-radius:12px;border:1px solid #ddd;width:260px;font-size:16px;}
-  button{padding:14px 22px;border-radius:999px;border:1px solid #ddd;background:#fff;cursor:pointer;transition:.25s ease;}
-  button:hover{background:#eee}
-  button.selected{background:#111;color:#fff;transform:scale(1.06);}
-  button:disabled{opacity:.35;cursor:not-allowed;}
-  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;}
-  .nav{position:absolute;bottom:24px;right:24px;display:flex;gap:12px;}
-  .social{display:flex;gap:16px;}
-  .social-btn{width:52px;height:52px;border-radius:50%;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.25s ease;}
-  .social-btn:hover{background:#f2f2f2;transform:scale(1.05);}
-  .admin-list{width:100%;max-height:360px;overflow:auto;display:flex;flex-direction:column;gap:12px;}
-  .admin-card{border:1px solid #ddd;border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
-  .admin-card div{flex:1;}
-  .admin-actions{display:flex;gap:8px;}
-  .delete-btn{background:red;color:#fff;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;}
-  .save-btn{background:green;color:#fff;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;}
-  .time-input{width:70px;padding:4px;border-radius:6px;border:1px solid #ccc;text-align:center;}
+  * { box-sizing: border-box; font-family: 'Inter', system-ui, 'Segoe UI', Arial; }
+  body { margin:0; background:#e8e8e8; color:#222; height:100vh; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .app { width:100%; max-width:900px; height:600px; background:#fff; border-radius:20px; box-shadow:0 15px 40px rgba(0,0,0,.1); padding:40px; position:relative; overflow:hidden; }
+  .screen { position:absolute; inset:40px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; opacity:0; transform:translateY(20px); pointer-events:none; transition:.4s ease; }
+  .screen.active { opacity:1; transform:translateY(0); pointer-events:auto; }
+  h1,h2 { font-weight:600; margin:0; }
+  .brand { font-size:42px; color:#222; }
+  input, select { padding:12px 14px; border-radius:10px; border:1px solid #ccc; width:260px; font-size:15px; outline:none; transition:.3s ease; }
+  input:focus, select:focus { border-color:#444; box-shadow:0 0 5px rgba(0,0,0,.1); }
+  button { padding:12px 24px; border-radius:30px; border:none; background:linear-gradient(90deg,#ff4b2b,#ff416c); color:#fff; font-weight:500; cursor:pointer; transition:.3s ease; }
+  button:hover { transform:scale(1.05); box-shadow:0 5px 15px rgba(0,0,0,.2); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .grid { display:grid; grid-template-columns:repeat(7,1fr); gap:10px; }
+  .nav { position:absolute; bottom:20px; right:20px; display:flex; gap:12px; }
+  .social { display:flex; gap:16px; }
+  .social-btn { width:50px; height:50px; border-radius:50%; border:1px solid #ccc; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.25s ease; background:#fff; }
+  .social-btn:hover { background:#ff416c; color:#fff; transform:scale(1.1); }
+  .admin-list { width:100%; max-height:360px; overflow:auto; display:flex; flex-direction:column; gap:12px; }
+  .admin-card { background:#fafafa; border-radius:12px; padding:15px; display:flex; justify-content:space-between; align-items:center; gap:12px; box-shadow:0 5px 15px rgba(0,0,0,.05); }
+  .admin-card div { flex:1; }
+  .admin-actions { display:flex; gap:10px; align-items:center; }
+  .delete-btn { background:#ff4b2b; color:#fff; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; transition:.3s ease; }
+  .delete-btn:hover { background:#ff1c00; }
+  .save-btn { background:#28a745; color:#fff; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; transition:.3s ease; }
+  .save-btn:hover { background:#1c7a31; }
+  .time-input { width:70px; padding:5px; border-radius:6px; border:1px solid #ccc; text-align:center; outline:none; }
+  img { border-radius:8px; border:1px solid #ddd; }
 </style>
 </head>
 
@@ -100,13 +103,11 @@ let selectedMonth, selectedDay;
 let bookings = [];
 let userPhone = localStorage.getItem("whatsapp");
 
-// ----- Utilidades -----
 function nowUY(){ return new Date(new Date().toLocaleString("en-US",{timeZone:"America/Montevideo"})); }
 function openInsta(){ window.open("https://www.instagram.com/richardtattooartigas/","_blank"); }
 function openWhatsApp(){ window.open("https://wa.me/59892528388","_blank"); }
 function go(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); document.getElementById(id).classList.add("active"); }
 
-// ----- Login de usuario -----
 function tryGoAgenda(){ userPhone ? go("month") : go("login"); }
 function login(){
   const phone = document.getElementById("phoneInput").value.trim();
@@ -116,7 +117,6 @@ function login(){
   go("month");
 }
 
-// ----- Meses y días -----
 const year = nowUY().getFullYear();
 document.getElementById("yearLabel").textContent = year;
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -143,7 +143,6 @@ function renderDays(){
   }
 }
 
-// ----- Confirmar reserva -----
 function enableConfirmButton(){
   const btn = document.getElementById("confirmBtn");
   const img = document.getElementById("tattooImage");
@@ -188,19 +187,13 @@ async function confirmBooking(){
   reader.readAsDataURL(imgInput.files[0]);
 }
 
-// ----- Panel tatuador con password -----
 function promptAdmin(){
   const pass = prompt("Ingrese la contraseña del tatuador:");
-  if(pass === "tattoo123"){ // cambiar contraseña aquí
-    openAdmin();
-  } else alert("Contraseña incorrecta");
+  if(pass === "tattoo123"){ openAdmin(); } else alert("Contraseña incorrecta");
 }
 
 function openAdmin(){
-  fetch(SERVER_URL).then(r=>r.json()).then(data=>{
-    bookings=data; renderAdmin();
-    go("admin");
-  }).catch(err=>console.error(err));
+  fetch(SERVER_URL).then(r=>r.json()).then(data=>{ bookings=data; renderAdmin(); go("admin"); }).catch(err=>console.error(err));
 }
 
 function renderAdmin(){
@@ -216,7 +209,7 @@ function renderAdmin(){
       <div>
         <strong>${res.date}</strong><br>
         📏 ${res.tattoo.size}cm - ${res.tattoo.place}<br>
-        <img src="${res.tattoo.image}" width="80" style="border-radius:8px;"><br>
+        <img src="${res.tattoo.image}" width="80"><br>
         📲 ${res.phone}<br>
         Horario: <input class="time-input" type="text" value="${res.start || '9:00'}" onchange="updateTime(${index}, this.value)">
       </div>
@@ -229,7 +222,6 @@ function renderAdmin(){
   });
 }
 
-// ----- Eliminar reserva -----
 function deleteBooking(idx){
   const booking = bookings[idx];
   if(confirm("Eliminar reserva de "+booking.phone+"?")){
@@ -239,15 +231,12 @@ function deleteBooking(idx){
   }
 }
 
-// ----- Actualizar horario -----
 function updateTime(idx,value){
   const booking = bookings[idx];
-  booking.start=value; // solo para frontend, backend debe soportarlo
-  // Si tu backend tiene PUT/PATCH, enviar request para guardar
+  booking.start=value;
   console.log("Horario actualizado:", value);
 }
 
-// ----- Cargar reservas iniciales -----
 fetch(SERVER_URL).then(r=>r.json()).then(data=>bookings=data).catch(err=>console.error(err));
 </script>
 </body>

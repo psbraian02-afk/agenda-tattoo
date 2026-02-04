@@ -37,9 +37,17 @@ app.post("/api/bookings", (req, res) => {
   const bookings = readBookings();
   const newBooking = req.body;
 
-  // Validación básica
+  // Validación básica obligatoria
   if (!newBooking.date || newBooking.start == null || newBooking.end == null || !newBooking.phone) {
     return res.status(400).json({ error: "Datos incompletos" });
+  }
+
+  // Validación opcional del tatuaje
+  if (newBooking.tattoo) {
+    const t = newBooking.tattoo;
+    if (!t.image || !t.size || !t.place) {
+      return res.status(400).json({ error: "Datos del tatuaje incompletos" });
+    }
   }
 
   bookings.push(newBooking);

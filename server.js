@@ -4,8 +4,9 @@ const fs = require("fs");
 
 const app = express();
 
-// Middleware para leer JSON del body
-app.use(express.json());
+// Middleware para leer JSON del body con mayor límite para imágenes grandes
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Servir archivos estáticos desde la carpeta "public"
 app.use(express.static(path.join(__dirname, "public")));

@@ -340,8 +340,12 @@ function go(id){
   if(screen) screen.classList.add("active");
 }
 
+// --- ABRIR GOOGLE MAPS CON COORDENADAS EXACTAS ---
 function openMap(){
-  const url = "https://www.google.com/maps/place/Richard+Tattoo/@-30.4265752,-56.4663661,19.75z";
+  const lat = -30.4266613;
+  const lng = -56.4663316;
+  const zoom = 20.25;
+  const url = `https://www.google.com/maps/@${lat},${lng},${zoom}z`;
   window.open(url,"_blank");
 }
 

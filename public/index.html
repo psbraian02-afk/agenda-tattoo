@@ -273,7 +273,6 @@ img{
       <div class="social-btn" onclick="openWhatsApp()">WA</div>
     </div>
 
-    <!-- BOTON COMO LLEGAR -->
     <div id="mapButton" onclick="openMap()">📍 Cómo llegar</div>
   </div>
 
@@ -330,7 +329,7 @@ let selectedMonth, selectedDay;
 let bookings = [];
 let userPhone = localStorage.getItem("whatsapp");
 
-// --- FUNCIONES DE NAVEGACION ---
+// --- NAVEGACION ---
 function nowUY(){ return new Date(new Date().toLocaleString("en-US",{timeZone:"America/Montevideo"})); }
 function openInsta(){ window.open("https://www.instagram.com/richardtattooartigas/","_blank"); }
 function openWhatsApp(){ window.open("https://wa.me/59892528388","_blank"); }
@@ -342,7 +341,7 @@ function go(id){
 }
 
 function openMap(){
-  const url = "www.google.com/maps/search/Richard+Tattoo/@-30.4265772,-56.4667035,19z";
+  const url = "https://www.google.com/maps/place/Richard+Tattoo/@-30.4265752,-56.4663661,19.75z/data=!4m6!3m5!1s0x95ab09003b0062eb:0x52d8bae27fec5a8f!8m2!3d-30.4265772!4d-56.4660584!16s%2Fg%2F11m6l13ypg?entry=ttu&g_ep=EgoyMDI2MDIwMS4wIKXMDSoASAFQAw%3D%3D";
   window.open(url,"_blank");
 }
 
@@ -356,7 +355,7 @@ function login(){
   go("month");
 }
 
-// --- CONFIGURACION DE MESES Y DIAS ---
+// --- MESES Y DIAS ---
 const year = nowUY().getFullYear();
 document.getElementById("yearLabel").textContent = year;
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -385,7 +384,7 @@ function renderDays(){
   }
 }
 
-// --- HABILITAR BOTON CONFIRMAR ---
+// --- CONFIRMAR RESERVA ---
 function enableConfirmButton(){
   const btn = document.getElementById("confirmBtn");
   const img = document.getElementById("tattooImage");
@@ -400,7 +399,6 @@ document.getElementById("tattooSize").addEventListener("input", enableConfirmBut
 document.getElementById("tattooPlace").addEventListener("input", enableConfirmButton);
 document.getElementById("timeSlot").addEventListener("change", enableConfirmButton);
 
-// --- CONFIRMAR RESERVA ---
 async function confirmBooking(){
   const imgInput = document.getElementById("tattooImage");
   const size = document.getElementById("tattooSize").value;
@@ -428,13 +426,8 @@ async function confirmBooking(){
       bookings.push(booking);
       go("done");
 
-      // --- NOTIFICACION PARA EL TATUADOR ---
-      if(Notification.permission === "granted"){
-        new Notification("Nueva reserva",{
-          body:`${booking.phone} reservó el ${booking.date} (${booking.tattoo.place})`,
-          icon:"logo.png"
-        });
-      }
+      // --- NOTIFICACION VIA WHATSAPP ---
+      window.open(`https://wa.me/59892528388?text=Nueva reserva de ${booking.phone} para ${booking.date} (${booking.tattoo.place})`,'_blank');
 
     }catch(err){
       alert("Error al guardar la reserva: " + err.message);
@@ -443,29 +436,19 @@ async function confirmBooking(){
   reader.readAsDataURL(imgInput.files[0]);
 }
 
-// --- ADMIN ---
+// --- PANEL TATUADOR ---
 function promptAdmin(){
   const savedPass = localStorage.getItem("tattooAdminPass");
-  if(savedPass === "richard7392"){
-    openAdmin();
-    return;
-  }
+  if(savedPass === "richard7392"){ openAdmin(); return; }
 
   const pass = prompt("Ingrese la contraseña del tatuador:");
   if(pass === "richard7392"){
     localStorage.setItem("tattooAdminPass", pass);
     openAdmin();
-  } else {
-    alert("Contraseña incorrecta");
-  }
+  } else { alert("Contraseña incorrecta"); }
 }
 
 function openAdmin(){
-  // Pedir permiso de notificación si no se pidió
-  if(Notification.permission !== "granted" && Notification.permission !== "denied"){
-    Notification.requestPermission();
-  }
-
   fetch(SERVER_URL)
     .then(r=>r.json())
     .then(data=>{ bookings=data; renderAdmin(); go("admin"); })
@@ -475,10 +458,7 @@ function openAdmin(){
 function renderAdmin(){
   const list = document.getElementById("adminList");
   list.innerHTML="";
-  if(bookings.length===0){
-    list.innerHTML="<p>No hay reservas.</p>";
-    return;
-  }
+  if(bookings.length===0){ list.innerHTML="<p>No hay reservas.</p>"; return; }
 
   bookings.forEach((res,index)=>{
     const clean=res.phone.replace(/\D/g,"");
@@ -501,6 +481,17 @@ function renderAdmin(){
   });
 }
 
+function updateTime(idx,value){
+  bookings[idx].start=value;
+  const booking = bookings[idx];
+  // Guardar cambios en servidor
+  fetch(`${SERVER_URL}/${booking.id}`,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(booking)
+  }).catch(err=>alert("No se pudo guardar el horario: "+err));
+}
+
 function deleteBooking(idx){
   const booking = bookings[idx];
   if(confirm("Eliminar reserva de "+booking.phone+"?")){
@@ -510,11 +501,7 @@ function deleteBooking(idx){
   }
 }
 
-function updateTime(idx,value){
-  bookings[idx].start=value;
-}
-
-// --- CARGAR RESERVAS ---
+// --- CARGAR RESERVAS AL INICIO ---
 fetch(SERVER_URL)
   .then(r=>r.json())
   .then(data=>bookings=data)

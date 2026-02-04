@@ -19,7 +19,7 @@ app.use(express.static(path.join(__dirname, "public")));
 /* =====================
    Archivo de datos (Render-safe)
 ===================== */
-// /tmp ES ESCRIBIBLE EN RENDER
+// /tmp es escribible en Render
 const BOOKINGS_FILE = path.join("/tmp", "bookings.json");
 
 /* =====================
@@ -73,7 +73,6 @@ app.post("/api/bookings", async (req, res) => {
       createdAt: new Date().toISOString()
     };
 
-    // Validaciones
     if (
       !newBooking.date ||
       newBooking.start == null ||
@@ -123,8 +122,20 @@ app.delete("/api/bookings/:id", async (req, res) => {
 /* =====================
    SPA fallback
 ===================== */
-app.get("*", (req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+/* =====================
+   Error handling global
+===================== */
+process.on("unhandledRejection", err => {
+  console.error("UNHANDLED REJECTION:", err);
+});
+
+process.on("uncaughtException", err => {
+  console.error("UNCAUGHT EXCEPTION:", err);
+  process.exit(1);
 });
 
 /* =====================

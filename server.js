@@ -17,9 +17,10 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
 /* =====================
-   Archivo de datos
+   Archivo de datos (Render-safe)
 ===================== */
-const BOOKINGS_FILE = path.join(__dirname, "bookings.json");
+// /tmp ES ESCRIBIBLE EN RENDER
+const BOOKINGS_FILE = path.join("/tmp", "bookings.json");
 
 /* =====================
    Helpers
@@ -28,7 +29,7 @@ async function ensureBookingsFile() {
   try {
     await fs.access(BOOKINGS_FILE);
   } catch {
-    await fs.writeFile(BOOKINGS_FILE, "[]");
+    await fs.writeFile(BOOKINGS_FILE, "[]", "utf-8");
   }
 }
 
@@ -50,15 +51,13 @@ async function writeBookings(bookings) {
    API
 ===================== */
 
-// GET últimas 50 reservas
+// GET reservas
 app.get("/api/bookings", async (req, res) => {
   try {
     const bookings = await readBookings();
-    const latest = bookings
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 50);
-    res.json(latest);
+    res.json(bookings);
   } catch (err) {
+    console.error("READ ERROR:", err);
     res.status(500).json({ error: "Error leyendo reservas" });
   }
 });
@@ -74,6 +73,7 @@ app.post("/api/bookings", async (req, res) => {
       createdAt: new Date().toISOString()
     };
 
+    // Validaciones
     if (
       !newBooking.date ||
       newBooking.start == null ||
@@ -86,9 +86,7 @@ app.post("/api/bookings", async (req, res) => {
     if (newBooking.tattoo) {
       const t = newBooking.tattoo;
       if (!t.image || !t.size || !t.place) {
-        return res
-          .status(400)
-          .json({ error: "Datos del tatuaje incompletos" });
+        return res.status(400).json({ error: "Datos del tatuaje incompletos" });
       }
     }
 
@@ -97,11 +95,12 @@ app.post("/api/bookings", async (req, res) => {
 
     res.status(201).json(newBooking);
   } catch (err) {
-    res.status(500).json({ error: "Error guardando reserva" });
+    console.error("WRITE ERROR:", err);
+    res.status(500).json({ error: "No se pudo guardar la reserva" });
   }
 });
 
-// DELETE eliminar reserva
+// DELETE reserva
 app.delete("/api/bookings/:id", async (req, res) => {
   try {
     const bookings = await readBookings();
@@ -116,28 +115,8 @@ app.delete("/api/bookings/:id", async (req, res) => {
 
     res.json({ message: "Reserva eliminada" });
   } catch (err) {
-    res.status(500).json({ error: "Error eliminando reserva" });
-  }
-});
-
-// PATCH actualizar horario
-app.patch("/api/bookings/:id", async (req, res) => {
-  try {
-    const { start, end } = req.body;
-    const bookings = await readBookings();
-    const booking = bookings.find(b => b.id === req.params.id);
-
-    if (!booking) {
-      return res.status(404).json({ error: "Reserva no encontrada" });
-    }
-
-    if (start != null) booking.start = start;
-    if (end != null) booking.end = end;
-
-    await writeBookings(bookings);
-    res.json(booking);
-  } catch (err) {
-    res.status(500).json({ error: "Error actualizando reserva" });
+    console.error("DELETE ERROR:", err);
+    res.status(500).json({ error: "No se pudo eliminar la reserva" });
   }
 });
 

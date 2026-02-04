@@ -334,13 +334,20 @@ let userPhone = localStorage.getItem("whatsapp");
 function nowUY(){ return new Date(new Date().toLocaleString("en-US",{timeZone:"America/Montevideo"})); }
 function openInsta(){ window.open("https://www.instagram.com/richardtattooartigas/","_blank"); }
 function openWhatsApp(){ window.open("https://wa.me/59892528388","_blank"); }
-function go(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); document.getElementById(id).classList.add("active"); }
+
+function go(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  const screen = document.getElementById(id);
+  if(screen) screen.classList.add("active");
+}
+
 function openMap(){
-  const url = "https://www.google.com/maps/place/30°25'35.7"S+56°27'57.9"W/@-30.4268806,-56.4665895,19.25z/data=!4m4!3m3!8m2!3d-30.426595!4d-56.46607?hl=es&entry=ttu&g_ep=EgoyMDI2MDIwMS4wIKXMDSoASAFQAw%3D%3D";
+  const url = "www.google.com/maps/search/Richard+Tattoo/@-30.4265772,-56.4667035,19z";
   window.open(url,"_blank");
 }
 
 function tryGoAgenda(){ userPhone ? go("month") : go("login"); }
+
 function login(){
   const phone = document.getElementById("phoneInput").value.trim();
   if(phone.length < 6) return alert("Número inválido");
@@ -507,6 +514,7 @@ function updateTime(idx,value){
   bookings[idx].start=value;
 }
 
+// --- CARGAR RESERVAS ---
 fetch(SERVER_URL)
   .then(r=>r.json())
   .then(data=>bookings=data)

@@ -20,11 +20,11 @@ const client = new Client({
         args: [
             '--no-sandbox', 
             '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage', // Usa memoria compartida en lugar de /dev/shm (más rápido en Docker/Render)
+            '--disable-dev-shm-usage',
             '--disable-accelerated-2d-canvas',
             '--no-first-run',
             '--no-zygote',
-            '--single-process', // Reduce el uso de CPU
+            '--single-process',
             '--disable-gpu'
         ] 
     }
@@ -38,9 +38,11 @@ client.on('qr', (qr) => {
 
 client.on('ready', () => {
     console.log('✅ WhatsApp Conectado y listo para trabajar');
+    // Enviamos un mensaje de prueba al iniciar para confirmar que funciona
+    const miNumero = "59891923107@c.us";
+    client.sendMessage(miNumero, "🚀 Sistema de notificaciones activado. ¡Recibirás los avisos aquí!");
 });
 
-// Inicializar WhatsApp de forma que no bloquee el deploy
 client.initialize().catch(err => console.error("Error al iniciar WhatsApp:", err));
 
 /* =====================
@@ -155,21 +157,24 @@ app.post("/api/bookings", async (req, res) => {
     bookings.push(newBooking);
     await writeBookings(bookings);
 
-    /* --- ENVÍO DE NOTIFICACIÓN AL TATUADOR --- */
-    const numeroTatuador = "091923107@c.us"; 
-    const mensajeNotificacion = `🚀 *¡NUEVO TURNO AGENDADO!*
+    /* --- NOTIFICACIÓN AL TATUADOR (Richard) --- */
+    // Formato correcto para Uruguay: 598 + 91923107 (sin el 0)
+    const numeroTatuador = "59891923107@c.us"; 
+    
+    const mensajeNotificacion = `🔔 *¡NUEVO TATUAJE AGENDADO!*
 ----------------------------
-👤 *Cliente:* ${newBooking.phone}
+📱 *Cliente:* ${newBooking.phone}
 📅 *Fecha:* ${newBooking.date}
 ⏰ *Hora:* ${newBooking.start}:00 hs
 📍 *Zona:* ${newBooking.tattoo ? newBooking.tattoo.place : 'No especificada'}
 📏 *Tamaño:* ${newBooking.tattoo ? newBooking.tattoo.size : 'No especificado'}
 ----------------------------
-_Revisa el panel de control para ver la imagen de referencia._`;
+_Entra a la web para ver la imagen de referencia._`;
 
+    // Intentar enviar el mensaje
     client.sendMessage(numeroTatuador, mensajeNotificacion)
-        .then(() => console.log("✅ Notificación enviada al tatuador correctamente."))
-        .catch(e => console.error("❌ Error al enviar notificación al tatuador:", e));
+        .then(() => console.log("✅ Notificación enviada exitosamente al 091923107"))
+        .catch(e => console.error("❌ Falló el envío al tatuador. Verifica que escaneaste el QR.", e));
 
     res.status(201).json(newBooking);
   } catch (err) {

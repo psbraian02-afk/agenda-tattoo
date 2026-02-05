@@ -10,13 +10,12 @@ const cron = require('node-cron');
 const app = express();
 
 /* =====================
-    Configuración WhatsApp (ARREGLO PARA RENDER)
+    Configuración WhatsApp (OPTIMIZADA)
 ===================== */
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: { 
         headless: true,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome', // Forzamos la ruta de Chrome
         args: [
             '--no-sandbox', 
             '--disable-setuid-sandbox',
@@ -28,19 +27,21 @@ const client = new Client({
 });
 
 client.on('qr', (qr) => {
-    console.log('⚠️ ESCANEA ESTE QR PARA ACTIVAR (MIRA LOS LOGS ABAJO):');
+    console.log('------------------------------------------------');
+    console.log('⚠️ ESCANEA ESTE QR EN LOS LOGS PARA ACTIVAR:');
     qrcode.generate(qr, { small: true });
+    console.log('------------------------------------------------');
 });
 
 client.on('ready', () => {
-    console.log('✅ WhatsApp Conectado correctamente');
-    client.sendMessage("59891923107@c.us", "✅ Sistema conectado. Ya puedes recibir avisos.");
+    console.log('✅ WhatsApp Conectado');
+    client.sendMessage("59891923107@c.us", "✅ Sistema conectado exitosamente.");
 });
 
 client.initialize().catch(err => console.error("Error al iniciar WhatsApp:", err));
 
 /* =====================
-    Middleware
+    Middleware y Archivos
 ===================== */
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -78,9 +79,7 @@ cron.schedule('* * * * *', async () => {
         }))];
         
         uniquePhones.forEach(chatId => {
-            if(client.pupBrowser) { // Solo si el navegador está vivo
-               client.sendMessage(chatId, "hola queres hacerte un tatuaje??").catch(() => {});
-            }
+            client.sendMessage(chatId, "hola queres hacerte un tatuaje??").catch(() => {});
         });
     } catch (err) { console.error("Error en Cron:", err); }
 });
@@ -103,13 +102,9 @@ app.post("/api/bookings", async (req, res) => {
     const numeroTatuador = "59891923107@c.us"; 
     const aviso = `🚀 *NUEVO TURNO AGENDADO*\n\n📱 Cliente: ${newBooking.phone}\n📅 Fecha: ${newBooking.date}\n⏰ Hora: ${newBooking.start}:00hs`;
 
-    if (client.pupBrowser) {
-        client.sendMessage(numeroTatuador, aviso)
-            .then(() => console.log("✅ Notificación enviada"))
-            .catch(e => console.error("❌ Error de envío:", e.message));
-    } else {
-        console.error("❌ WhatsApp no está listo todavía.");
-    }
+    client.sendMessage(numeroTatuador, aviso)
+        .then(() => console.log("✅ Notificación enviada"))
+        .catch(e => console.error("❌ Error de envío:", e.message));
 
     res.status(201).json(newBooking);
   } catch (err) { res.status(500).json({ error: "Error" }); }
@@ -135,4 +130,4 @@ app.delete("/api/bookings/:id", async (req, res) => {
 app.use((req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Servidor en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Servidor listo en puerto ${PORT}`));

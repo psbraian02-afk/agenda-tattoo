@@ -368,7 +368,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
             <button onclick="resetUserData()" style="font-size:10px; padding:10px; border-color: #ff4d4d; color: #ff4d4d;">Limpiar Sesión Usuarios</button>
         </div>
 
-        <div class="admin-list" id="adminList" style="width:100%; overflow-y:auto"></div>
+        <div class="admin-list" id="adminList" style="width:100%; overflow-y:auto; flex:1"></div>
         <div class="nav"><button onclick="logoutAdmin()" style="border:none; font-size:12px">Cerrar Sesión</button></div>
       </div>
 
@@ -405,8 +405,6 @@ let userName = localStorage.getItem("userName");
 let userSurname = localStorage.getItem("userSurname");
 
 let notificationInterval;
-
-// VARIABLES PARA MARKETING
 let marketingInterval;
 let isMarketingActive = false;
 
@@ -414,14 +412,15 @@ function nowUY(){ return new Date(new Date().toLocaleString("en-US", {timeZone: 
 
 function go(id){ 
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); 
-  document.getElementById(id).classList.add("active"); 
+  const target = document.getElementById(id);
+  if(target) target.classList.add("active"); 
   if(id === 'imageUploadScreen') updateSummary(); 
   if(id !== 'admin') {
       clearInterval(notificationInterval);
   }
 }
 
-function openMap(){ window.open("https://maps.google.com/?q=Cerro+Ejido+Calle+2+Artigas","_blank"); }
+function openMap(){ window.open("https://www.google.com/maps?q=Artigas,Uruguay","_blank"); }
 
 function tryGoAgenda(){ 
     if(userPhone && userName && userSurname) {
@@ -436,15 +435,8 @@ function login(){
     const surname = document.getElementById("surnameInput").value.trim();
     const phone = document.getElementById("phoneInput").value.trim();
     
-    const phonePattern = /^[+]?[\d\s-]{8,17}$/;
-    const digitCount = phone.replace(/\D/g, '').length;
-
-    if(!name || !surname) {
-        return alert("Por favor completa tu Nombre y Apellido.");
-    }
-    
-    if (!phonePattern.test(phone) || digitCount < 8) {
-        return alert("Número de WhatsApp incorrecto. Por favor verifica que esté bien escrito.");
+    if(!name || !surname || phone.length < 8) {
+        return alert("Por favor completa tus datos correctamente.");
     }
     
     localStorage.setItem("userName", name);
@@ -466,7 +458,7 @@ const daysEl=document.getElementById("days");
 MONTHS.forEach((m,i)=>{ 
   const b=document.createElement("button"); 
   b.textContent=m; 
-  if(i<nowUY().getMonth()) b.disabled=true; 
+  if(i < nowUY().getMonth()) b.disabled=true; 
   b.onclick=()=>{ selectedMonth=i; renderDays(); go('day'); }; 
   monthsEl.appendChild(b); 
 });
@@ -512,7 +504,7 @@ function renderTattooOptions(){
   TATTOO_SIZES.forEach(t=>{ 
     const card=document.createElement("div"); 
     card.className="tattoo-card"; 
-    card.innerHTML=`<img src="${t.img}"><div><strong>${t.label}</strong><p style="color:var(--gold); font-size:12px">${t.price}</p></div>`; 
+    card.innerHTML=`<img src="${t.img}" onerror="this.src='https://via.placeholder.com/150'"><div><strong>${t.label}</strong><p style="color:var(--gold); font-size:12px">${t.price}</p></div>`; 
     card.onclick=()=>selectTattoo(t.id);
     container.appendChild(card); 
   }); 
@@ -534,7 +526,7 @@ function renderZones(){
   BODY_ZONES.forEach(z=>{ 
     const card=document.createElement("div"); 
     card.className="zone-card"; 
-    card.innerHTML=`<img src="${z.img}"><div>${z.label}</div>`; 
+    card.innerHTML=`<img src="${z.img}" onerror="this.src='https://via.placeholder.com/150'"><div>${z.label}</div>`; 
     card.onclick=()=>selectZone(z.id);
     container.appendChild(card); 
   }); 
@@ -607,19 +599,19 @@ async function confirmBooking(){
   };
   try {
     const res=await fetch(SERVER_URL,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(booking) });
-    if(res.ok) { bookings.push(booking); go("done"); }
-  } catch(e) { alert("Error"); }
+    if(res.ok) { 
+        bookings.push(booking); 
+        go("done"); 
+    }
+  } catch(e) { alert("Error al guardar la cita."); }
 }
 
-// CORRECCIÓN: Persistencia de Login de Admin
+// ADMIN LOGIC
 function promptAdmin(){ 
-  // Si ya tiene el permiso guardado en el navegador, entra directo
   if (localStorage.getItem("adminAuth") === "true") {
       openAdmin();
       return;
   }
-
-  // Si no, pide contraseña
   const pass=prompt("Ingrese contraseña de artista:"); 
   if(pass==="richard123") {
     localStorage.setItem("adminAuth", "true"); 
@@ -636,13 +628,19 @@ function logoutAdmin() {
 }
 
 function openAdmin(){ 
-  fetch(SERVER_URL).then(r=>r.json()).then(data=>{ 
-    bookings=data; 
-    lastBookingCount = data.length; 
-    renderAdmin(); 
-    go("admin"); 
-    notificationInterval = setInterval(checkForNewBookings, 30000);
-  }); 
+  fetch(SERVER_URL)
+    .then(r => r.json())
+    .then(data => { 
+        bookings = data; 
+        lastBookingCount = data.length; 
+        renderAdmin(); 
+        go("admin"); 
+        notificationInterval = setInterval(checkForNewBookings, 30000);
+    })
+    .catch(e => {
+        alert("Error al conectar con el servidor para cargar las citas.");
+        console.error(e);
+    }); 
 }
 
 async function checkForNewBookings() {
@@ -655,14 +653,14 @@ async function checkForNewBookings() {
       lastBookingCount = data.length;
       bookings = data;
       renderAdmin();
-        }
+    }
   } catch (e) { console.log("Error checking bookings"); }
 }
 
 function showSystemNotification(booking) {
   if (Notification.permission === "granted") {
     new Notification("NUEVA CITA - Richard Tattoo", {
-      body: `Cliente: ${booking.name || ''} ${booking.surname || ''} (${booking.phone})\nFecha: ${booking.date} a las ${booking.start}:00hs`,
+      body: `Cliente: ${booking.name || ''} ${booking.surname || ''}\nFecha: ${booking.date} a las ${booking.start}:00hs`,
       icon: "logo.png"
     });
   }
@@ -676,16 +674,13 @@ function toggleAutoMarketing() {
         isMarketingActive = true;
         btn.textContent = "Detener Auto-Mensaje";
         btn.style.backgroundColor = "red";
-        btn.style.color = "white";
         statusDiv.style.display = "block";
-        
         sendMarketingMessages();
         marketingInterval = setInterval(sendMarketingMessages, 60000);
     } else {
         isMarketingActive = false;
         btn.textContent = "Activar Auto-Mensaje";
         btn.style.backgroundColor = "transparent";
-        btn.style.color = "var(--gold)";
         statusDiv.style.display = "none";
         clearInterval(marketingInterval);
     }
@@ -694,7 +689,6 @@ function toggleAutoMarketing() {
 function sendMarketingMessages() {
     const uniquePhones = [...new Set(bookings.map(b => b.phone.replace(/\s+/g, '')))];
     const message = encodeURIComponent("hola queres hacerte un tatuaje??");
-
     uniquePhones.forEach((phone, index) => {
         setTimeout(() => {
             if (isMarketingActive) {
@@ -708,6 +702,10 @@ function zoomImg(src) { const lb=document.getElementById('lightbox'); const img=
 
 function renderAdmin(){ 
   const list=document.getElementById("adminList"); list.innerHTML="";
+  if(bookings.length === 0) {
+      list.innerHTML = "<p style='text-align:center; opacity:0.5'>No hay citas agendadas.</p>";
+      return;
+  }
   bookings.sort((a,b)=> new Date(a.date) - new Date(b.date)); 
   bookings.forEach((res,idx)=>{
     const cleanPhone = res.phone.replace(/\s+/g, '');
@@ -715,29 +713,27 @@ function renderAdmin(){
     
     const div=document.createElement("div"); div.className="admin-card";
     div.innerHTML=`<div style="display:flex; align-items:center">
-        <img src="${res.tattoo.image || 'placeholder.png'}" onclick="zoomImg('${res.tattoo.image}')" style="width:50px; height:50px; cursor:zoom-in; border-radius:2px">
+        <img src="${res.tattoo.image || 'placeholder.png'}" onclick="zoomImg('${res.tattoo.image}')" style="width:50px; height:50px; cursor:zoom-in; border-radius:2px; object-fit:cover">
         <div style="margin-left:15px">
           <strong style="font-size:14px">${res.date}</strong><br>
           <small style="color:var(--gold); font-weight:bold;">${clientName}</small><br>
-          <small style="color:var(--text-secondary);">${res.start}:00hs - ${res.tattoo.size}</small><br>
-          <small style="color:var(--text-secondary); text-transform:uppercase; font-size:10px">${res.tattoo.place}</small>
+          <small style="color:var(--text-secondary);">${res.start}:00hs - ${res.tattoo.size}</small>
         </div>
       </div>
       <div style="text-align:right">
-        <div style="color:var(--text-primary); font-size:10px; margin-bottom:5px;">${res.phone}</div>
         <a href="https://wa.me/${cleanPhone}" target="_blank" style="color:var(--gold); text-decoration:none; font-size:11px; border:1px solid var(--gold); padding:2px 5px; border-radius:3px;">WHATSAPP</a><br>
-        <button onclick="deleteBooking(${idx})" style="padding:2px 5px; font-size:9px; margin-top:5px; border-color:rgba(255,0,0,0.2)">Eliminar</button>
+        <button onclick="deleteBooking('${res.id}')" style="padding:2px 5px; font-size:9px; margin-top:5px; border-color:rgba(255,0,0,0.5); color:red">Borrar</button>
       </div>`;
     list.appendChild(div);
   });
 }
 
-function deleteBooking(idx){ 
-  if(confirm("¿Eliminar?")) { 
-    fetch(`${SERVER_URL}/${bookings[idx].id}`,{method:'DELETE'}).then(()=> {
-      lastBookingCount--;
-      openAdmin();
-    }); 
+function deleteBooking(id){ 
+  if(confirm("¿Eliminar cita permanentemente?")) { 
+    fetch(`${SERVER_URL}/${id}`, {method:'DELETE'})
+    .then(r => r.json())
+    .then(() => openAdmin())
+    .catch(e => alert("Error al borrar la cita.")); 
   } 
 }
 
@@ -752,10 +748,11 @@ function resetUserData() {
     }
 }
 
+// Carga inicial de datos
 fetch(SERVER_URL).then(r=>r.json()).then(data=> {
   bookings=data;
   lastBookingCount = data.length;
-});
+}).catch(e => console.log("Cargando servidor..."));
 </script>
 </body>
 </html>

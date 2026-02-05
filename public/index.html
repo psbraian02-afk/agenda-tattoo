@@ -39,10 +39,6 @@ body {
 .main-wrapper {
   width: 100%;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
 }
 
 .hero-section {
@@ -369,6 +365,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 
         <div style="display:flex; gap:10px; margin-bottom:20px;">
             <button id="btnStartMarketing" onclick="toggleAutoMarketing()" style="font-size:10px; padding:10px;">Activar Auto-Mensaje</button>
+            <button onclick="resetUserData()" style="font-size:10px; padding:10px; border-color: #ff4d4d; color: #ff4d4d;">Limpiar Sesión Usuarios</button>
         </div>
 
         <div class="admin-list" id="adminList" style="width:100%; overflow-y:auto"></div>
@@ -434,19 +431,23 @@ function tryGoAgenda(){
     }
 }
 
-// Validación ESTRICTA de Teléfono
+// CAMBIO: Validación ESTRICTA de Teléfono
 function login(){ 
     const name = document.getElementById("nameInput").value.trim();
     const surname = document.getElementById("surnameInput").value.trim();
     const phone = document.getElementById("phoneInput").value.trim();
     
+    // Regex para validar formato (acepta +, espacios, guiones y números, longitud 8 a 17)
     const phonePattern = /^[+]?[\d\s-]{8,17}$/;
+    
+    // Contamos cuantos números hay realmente
     const digitCount = phone.replace(/\D/g, '').length;
 
     if(!name || !surname) {
         return alert("Por favor completa tu Nombre y Apellido.");
     }
     
+    // Si no cumple el formato o tiene muy pocos numeros reales
     if (!phonePattern.test(phone) || digitCount < 8) {
         return alert("Número de WhatsApp incorrecto. Por favor verifica que esté bien escrito (ej: 099123456 o +598...)");
     }
@@ -615,61 +616,23 @@ async function confirmBooking(){
   } catch(e) { alert("Error"); }
 }
 
-// ==========================================
-// LÓGICA DE ADMIN + REINICIO DEL SISTEMA (UPDATED)
-// ==========================================
-
-async function resetSystem() {
-    // 1. Borrar LocalStorage (credenciales y auth)
-    localStorage.clear();
-    
-    // 2. Borrar Citas del Servidor
-    try {
-        // Obtenemos todas las citas actuales para saber sus IDs
-        const res = await fetch(SERVER_URL);
-        const data = await res.json();
-        
-        // Enviamos DELETE para cada una
-        await Promise.all(data.map(b => 
-            fetch(`${SERVER_URL}/${b.id}`, { method: 'DELETE' })
-        ));
-        
-        alert("✅ Sistema Reiniciado por Completo.\nSe han borrado usuarios y citas.");
-        location.reload(); // Recarga la página para empezar de 0
-    } catch(e) {
-        alert("Error al intentar borrar la base de datos (o conexión perdida). Se ha limpiado la caché local.");
-        location.reload();
-    }
-}
-
+// CAMBIO: Persistencia de Login de Admin
 function promptAdmin(){ 
-  // Si ya está logueado, entra directo
+  // Verifica si ya está autenticado
   if (localStorage.getItem("adminAuth") === "true") {
       openAdmin();
       return;
   }
 
-  const pass=prompt("Contraseña de Acceso:"); 
-  
-  // LOGIN NORMAL
+  const pass=prompt("Password:"); 
   if(pass==="richard123") {
-    localStorage.setItem("adminAuth", "true"); 
+    localStorage.setItem("adminAuth", "true"); // Guarda la sesión
     if ("Notification" in window) Notification.requestPermission();
     openAdmin(); 
-    return;
   }
-  
-  // CÓDIGO DE REINICIO DE FÁBRICA
-  if(pass==="restartall123") {
-      if(confirm("⚠️ ¿ESTÁS SEGURO?\n\nEsto borrará TODAS las citas agendadas y reiniciará la aplicación como nueva.")) {
-          resetSystem();
-      }
-      return;
-  }
-  
-  if(pass) alert("Contraseña incorrecta");
 }
 
+// CAMBIO: Función para cerrar sesión Admin y borrar persistencia
 function logoutAdmin() {
     localStorage.removeItem("adminAuth");
     go('home');
@@ -709,7 +672,7 @@ function showSystemNotification(booking) {
   }
 }
 
-// LÓGICA DE MARKETING AUTOMÁTICO
+// LÓGICA DE MARKETING AUTOMÁTICO (ENVÍO CADA 1 MINUTO)
 function toggleAutoMarketing() {
     const btn = document.getElementById("btnStartMarketing");
     const statusDiv = document.getElementById("marketingStatus");
@@ -724,7 +687,7 @@ function toggleAutoMarketing() {
         sendMarketingMessages();
         marketingInterval = setInterval(sendMarketingMessages, 60000);
         
-        alert("Sistema de Marketing Activo. El navegador intentará abrir WhatsApp cada 1 minuto.");
+        alert("Sistema de Marketing Activo. El navegador intentará abrir WhatsApp cada 1 minuto para los clientes registrados. Asegúrate de permitir las ventanas emergentes.");
     } else {
         isMarketingActive = false;
         btn.textContent = "Activar Auto-Mensaje";
@@ -784,6 +747,23 @@ function deleteBooking(idx){
       openAdmin();
     }); 
   } 
+}
+
+// --- NUEVA FUNCIÓN: Resetear sesión de usuarios ---
+function resetUserData() {
+    if(confirm("¿Deseas obligar a que el próximo usuario ingrese sus datos de nuevo? Esto borrará el nombre y teléfono guardados en este dispositivo.")) {
+        localStorage.removeItem("userName");
+        localStorage.removeItem("userSurname");
+        localStorage.removeItem("whatsapp");
+        
+        // Limpiamos variables en tiempo real
+        userName = null;
+        userSurname = null;
+        userPhone = null;
+        
+        alert("Sesión de usuario limpiada. Al intentar agendar, pedirá los datos otra vez.");
+        go('home');
+    }
 }
 
 fetch(SERVER_URL).then(r=>r.json()).then(data=> {

@@ -166,7 +166,17 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 
 #days button { padding: 15px 5px; min-width: 45px; font-size: 14px; }
 #months { grid-template-columns: repeat(2, 1fr); gap: 15px; max-width: 300px; }
-#hoursGrid { grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 350px; overflow-y: auto; padding: 10px; max-width: 320px; }
+
+/* AJUSTE DE HORARIOS PARA MAYOR DESPLAZAMIENTO */
+#hoursGrid { 
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 15px; 
+  max-height: 400px; 
+  overflow-y: auto; 
+  padding: 20px 40px; /* Aumentado el padding lateral */
+  width: 100%;
+  max-width: 450px; /* Aumentado para que "respire" más */
+}
 
 .tattoo-options, .body-zones {
   display: grid;
@@ -329,8 +339,16 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 
       <div class="screen" id="done">
         <h1 class="brand" style="font-size:32px">Confirmado</h1>
-        <p style="color:var(--text-secondary); text-align:center; font-size:14px">Tu cita ha sido agendada con éxito.</p>
-        <button onclick="openMap()" style="background:var(--gold); color:#000; margin-bottom:10px">Ver Ubicación del Local</button>
+        <p style="color:var(--text-secondary); text-align:center; font-size:14px; margin-bottom: 5px;">Tu cita ha sido agendada con éxito.</p>
+        
+        <div style="text-align:center; background: rgba(197, 160, 89, 0.1); padding: 15px; border-radius: 10px; border: 1px dashed var(--gold); margin-bottom: 15px;">
+           <p style="color:var(--gold); font-size:13px; margin:0 0 10px 0; font-weight:600;">UBICACIÓN:</p>
+           <p style="font-size:14px; margin:0; color:#fff;">Av. Lecueder 123 (Esquina Calle Falsa)<br>Artigas, Uruguay</p>
+           <hr style="opacity:0.1; margin:15px 0">
+           <p style="font-size:12px; color:var(--gold-light); margin:0;">📸 <strong>Toma una captura de pantalla de esto</strong></p>
+        </div>
+
+        <button onclick="openMap()" style="background:var(--gold); color:#000; margin-bottom:10px">Ver en Google Maps</button>
         <button onclick="go('home')" style="border:none; opacity:0.6">Regresar al Inicio</button>
       </div>
 
@@ -372,7 +390,7 @@ function nowUY(){ return new Date(new Date().toLocaleString("en-US", {timeZone: 
 function go(id){ 
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); 
   document.getElementById(id).classList.add("active"); 
-  if(id === 'imageUploadScreen') updateSummary(); // Actualiza el resumen siempre que entres a esa pantalla
+  if(id === 'imageUploadScreen') updateSummary(); 
 }
 function openMap(){ window.open("https://maps.google.com/?q=Cerro+Ejido+Calle+2+Artigas","_blank"); }
 function tryGoAgenda(){ userPhone?go("month"):go("login"); }
@@ -495,7 +513,6 @@ function renderHours(){
 
 function selectHour(hour){ selectedHour=hour; go('imageUploadScreen'); }
 
-// Función para actualizar el texto del resumen correctamente
 function updateSummary() {
   const info = document.getElementById("userTattooInfo");
   if(selectedTattoo && selectedZone && selectedHour) {
@@ -539,7 +556,6 @@ function renderAdmin(){
   bookings.forEach((res,idx)=>{
     const cleanPhone = res.phone.replace(/\s+/g, '');
     const div=document.createElement("div"); div.className="admin-card";
-    // AÑADIDA LA ZONA (res.tattoo.place) EN EL PANEL
     div.innerHTML=`<div style="display:flex; align-items:center">
         <img src="${res.tattoo.image || 'placeholder.png'}" onclick="zoomImg('${res.tattoo.image}')" style="width:50px; height:50px; cursor:zoom-in; border-radius:2px">
         <div style="margin-left:15px">

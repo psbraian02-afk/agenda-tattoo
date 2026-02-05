@@ -422,7 +422,7 @@ function renderHours(){
   grid.innerHTML = "";
   selectedHour = null;
   for(let h=9; h<=21; h++){
-    if(h === 12) continue; // descanso 12–13
+    if(h === 12) continue;
     const btn = document.createElement("button");
     btn.textContent = h+":00";
     btn.onclick = ()=>selectHour(h);
@@ -470,8 +470,8 @@ async function confirmBooking(){
       });
       if(!res.ok) throw new Error("No se pudo guardar la reserva");
       bookings.push(booking);
-      go("done");
-      window.open(`https://wa.me/59892528388?text=Nueva reserva de ${booking.phone} para ${booking.date} (${booking.tattoo.size})`,'_blank');
+      renderAdmin(); // Actualiza la agenda del tatuador
+      go("done"); // Solo mostrar pantalla de confirmación
     }catch(err){
       alert("Error al guardar la reserva: " + err.message);
     }

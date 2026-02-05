@@ -33,7 +33,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Scrollbar Elegante */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 10px; }
 
@@ -151,17 +150,23 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 
 .grid { 
   display: grid; 
-  grid-template-columns: repeat(7, 1fr); 
+  grid-template-columns: repeat(4, 1fr); 
   gap: 10px; 
   width: 100%; 
-  max-width: 600px; 
+  max-width: 300px; 
   margin: 0 auto;
   justify-content: center;
 }
 
+#days {
+  max-height: 380px; 
+  overflow-y: auto;
+  padding: 10px;
+}
+
 #days button { padding: 15px 5px; min-width: 45px; font-size: 14px; }
-#months { grid-template-columns: repeat(3, 1fr); gap: 15px; max-width: 600px; }
-#hoursGrid { grid-template-columns: repeat(4, 1fr); gap: 10px; max-height: 350px; overflow-y: auto; padding: 10px; max-width: 500px; }
+#months { grid-template-columns: repeat(2, 1fr); gap: 15px; max-width: 300px; }
+#hoursGrid { grid-template-columns: repeat(3, 1fr); gap: 10px; max-height: 350px; overflow-y: auto; padding: 10px; max-width: 320px; }
 
 .tattoo-options, .body-zones {
   display: grid;
@@ -191,7 +196,6 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
   width: 100%; height: 120px; object-fit: cover; border-radius: 2px; margin-bottom: 15px;
   filter: grayscale(1) contrast(1.1); transition: 0.4s;
 }
-.tattoo-card:hover img, .zone-card:hover img { filter: grayscale(0); }
 
 .about-section {
   padding: 120px 40px;
@@ -228,7 +232,6 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 .nav { position: absolute; bottom: 30px; right: 40px; }
 .social { display: flex; gap: 25px; margin-top: 15px; }
 .social-btn img { width: 22px; filter: opacity(0.6) invert(1); transition: 0.3s; }
-.social-btn:hover img { filter: opacity(1) invert(1); transform: translateY(-3px); }
 
 #lightbox {
   position: fixed; inset: 0; background: rgba(0,0,0,0.98);
@@ -252,7 +255,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
     <div class="app">
 
       <div class="screen active" id="home">
-        <div class="home-logo"><img src="logo.png" alt="Logo" style="width:100px; filter: drop-shadow(0 0 10px rgba(197,160,89,0.5))"></div>
+        <div class="home-logo"><img src="logo.png" alt="Logo" style="width:100px;"></div>
         <h1 class="brand">Richard Tattoo</h1>
         <p style="letter-spacing: 6px; color: var(--gold); font-size: 13px; margin-top:-20px; font-weight: 300;">ESTUDIO PRIVADO</p>
         
@@ -277,7 +280,6 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 
       <div class="screen" id="login">
         <h2>Identificación</h2>
-        <p style="color:var(--text-secondary); font-size:14px">Vincular con WhatsApp</p>
         <input id="phoneInput" placeholder="+598 9x xxx xxx">
         <button onclick="login()">Acceder</button>
         <div class="nav"><button onclick="go('home')" style="border:none; font-size:12px">Cerrar</button></div>
@@ -327,7 +329,6 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 
       <div class="screen" id="done">
         <h1 class="brand" style="font-size:32px">Confirmado</h1>
-        <p style="color:var(--text-secondary); text-align:center">Recibirás un mensaje de confirmación pronto.</p>
         <button onclick="go('home')">Regresar</button>
       </div>
 
@@ -348,17 +349,8 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
       </div>
     </div>
     <div class="about-content">
-      <h2>EL <span style="color:var(--gold)">ARTISTA</span></h2>
-      <p>
-        Richard Artigas no solo tatúa; crea legados en la piel. Con una carrera que abarca más de una década, su enfoque combina la precisión técnica con una visión artística única.
-      </p>
-      <p>
-        Especializado en realismo y composiciones complejas, cada pieza es tratada como una obra de galería, asegurando que la estética y la longevidad del tatuaje sean primordiales.
-      </p>
-      <div style="display:flex; gap:50px; margin-top:40px; border-left: 1px solid var(--gold); padding-left: 30px;">
-        <div><strong style="color:var(--gold); font-size:28px; font-family:'Cinzel'">5k+</strong><br><small style="letter-spacing:2px; font-size:10px">PIEZAS</small></div>
-        <div><strong style="color:var(--gold); font-size:28px; font-family:'Cinzel'">URUGUAY</strong><br><small style="letter-spacing:2px; font-size:10px">ORIGEN</small></div>
-      </div>
+      <h2>EL ARTISTA</h2>
+      <p>Richard Artigas crea legados en la piel. Especializado en realismo y composiciones complejas.</p>
     </div>
   </section>
 </div>
@@ -408,33 +400,24 @@ function renderDays(){
 }
 
 const TATTOO_SIZES=[ 
-  { id:"mini", label:"Mini", price:"$", duration:"1h", img:"muy-pequeño.png" }, 
-  { id:"small", label:"Pequeño", price:"$800", duration:"1h", img:"pequeño.png" }, 
-  { id:"medium", label:"Mediano", price:"$1400", duration:"1:30h", img:"mediano.png" }, 
-  { id:"large", label:"Grande", price:"$2500", duration:"2:15h", img:"grande.png" }, 
-  { id:"muy-grande", label:"Muy Grande", price:"$4000", duration:"3:40h", img:"muy-grande.png" },
-  { id:"manga-brazo", label:"Manga Completa", price:"$4000", duration:"4:30h", img:"manga.png" },
+  { id:"mini", label:"Mini (5cm)", price:"$500", duration:"1h", img:"muy-pequeño.png" }, 
+  { id:"small", label:"Pequeño (15cm)", price:"$800", duration:"1h", img:"pequeño.png" }, 
+  { id:"medium", label:"Mediano (25cm)", price:"$1400", duration:"1:30h", img:"mediano.png" }, 
+  { id:"large", label:"Grande (35cm)", price:"$2500", duration:"2:15h", img:"grande.png" }, 
+  { id:"muy-grande", label:"Muy Grande (45cm)", price:"$4000", duration:"3:40h", img:"muy-grande.png" },
+  { id:"manga-brazo", label:"Manga Completa", price:"$4500", duration:"4:30h", img:"manga.png" },
   { id:"espalda-completa", label:"Espalda Completa", price:"$5500", duration:"5h", img:"espalda-full.png" }
 ];
 
-/* NUEVAS ZONAS AGREGADAS */
 const BODY_ZONES=[ 
-  { id:"cuello", label:"Cuello", img:"cuello.png" }, 
-  { id:"nuca", label:"Nuca", img:"nuca.png" },
-  { id:"hombros", label:"Hombros", img:"hombro.png" },
-  { id:"pecho", label:"Pecho", img:"pecho.png" },
-  { id:"costilla", label:"Costilla", img:"costilla.png" },
-  { id:"espalda-alta", label:"Espalda Alta", img:"espaldaalta.png" },
-  { id:"espalda-baja", label:"Espalda Baja", img:"espalda.png" },
-  { id:"brazo", label:"Brazo Completo", img:"brazo.png" }, 
-  { id:"biceps", label:"Biceps", img:"biceps.png" },
-  { id:"triceps", label:"Triceps", img:"triceps.png" },
-  { id:"antebrazo", label:"Antebrazo", img:"antebrazo.png" },
-  { id:"muñeca", label:"Muñeca", img:"muñeca.png" },
-  { id:"muslo", label:"Muslo", img:"muslo.png" }, 
-  { id:"isquios", label:"Isquios", img:"isquios.png" },
-  { id:"gemelos", label:"Gemelos", img:"gemelos.png" },
-  { id:"canillas", label:"Canillas", img:"canillas.png" }
+  { id:"cuello", label:"Cuello", img:"cuello.png" }, { id:"nuca", label:"Nuca", img:"nuca.png" },
+  { id:"hombros", label:"Hombros", img:"hombro.png" }, { id:"pecho", label:"Pecho", img:"pecho.png" },
+  { id:"costilla", label:"Costilla", img:"costilla.png" }, { id:"espalda-alta", label:"Espalda Alta", img:"espaldaalta.png" },
+  { id:"espalda-baja", label:"Espalda Baja", img:"espalda.png" }, { id:"brazo", label:"Brazo Completo", img:"brazo.png" }, 
+  { id:"biceps", label:"Biceps", img:"biceps.png" }, { id:"triceps", label:"Triceps", img:"triceps.png" },
+  { id:"antebrazo", label:"Antebrazo", img:"antebrazo.png" }, { id:"muñeca", label:"Muñeca", img:"muñeca.png" },
+  { id:"muslo", label:"Muslo", img:"muslo.png" }, { id:"isquios", label:"Isquios", img:"isquios.png" },
+  { id:"gemelos", label:"Gemelos", img:"gemelos.png" }, { id:"canillas", label:"Canillas", img:"canillas.png" }
 ];
 
 function renderTattooOptions(){ 
@@ -472,9 +455,9 @@ function renderZones(){
 }
 
 function selectZone(id){ selectedZone=BODY_ZONES.find(z=>z.id===id); renderHours(); go("hourSelection"); }
-
 function goBackFromHours(){ (selectedTattoo.id === "manga-brazo" || selectedTattoo.id === "espalda-completa") ? go("tattooDetails") : go("zoneSelection"); }
 
+/* MODIFICADO: Se quitó el bloqueo por tamaño al final del día */
 function renderHours(){
   const grid=document.getElementById("hoursGrid"); grid.innerHTML=""; 
   const duration=DURATIONS[selectedTattoo.id];
@@ -484,12 +467,16 @@ function renderHours(){
   for(let h=9; h<=21; h++){
     if(h===12) continue; 
     let btn=document.createElement("button"); btn.textContent=h+":00";
-    let disabled = (isToday && h <= timeUY.getHours()) || (h + duration > 22);
     
+    // Solo bloquea si la hora ya pasó (si es hoy)
+    let disabled = (isToday && h <= timeUY.getHours());
+    
+    // Bloqueo solo si hay una reserva previa que coincida
     if(!disabled){
       bookings.forEach(b=>{
         const bd=b.date.split("-");
         if(parseInt(bd[2])===selectedDay && parseInt(bd[1])===(selectedMonth+1)){
+          // Bloquea si la hora de inicio cae dentro de otra reserva O si el tatuaje choca con la siguiente reserva
           if ((h >= b.start && h < b.end) || (h < b.start && (h + duration) > b.start)) disabled = true;
         }
       });
@@ -519,24 +506,18 @@ async function confirmBooking(){
   const duration=DURATIONS[selectedTattoo.id];
   const booking={ 
     date:`${year}-${selectedMonth+1}-${selectedDay}`, 
-    start:selectedHour, end:selectedHour+duration, 
-    phone:userPhone, 
+    start:selectedHour, end:selectedHour+duration, phone:userPhone, 
     tattoo:{ image: document.getElementById("userTattooPreview").src, size:selectedTattoo.label, place:selectedZone.label } 
   };
   try {
     const res=await fetch(SERVER_URL,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(booking) });
     if(res.ok) { bookings.push(booking); go("done"); }
-  } catch(e) { alert("Error al confirmar"); }
+  } catch(e) { alert("Error"); }
 }
 
 function promptAdmin(){ const pass=prompt("Password:"); if(pass==="richard7392") openAdmin(); }
 function openAdmin(){ fetch(SERVER_URL).then(r=>r.json()).then(data=>{ bookings=data; renderAdmin(); go("admin"); }); }
-
-function zoomImg(src) {
-  const lb = document.getElementById('lightbox');
-  const lbImg = document.getElementById('lightboxImg');
-  lbImg.src = src; lb.style.display = 'flex';
-}
+function zoomImg(src) { const lb=document.getElementById('lightbox'); const img=document.getElementById('lightboxImg'); img.src=src; lb.style.display='flex'; }
 
 function renderAdmin(){ 
   const list=document.getElementById("adminList"); list.innerHTML="";
@@ -544,24 +525,17 @@ function renderAdmin(){
   bookings.forEach((res,idx)=>{
     const cleanPhone = res.phone.replace(/\s+/g, '');
     const div=document.createElement("div"); div.className="admin-card";
-    div.innerHTML=`
-      <div style="display:flex; align-items:center">
-        <img src="${res.tattoo.image || 'placeholder.png'}" onclick="zoomImg('${res.tattoo.image}')" style="width:50px; height:50px; cursor:zoom-in; border-radius:2px; filter:grayscale(0)">
-        <div style="margin-left:15px">
-          <strong style="font-size:14px">${res.date}</strong><br>
-          <small style="color:var(--gold)">${res.start}:00hs - ${res.tattoo.size}</small>
-        </div>
+    div.innerHTML=`<div style="display:flex; align-items:center">
+        <img src="${res.tattoo.image || 'placeholder.png'}" onclick="zoomImg('${res.tattoo.image}')" style="width:50px; height:50px; cursor:zoom-in;">
+        <div style="margin-left:15px"><strong>${res.date}</strong><br><small>${res.start}:00hs - ${res.tattoo.size}</small></div>
       </div>
-      <div style="text-align:right">
-        <a href="https://wa.me/${cleanPhone}" target="_blank" style="color:var(--gold); text-decoration:none; font-size:11px; letter-spacing:1px">WHATSAPP</a><br>
-        <button class="delete-btn" onclick="deleteBooking(${idx})" style="padding:2px 8px; font-size:9px; margin-top:5px; border-color:rgba(255,0,0,0.3); color:rgba(255,0,0,0.5)">Eliminar</button>
-      </div>`;
+      <div style="text-align:right"><a href="https://wa.me/${cleanPhone}" target="_blank" style="color:var(--gold)">WHATSAPP</a><br>
+      <button onclick="deleteBooking(${idx})" style="padding:2px 5px; font-size:9px; margin-top:5px">Eliminar</button></div>`;
     list.appendChild(div);
   });
 }
 
-function deleteBooking(idx){ if(confirm("¿Eliminar reserva?")) { fetch(`${SERVER_URL}/${bookings[idx].id}`,{method:'DELETE'}).then(()=>openAdmin()); } }
-
+function deleteBooking(idx){ if(confirm("¿Eliminar?")) { fetch(`${SERVER_URL}/${bookings[idx].id}`,{method:'DELETE'}).then(()=>openAdmin()); } }
 fetch(SERVER_URL).then(r=>r.json()).then(data=>bookings=data);
 </script>
 </body>

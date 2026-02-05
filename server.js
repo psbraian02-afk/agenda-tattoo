@@ -11,12 +11,22 @@ const cron = require('node-cron');
 const app = express();
 
 /* =====================
-    Configuración WhatsApp
+    Configuración WhatsApp (OPTIMIZADO PARA RENDER)
 ===================== */
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: { 
-        args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+        headless: true,
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage', // Usa memoria compartida en lugar de /dev/shm (más rápido en Docker/Render)
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process', // Reduce el uso de CPU
+            '--disable-gpu'
+        ] 
     }
 });
 
@@ -30,7 +40,8 @@ client.on('ready', () => {
     console.log('✅ WhatsApp Conectado y listo para trabajar');
 });
 
-client.initialize();
+// Inicializar WhatsApp de forma que no bloquee el deploy
+client.initialize().catch(err => console.error("Error al iniciar WhatsApp:", err));
 
 /* =====================
     Middleware
@@ -114,7 +125,7 @@ app.get("/api/bookings", async (req, res) => {
   }
 });
 
-// POST nueva reserva (MODIFICADO PARA NOTIFICAR AL TATUADOR)
+// POST nueva reserva
 app.post("/api/bookings", async (req, res) => {
   try {
     const bookings = await readBookings();
@@ -156,7 +167,6 @@ app.post("/api/bookings", async (req, res) => {
 ----------------------------
 _Revisa el panel de control para ver la imagen de referencia._`;
 
-    // Enviar el mensaje
     client.sendMessage(numeroTatuador, mensajeNotificacion)
         .then(() => console.log("✅ Notificación enviada al tatuador correctamente."))
         .catch(e => console.error("❌ Error al enviar notificación al tatuador:", e));

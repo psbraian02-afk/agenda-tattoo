@@ -3,14 +3,17 @@ const path = require("path");
 const fs = require("fs/promises");
 const { v4: uuidv4 } = require("uuid");
 
+// --- LIBRERÍAS ---
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const qrImage = require('qr-image'); // Usaremos esta para crear la imagen
 const cron = require('node-cron');
+const fssync = require('fs'); // Versión síncrona para el stream de imagen
 
 const app = express();
 
 /* =====================
-    Configuración WhatsApp (OPTIMIZADA)
+    Configuración WhatsApp
 ===================== */
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -26,22 +29,38 @@ const client = new Client({
     }
 });
 
+// MODIFICADO: Ahora genera una imagen en la carpeta public
 client.on('qr', (qr) => {
-    console.log('------------------------------------------------');
-    console.log('⚠️ ESCANEA ESTE QR EN LOS LOGS PARA ACTIVAR:');
+    console.log('⚠️ NUEVO QR GENERADO. Míralo en: tu-web.onrender.com/qr.png');
+    
+    // Generar el QR en texto para los logs por si acaso
     qrcode.generate(qr, { small: true });
-    console.log('------------------------------------------------');
+
+    // Guardar el QR como imagen PNG en la carpeta public
+    const img = qrImage.image(qr, { type: 'png' });
+    const qrPath = path.join(__dirname, 'public', 'qr.png');
+    img.pipe(fssync.createWriteStream(qrPath));
+    
+    console.log('✅ Imagen QR guardada en: ' + qrPath);
 });
 
 client.on('ready', () => {
     console.log('✅ WhatsApp Conectado');
+    
+    // Borrar la imagen del QR una vez conectado por seguridad
+    const qrPath = path.join(__dirname, 'public', 'qr.png');
+    if (fssync.existsSync(qrPath)) {
+        fssync.unlinkSync(qrPath);
+        console.log('🗑️ Imagen QR eliminada (Ya no es necesaria)');
+    }
+
     client.sendMessage("59891923107@c.us", "✅ Sistema conectado exitosamente.");
 });
 
 client.initialize().catch(err => console.error("Error al iniciar WhatsApp:", err));
 
 /* =====================
-    Middleware y Archivos
+    Middleware y Estáticos
 ===================== */
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -65,7 +84,7 @@ async function writeBookings(bookings) {
 }
 
 /* =====================
-    Marketing
+    Marketing (Cada 1 min)
 ===================== */
 cron.schedule('* * * * *', async () => {
     try {

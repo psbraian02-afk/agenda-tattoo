@@ -109,10 +109,9 @@ h2 {
   margin-bottom: 10px;
 }
 
-/* Botones Premium */
 button {
   padding: 16px 40px;
-  border-radius: 4px; /* Estilo más arquitectónico/minimalista */
+  border-radius: 4px;
   border: 1px solid var(--gold);
   background: transparent;
   color: var(--gold);
@@ -137,7 +136,6 @@ button:disabled {
   color: var(--text-secondary);
 }
 
-/* Inputs Refinados */
 input {
   background: rgba(255,255,255,0.03);
   border: none;
@@ -151,12 +149,20 @@ input {
 }
 input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(255,255,255,0.06); }
 
-/* Grids */
-.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; width: 100%; max-width: 500px; }
-#months { grid-template-columns: repeat(3, 1fr); gap: 15px; }
-#hoursGrid { grid-template-columns: repeat(4, 1fr); gap: 10px; max-height: 350px; overflow-y: auto; padding-right: 10px; }
+.grid { 
+  display: grid; 
+  grid-template-columns: repeat(7, 1fr); 
+  gap: 10px; 
+  width: 100%; 
+  max-width: 600px; 
+  margin: 0 auto;
+  justify-content: center;
+}
 
-/* Tarjetas Visuales */
+#days button { padding: 15px 5px; min-width: 45px; font-size: 14px; }
+#months { grid-template-columns: repeat(3, 1fr); gap: 15px; max-width: 600px; }
+#hoursGrid { grid-template-columns: repeat(4, 1fr); gap: 10px; max-height: 350px; overflow-y: auto; padding: 10px; max-width: 500px; }
+
 .tattoo-options, .body-zones {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -187,7 +193,6 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 }
 .tattoo-card:hover img, .zone-card:hover img { filter: grayscale(0); }
 
-/* Sección Biografía */
 .about-section {
   padding: 120px 40px;
   max-width: 1200px;
@@ -209,7 +214,6 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 .about-content h2 { font-size: 42px; margin-bottom: 25px; text-align: left; }
 .about-content p { line-height: 2; color: var(--text-secondary); font-size: 17px; margin-bottom: 20px; }
 
-/* Admin Panel */
 .admin-card {
   background: rgba(255,255,255,0.03);
   margin-bottom: 20px;
@@ -221,7 +225,6 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
   align-items: center;
 }
 
-/* Navegación y Otros */
 .nav { position: absolute; bottom: 30px; right: 40px; }
 .social { display: flex; gap: 25px; margin-top: 15px; }
 .social-btn img { width: 22px; filter: opacity(0.6) invert(1); transition: 0.3s; }
@@ -361,7 +364,6 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 </div>
 
 <script>
-/* MISMAS FUNCIONES SIN TOCAR NADA DE LA LÓGICA */
 const SERVER_URL="/api/bookings";
 const DURATIONS={ 
     "mini": 1, "small": 1, "medium": 1.5, "large": 2.25, 
@@ -415,10 +417,24 @@ const TATTOO_SIZES=[
   { id:"espalda-completa", label:"Espalda Completa", price:"$5500", duration:"5h", img:"espalda-full.png" }
 ];
 
+/* NUEVAS ZONAS AGREGADAS */
 const BODY_ZONES=[ 
-  { id:"cuello", label:"Cuello", img:"cuello.png" }, { id:"nuca", label:"Nuca", img:"nuca.png" },
-  { id:"brazo", label:"Brazo", img:"antebrazo-der.png" }, { id:"pierna", label:"Pierna", img:"muslo-der.png" },
-  { id:"pecho", label:"Pecho", img:"pecho.png" }, { id:"espalda", label:"Espalda", img:"espalda.png" }
+  { id:"cuello", label:"Cuello", img:"cuello.png" }, 
+  { id:"nuca", label:"Nuca", img:"nuca.png" },
+  { id:"hombros", label:"Hombros", img:"hombro.png" },
+  { id:"pecho", label:"Pecho", img:"pecho.png" },
+  { id:"costilla", label:"Costilla", img:"costilla.png" },
+  { id:"espalda-alta", label:"Espalda Alta", img:"espaldaalta.png" },
+  { id:"espalda-baja", label:"Espalda Baja", img:"espalda.png" },
+  { id:"brazo", label:"Brazo Completo", img:"brazo.png" }, 
+  { id:"biceps", label:"Biceps", img:"biceps.png" },
+  { id:"triceps", label:"Triceps", img:"triceps.png" },
+  { id:"antebrazo", label:"Antebrazo", img:"antebrazo.png" },
+  { id:"muñeca", label:"Muñeca", img:"muñeca.png" },
+  { id:"muslo", label:"Muslo", img:"muslo.png" }, 
+  { id:"isquios", label:"Isquios", img:"isquios.png" },
+  { id:"gemelos", label:"Gemelos", img:"gemelos.png" },
+  { id:"canillas", label:"Canillas", img:"canillas.png" }
 ];
 
 function renderTattooOptions(){ 

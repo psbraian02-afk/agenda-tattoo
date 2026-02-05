@@ -251,42 +251,17 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 }
 #lightbox img { max-width: 85%; max-height: 85%; border: 1px solid var(--gold); }
 
-/* --- FIX QR RENDER --- */
-#floating-qr {
+/* --- NUEVO BOTÓN QR 100% EFECTIVO --- */
+#qr-launcher {
   position: absolute; top: 20px; right: 20px;
-  width: 55px; height: 55px; background: var(--gold);
+  width: 60px; height: 60px; background: var(--gold);
   border-radius: 50%; display: none; align-items: center; justify-content: center;
-  cursor: pointer; z-index: 2000; box-shadow: 0 0 15px rgba(197,160,89,0.4);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  border: 2px solid white; overflow: hidden;
+  cursor: pointer; z-index: 2000; border: 2px solid white;
+  box-shadow: 0 0 20px rgba(197, 160, 89, 0.5);
+  transition: transform 0.3s;
 }
-
-#floating-qr.expanded {
-  width: 350px; height: 450px; border-radius: 20px; background: #fff;
-  flex-direction: column; padding: 15px; cursor: default;
-}
-
-#qr-display {
-  display: none;
-  background: white;
-  color: black;
-  font-family: monospace;
-  font-size: 8px; /* Tamaño crítico para que el dibujo encaje */
-  line-height: 1;
-  white-space: pre;
-  letter-spacing: 0;
-  padding: 10px;
-  border: 1px solid #eee;
-  text-align: center;
-}
-
-#floating-qr.expanded #qr-display { display: block; }
-#floating-qr.expanded #qr-icon-img { display: none; }
-
-.qr-controls { display: none; width: 100%; flex-direction: column; gap: 10px; margin-top: 10px; }
-#floating-qr.expanded .qr-controls { display: flex; }
-
-.qr-controls button { padding: 10px; font-size: 11px; color: black; border-color: #ddd; }
+#qr-launcher:hover { transform: scale(1.1); }
+#qr-launcher img { width: 30px; filter: invert(1); }
 
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
 
@@ -294,15 +269,8 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 </head>
 <body>
 
-<div id="floating-qr">
-    <div id="qr-click-zone" onclick="toggleQR()" style="display:flex; flex-direction:column; align-items:center; width:100%; height:100%; justify-content:center;">
-        <img id="qr-icon-img" src="https://cdn-icons-png.flaticon.com/512/714/714390.png" style="width:30px; filter:invert(1);">
-        <pre id="qr-display"></pre> </div>
-    <div class="qr-controls">
-        <p style="color:black; font-size:12px; font-weight:bold; margin:0; text-align:center;">ESCANEÁ EL CÓDIGO</p>
-        <button onclick="refreshQR()" style="background:#f9f9f9;">🔄 ACTUALIZAR</button>
-        <button onclick="toggleQR()" style="border:none; color:#999;">CERRAR</button>
-    </div>
+<div id="qr-launcher" onclick="openQRWindow()" title="Vincular WhatsApp">
+    <img src="https://cdn-icons-png.flaticon.com/512/714/714390.png">
 </div>
 
 <div id="lightbox" onclick="this.style.display='none'">
@@ -447,35 +415,25 @@ let isMarketingActive = false;
 
 function nowUY(){ return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Montevideo"})); }
 
-// --- FIX QR DISPLAY ---
-function toggleQR() {
-    const el = document.getElementById('floating-qr');
-    el.classList.toggle('expanded');
-    if(el.classList.contains('expanded')) refreshQR();
-}
-
-async function refreshQR() {
-    try {
-        const res = await fetch('/api/get-qr'); // El server debe devolver el dibujo (ASCII)
-        const qrData = await res.text(); // Esperamos el texto del log
-        document.getElementById('qr-display').textContent = qrData;
-    } catch (e) {
-        document.getElementById('qr-display').textContent = "Error cargando QR";
-    }
+// --- FUNCION PARA ABRIR EL QR EN PESTAÑA LIMPIA ---
+function openQRWindow() {
+    // Abrimos el endpoint que devuelve la imagen del QR directamente
+    window.open('/api/get-qr', '_blank', 'width=500,height=500');
 }
 
 function go(id){ 
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); 
   document.getElementById(id).classList.add("active"); 
   
-  const qrBtn = document.getElementById("floating-qr");
+  // Mostrar el botón de QR solo en el panel admin
+  const qrBtn = document.getElementById("qr-launcher");
   qrBtn.style.display = (id === "admin") ? "flex" : "none";
 
   if(id === 'imageUploadScreen') updateSummary(); 
   if(id !== 'admin') clearInterval(notificationInterval);
 }
 
-function openMap(){ window.open("https://maps.google.com/?q=Artigas,Uruguay","_blank"); }
+function openMap(){ window.open("https://maps.google.com/?q=Av.Lecueder,Artigas,Uruguay","_blank"); }
 
 function tryGoAgenda(){ 
     if(userPhone && userName && userSurname) go("month");

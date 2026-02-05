@@ -156,7 +156,7 @@ app.post("/api/bookings", async (req, res) => {
     await writeBookings(bookings);
 
     /* --- ENVÍO DE NOTIFICACIÓN AL TATUADOR --- */
-    const numeroTatuador = "59891923107@c.us"; 
+    const numeroTatuador = "091923107@c.us"; 
     const mensajeNotificacion = `🚀 *¡NUEVO TURNO AGENDADO!*
 ----------------------------
 👤 *Cliente:* ${newBooking.phone}

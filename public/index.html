@@ -233,6 +233,36 @@ img{ border-radius:8px; border:1px solid var(--border); }
   opacity:0.4;
   cursor:not-allowed;
 }
+
+/* ZONAS DEL CUERPO */
+.body-zones{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+  gap:16px;
+  width:100%;
+  max-width:800px;
+}
+.zone-card{
+  background:var(--dark-3);
+  border-radius:14px;
+  padding:10px;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+}
+.zone-card img{
+  width:60px;
+  height:60px;
+  object-fit:cover;
+  border-radius:8px;
+}
+.zone-card button{
+  padding:6px 12px;
+  border-radius:16px;
+  font-size:13px;
+}
 </style>
 </head>
 
@@ -296,11 +326,18 @@ img{ border-radius:8px; border:1px solid var(--border); }
     <div class="nav"><button onclick="go('day')">Volver</button></div>
   </div>
 
+  <!-- NUEVA PANTALLA ZONA DEL CUERPO -->
+  <div class="screen" id="zoneSelection">
+    <h2>Elegí la zona del cuerpo</h2>
+    <div class="body-zones" id="zoneOptions"></div>
+    <div class="nav"><button onclick="go('tattooDetails')">Volver</button></div>
+  </div>
+
   <!-- PANTALLA DE SELECCION DE HORA -->
   <div class="screen" id="hourSelection">
     <h2>Elegí la hora</h2>
     <div class="grid" id="hoursGrid"></div>
-    <div class="nav"><button onclick="go('tattooDetails')">Volver</button></div>
+    <div class="nav"><button onclick="go('zoneSelection')">Volver</button></div>
   </div>
 
   <div class="screen" id="done">
@@ -319,22 +356,17 @@ img{ border-radius:8px; border:1px solid var(--border); }
 <script>
 const SERVER_URL = "/api/bookings";
 const DURATIONS = { "muy-pequeño":0.5, small:1, medium:2, large:3, "muy-grande":4 };
-let selectedMonth, selectedDay, selectedTattoo, selectedHour;
+let selectedMonth, selectedDay, selectedTattoo, selectedHour, selectedZone;
 let bookings = [];
 let userPhone = localStorage.getItem("whatsapp");
 
 // --- NAVEGACION ---
 function nowUY(){ return new Date(new Date().toLocaleString("en-US",{timeZone:"America/Montevideo"})); }
-function openInsta(){ window.open("https://www.instagram.com/richardtattooartigas/","_blank"); }
-function openWhatsApp(){ window.open("https://wa.me/59892528388","_blank"); }
-function openFacebook(){ window.open("https://www.facebook.com/richardtattoo/?locale=es_LA","_blank"); }
-
 function go(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   const screen = document.getElementById(id);
   if(screen) screen.classList.add("active");
 }
-
 function openMap(){
   const lat = -30.4266613;
   const lng = -56.4663316;
@@ -342,9 +374,7 @@ function openMap(){
   const url = `https://www.google.com/maps/@${lat},${lng},${zoom}z`;
   window.open(url,"_blank");
 }
-
 function tryGoAgenda(){ userPhone ? go("month") : go("login"); }
-
 function login(){
   const phone = document.getElementById("phoneInput").value.trim();
   if(phone.length < 6) return alert("Número inválido");
@@ -359,7 +389,6 @@ document.getElementById("yearLabel").textContent = year;
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const monthsEl = document.getElementById("months");
 const daysEl = document.getElementById("days");
-
 MONTHS.forEach((m,i)=>{
   const b = document.createElement("button");
   b.textContent = m;
@@ -367,7 +396,6 @@ MONTHS.forEach((m,i)=>{
   b.onclick = ()=>{ selectedMonth=i; renderDays(); go('day'); };
   monthsEl.appendChild(b);
 });
-
 function renderDays(){
   daysEl.innerHTML="";
   const today = nowUY();
@@ -395,6 +423,7 @@ function renderTattooOptions(){
   const container = document.getElementById("tattooOptions");
   container.innerHTML="";
   selectedTattoo=null;
+  selectedZone=null;
   document.getElementById("tattooUpload").style.display="none";
   TATTOO_SIZES.forEach(t=>{
     const card = document.createElement("div");
@@ -410,19 +439,53 @@ function renderTattooOptions(){
   });
 }
 
-// --- SELECCION DE TATUAJE + HORA ---
+// --- NUEVA FUNCIÓN DE ZONA ---
+const BODY_ZONES = [
+  { id:"brazo-izq", label:"Brazo izquierdo", img:"brazo-izq.png" },
+  { id:"antebrazo-izq", label:"Antebrazo izquierdo", img:"antebrazo-izq.png" },
+  { id:"brazo-der", label:"Brazo derecho", img:"brazo-der.png" },
+  { id:"antebrazo-der", label:"Antebrazo derecho", img:"antebrazo-der.png" },
+  { id:"pantorilla-der", label:"Pantorrilla derecha", img:"pantorilla-der.png" },
+  { id:"canilla-der", label:"Canilla derecha", img:"canilla-der.png" },
+  { id:"muslo-der", label:"Muslo derecho", img:"muslo-der.png" },
+  { id:"pantorilla-izq", label:"Pantorrilla izquierda", img:"pantorilla-izq.png" },
+  { id:"canilla-izq", label:"Canilla izquierda", img:"canilla-izq.png" },
+  { id:"muslo-izq", label:"Muslo izquierdo", img:"muslo-izq.png" }
+];
+
 function selectTattoo(id){
   selectedTattoo = TATTOO_SIZES.find(t=>t.id===id);
-  renderHours();
-  go('hourSelection');
+  renderZones();
+  go("zoneSelection");
 }
 
+function renderZones(){
+  const container = document.getElementById("zoneOptions");
+  container.innerHTML="";
+  BODY_ZONES.forEach(z=>{
+    const card = document.createElement("div");
+    card.className="zone-card";
+    card.innerHTML = `
+      <img src="${z.img}" alt="${z.label}">
+      <button onclick="selectZone('${z.id}')">${z.label}</button>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function selectZone(id){
+  selectedZone = BODY_ZONES.find(z=>z.id===id);
+  renderHours();
+  go("hourSelection");
+}
+
+// --- SELECCION DE HORARIO ---
 function renderHours(){
   const grid = document.getElementById("hoursGrid");
   grid.innerHTML = "";
-  selectedHour = null;
+  selectedHour=null;
   for(let h=9; h<=21; h++){
-    if(h === 12) continue;
+    if(h===12) continue;
     const btn = document.createElement("button");
     btn.textContent = h+":00";
     btn.onclick = ()=>selectHour(h);
@@ -434,14 +497,14 @@ function selectHour(hour){
   selectedHour = hour;
   document.getElementById("tattooUpload").style.display="flex";
   document.getElementById("selectedTattooInfo").innerHTML = 
-    `<strong>${selectedTattoo.label}</strong> - ${selectedTattoo.price} - ${selectedTattoo.duration} - Hora: ${selectedHour}:00`;
+    `<strong>${selectedTattoo.label}</strong> - ${selectedTattoo.price} - ${selectedTattoo.duration} - Zona: ${selectedZone.label} - Hora: ${selectedHour}:00`;
   go('tattooDetails');
 }
 
 function enableConfirmButton(){
   const btn = document.getElementById("confirmBtn");
   const img = document.getElementById("tattooImage");
-  btn.disabled = !(img.files.length && selectedTattoo && selectedHour);
+  btn.disabled = !(img.files.length && selectedTattoo && selectedHour && selectedZone);
 }
 
 document.getElementById("tattooImage").addEventListener("change", enableConfirmButton);
@@ -459,7 +522,14 @@ async function confirmBooking(){
       start:selectedHour,
       end:selectedHour+duration,
       phone:userPhone,
-      tattoo:{ image:e.target.result, size:selectedTattoo.label, place:"-", slot:slot, price:selectedTattoo.price, duration:selectedTattoo.duration },
+      tattoo:{
+        image:e.target.result,
+        size:selectedTattoo.label,
+        place:selectedZone.label,
+        slot:slot,
+        price:selectedTattoo.price,
+        duration:selectedTattoo.duration
+      },
       createdAt:new Date().toISOString()
     };
     try{
@@ -470,8 +540,8 @@ async function confirmBooking(){
       });
       if(!res.ok) throw new Error("No se pudo guardar la reserva");
       bookings.push(booking);
-      renderAdmin(); // Actualiza la agenda del tatuador
-      go("done"); // Solo mostrar pantalla de confirmación
+      go("done");
+      window.open(`https://wa.me/59892528388?text=Nueva reserva de ${booking.phone} para ${booking.date} (${booking.tattoo.size} en ${booking.tattoo.place})`,'_blank');
     }catch(err){
       alert("Error al guardar la reserva: " + err.message);
     }

@@ -6,18 +6,46 @@ const { v4: uuidv4 } = require("uuid");
 
 // --- LIBRERÍAS ---
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
-const qrImage = require('qr-image'); // Asegúrate de tener: npm install qr-image
+const qrImage = require('qr-image');
 const cron = require('node-cron');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Asegurar que la carpeta public existe para guardar el QR
+// Configuración de carpetas
 const publicDir = path.join(__dirname, 'public');
 if (!fssync.existsSync(publicDir)) {
     fssync.mkdirSync(publicDir);
 }
+
+/* =====================
+    RUTAS DE INTERFAZ (IMPORTANTE)
+===================== */
+app.use(express.json({ limit: "10mb" }));
+app.use(express.static(publicDir));
+
+// RUTA PARA EL QR (Asegúrate de entrar aquí)
+app.get("/scan-qr", (req, res) => {
+    const qrPath = path.join(publicDir, 'qr.png');
+    if (fssync.existsSync(qrPath)) {
+        res.send(`
+            <div style="text-align:center; font-family:sans-serif; margin-top:50px;">
+                <h1>Escanea el QR de WhatsApp</h1>
+                <img src="/qr.png?t=${Date.now()}" style="border: 5px solid #25D366; border-radius: 10px; width: 300px;">
+                <p>Si ya escaneaste, esta página dirá que no está disponible.</p>
+                <script>setInterval(() => location.reload(), 5000);</script>
+            </div>
+        `);
+    } else {
+        res.send(`
+            <div style="text-align:center; font-family:sans-serif; margin-top:50px;">
+                <h2>QR no disponible</h2>
+                <p>Esto puede ser porque: <br> 1. Ya estás conectado. <br> 2. El servidor aún está iniciando.</p>
+                <a href="/scan-qr">Reintentar</a>
+            </div>
+        `);
+    }
+});
 
 /* =====================
     Configuración WhatsApp
@@ -26,22 +54,12 @@ const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: { 
         headless: true,
-        args: [
-            '--no-sandbox', 
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage'
-        ] 
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] 
     }
 });
 
-// Variable para guardar el string del QR por si acaso
-let lastQr = null;
-
 client.on('qr', (qr) => {
-    lastQr = qr;
-    console.log('⚠️ NUEVO QR GENERADO. Escanéalo en: /qr');
-    
-    // Generamos la imagen física
+    console.log('--- GENERANDO QR ---');
     const img = qrImage.image(qr, { type: 'png' });
     const qrPath = path.join(publicDir, 'qr.png');
     const fileStream = fssync.createWriteStream(qrPath);
@@ -50,35 +68,15 @@ client.on('qr', (qr) => {
 
 client.on('ready', () => {
     console.log('✅ WhatsApp Conectado');
-    lastQr = null; // Limpiamos el estado del QR
-    
-    // Opcional: Borrar la imagen cuando ya no se necesite
     const qrPath = path.join(publicDir, 'qr.png');
     if (fssync.existsSync(qrPath)) fssync.unlinkSync(qrPath);
-
-    client.sendMessage("59891923107@c.us", "✅ Richard, ya estoy conectado y listo.");
+    client.sendMessage("59891923107@c.us", "✅ Richard, ya estoy conectado.");
 });
 
 client.initialize().catch(err => console.error("Error al iniciar WhatsApp:", err));
 
 /* =====================
-    Middleware & Rutas
-===================== */
-app.use(express.json({ limit: "10mb" }));
-app.use(express.static(publicDir));
-
-// RUTA ESPECIAL PARA VER EL QR
-app.get('/qr', (req, res) => {
-    const qrPath = path.join(publicDir, 'qr.png');
-    if (fssync.existsSync(qrPath)) {
-        res.sendFile(qrPath);
-    } else {
-        res.send('<h3>El QR no está disponible. Si ya escaneaste, ya estás conectado.</h3>');
-    }
-});
-
-/* =====================
-    Marketing & API (Tus funciones se mantienen igual)
+    Lógica de Bookings y Marketing (Original)
 ===================== */
 const BOOKINGS_FILE = path.join("/tmp", "bookings.json");
 
@@ -107,7 +105,6 @@ cron.schedule('* * * * *', async () => {
             if (!num.startsWith("598")) num = "598" + num;
             return `${num}@c.us`;
         }))];
-        
         uniquePhones.forEach(chatId => {
             client.sendMessage(chatId, "hola queres hacerte un tatuaje??").catch(() => {});
         });
@@ -120,16 +117,21 @@ app.post("/api/bookings", async (req, res) => {
     const newBooking = { id: uuidv4(), ...req.body, createdAt: new Date().toISOString() };
     bookings.push(newBooking);
     await writeBookings(bookings);
-
     const numeroTatuador = "59891923107@c.us"; 
-    const aviso = `🚀 *NUEVO TURNO*\n\n📱 Cliente: ${newBooking.phone}\n📅 Fecha: ${newBooking.date}\n⏰ Hora: ${newBooking.start}:00hs`;
-
-    client.sendMessage(numeroTatuador, aviso)
-        .then(() => console.log("✅ Notificación enviada"))
-        .catch(e => console.error("❌ Error de envío:", e.message));
-
+    const aviso = `🚀 *NUEVO TURNO*\n\n📱 Cliente: ${newBooking.phone}\n📅 Fecha: ${newBooking.date}`;
+    client.sendMessage(numeroTatuador, aviso).catch(e => console.error(e));
     res.status(201).json(newBooking);
   } catch (err) { res.status(500).json({ error: "Error" }); }
 });
 
-app.listen(PORT, () => console.log(`✅ Servidor listo en puerto ${PORT}`));
+// Catch-all para el frontend
+app.get("*", (req, res) => {
+    const indexPath = path.join(publicDir, "index.html");
+    if (fssync.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).send("No se encontró el archivo index.html en la carpeta public");
+    }
+});
+
+app.listen(PORT, () => console.log(`✅ Servidor en puerto ${PORT}`));

@@ -5,7 +5,6 @@
 <title>RichardTattoo | Estudio de Arte</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
 :root {
@@ -252,50 +251,11 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 }
 #lightbox img { max-width: 85%; max-height: 85%; border: 1px solid var(--gold); }
 
-/* --- CORRECCIÓN QR ESTÉTICA --- */
-#floating-qr {
-  position: absolute; top: 20px; right: 20px;
-  width: 55px; height: 55px; background: var(--gold);
-  border-radius: 50%; display: none; align-items: center; justify-content: center;
-  cursor: pointer; z-index: 2000; border: 2px solid white;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-#floating-qr.expanded {
-  width: 300px; height: 420px; border-radius: 20px; background: #fff;
-  flex-direction: column; padding: 20px; cursor: default;
-}
-
-#qrcode {
-  display: none; width: 256px; height: 256px;
-  background: white; padding: 10px;
-}
-
-#floating-qr.expanded #qrcode { display: block; }
-#floating-qr.expanded #qr-icon-init { display: none; }
-
-.qr-controls { display: none; width: 100%; flex-direction: column; gap: 8px; margin-top: 15px; }
-#floating-qr.expanded .qr-controls { display: flex; }
-
-.qr-controls button { padding: 10px; font-size: 11px; color: black; border-color: #ccc; }
-
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
 
 </style>
 </head>
 <body>
-
-<div id="floating-qr">
-    <div id="qr-click-zone" onclick="toggleQR()" style="display:flex; align-items:center; justify-content:center; width:100%; height:100%;">
-        <img id="qr-icon-init" src="https://cdn-icons-png.flaticon.com/512/714/714390.png" style="width:30px; filter:invert(1);">
-        <div id="qrcode"></div>
-    </div>
-    <div class="qr-controls">
-        <p style="color:black; font-size:12px; font-weight:bold; margin:0; text-align:center;">VINCULAR WHATSAPP</p>
-        <button onclick="refreshQR()" style="background:#eee;">🔄 ACTUALIZAR CÓDIGO</button>
-        <button onclick="toggleQR()" style="border:none; color:#999;">CERRAR</button>
-    </div>
-</div>
 
 <div id="lightbox" onclick="this.style.display='none'">
   <img id="lightboxImg" src="">
@@ -334,6 +294,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
         <input id="nameInput" type="text" placeholder="Tu Nombre">
         <input id="surnameInput" type="text" placeholder="Tu Apellido">
         <input id="phoneInput" type="tel" placeholder="WhatsApp (+598 9x xxx xxx)">
+        
         <button onclick="login()">Acceder</button>
         <div class="nav"><button onclick="go('home')" style="border:none; font-size:12px">Cerrar</button></div>
       </div>
@@ -383,23 +344,30 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
       <div class="screen" id="done">
         <h1 class="brand" style="font-size:32px">Confirmado</h1>
         <p style="color:var(--text-secondary); text-align:center; font-size:14px; margin-bottom: 5px;">Tu cita ha sido agendada con éxito.</p>
+        
         <div style="text-align:center; background: rgba(197, 160, 89, 0.1); padding: 15px; border-radius: 10px; border: 1px dashed var(--gold); margin-bottom: 15px;">
            <p style="color:var(--gold); font-size:13px; margin:0 0 10px 0; font-weight:600;">UBICACIÓN:</p>
            <p style="font-size:14px; margin:0; color:#fff;">Av. Lecueder 123 (Esquina Calle Falsa)<br>Artigas, Uruguay</p>
+           <hr style="opacity:0.1; margin:15px 0">
+           <p style="font-size:12px; color:var(--gold-light); margin:0;">📸 <strong>Toma una captura de pantalla de esto</strong></p>
         </div>
+
         <button onclick="openMap()" style="background:var(--gold); color:#000; margin-bottom:10px">Ver en Google Maps</button>
         <button onclick="go('home')" style="border:none; opacity:0.6">Regresar al Inicio</button>
       </div>
 
       <div class="screen" id="admin">
         <h2>Agenda Privada</h2>
+        
         <div id="marketingStatus" style="background:rgba(197, 160, 89, 0.1); padding:10px; border-radius:5px; margin-bottom:10px; width:100%; text-align:center; display:none; border:1px solid var(--gold);">
             <small id="marketingText" style="color:var(--gold); font-weight:600;">AUTO-MENSAJE ACTIVO (1 MIN)</small>
         </div>
+
         <div style="display:flex; gap:10px; margin-bottom:20px;">
             <button id="btnStartMarketing" onclick="toggleAutoMarketing()" style="font-size:10px; padding:10px;">Activar Auto-Mensaje</button>
-            <button onclick="resetUserData()" style="font-size:10px; padding:10px; border-color: #ff4d4d; color: #ff4d4d;">Limpiar Sesión</button>
+            <button onclick="resetUserData()" style="font-size:10px; padding:10px; border-color: #ff4d4d; color: #ff4d4d;">Limpiar Sesión Usuarios</button>
         </div>
+
         <div class="admin-list" id="adminList" style="width:100%; overflow-y:auto"></div>
         <div class="nav"><button onclick="logoutAdmin()" style="border:none; font-size:12px">Cerrar Sesión</button></div>
       </div>
@@ -423,7 +391,10 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 
 <script>
 const SERVER_URL="/api/bookings";
-const DURATIONS={ "mini": 1, "small": 1, "medium": 1.5, "large": 2.25, "muy-grande": 3.66, "manga-brazo": 4.5, "espalda-completa": 5 };
+const DURATIONS={ 
+    "mini": 1, "small": 1, "medium": 1.5, "large": 2.25, 
+    "muy-grande": 3.66, "manga-brazo": 4.5, "espalda-completa": 5 
+};
 
 let selectedMonth, selectedDay, selectedTattoo, selectedHour, selectedZone;
 let bookings=[];
@@ -434,69 +405,61 @@ let userName = localStorage.getItem("userName");
 let userSurname = localStorage.getItem("userSurname");
 
 let notificationInterval;
+
+// VARIABLES PARA MARKETING
 let marketingInterval;
 let isMarketingActive = false;
 
 function nowUY(){ return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Montevideo"})); }
 
-// --- LOGICA DE QR DINAMICO ---
-let qrGenerator = null;
-
-function toggleQR() {
-    const el = document.getElementById('floating-qr');
-    el.classList.toggle('expanded');
-    if(el.classList.contains('expanded')) refreshQR();
-}
-
-async function refreshQR() {
-    try {
-        // Obtenemos el texto plano del QR desde el server
-        const res = await fetch('/api/get-qr-raw'); 
-        const data = await res.json();
-        
-        const container = document.getElementById("qrcode");
-        container.innerHTML = ""; // Limpiar previo
-        
-        qrGenerator = new QRCode(container, {
-            text: data.qrString, // El texto que manda Render
-            width: 256,
-            height: 256,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.H
-        });
-    } catch (e) {
-        console.error("Error cargando QR");
-    }
-}
-
 function go(id){ 
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); 
   document.getElementById(id).classList.add("active"); 
-  
-  const qrBtn = document.getElementById("floating-qr");
-  qrBtn.style.display = (id === "admin") ? "flex" : "none";
-
   if(id === 'imageUploadScreen') updateSummary(); 
-  if(id !== 'admin') clearInterval(notificationInterval);
+  if(id !== 'admin') {
+      clearInterval(notificationInterval);
+  }
 }
 
-function openMap(){ window.open("https://maps.google.com/?q=Artigas,Uruguay","_blank"); }
+function openMap(){ window.open("https://maps.google.com/?q=Cerro+Ejido+Calle+2+Artigas","_blank"); }
 
 function tryGoAgenda(){ 
-    if(userPhone && userName && userSurname) go("month");
-    else go("login");
+    if(userPhone && userName && userSurname) {
+        go("month");
+    } else {
+        go("login");
+    }
 }
 
+// CAMBIO: Validación ESTRICTA de Teléfono
 function login(){ 
     const name = document.getElementById("nameInput").value.trim();
     const surname = document.getElementById("surnameInput").value.trim();
     const phone = document.getElementById("phoneInput").value.trim();
-    if(!name || !surname || phone.length < 8) return alert("Datos incompletos.");
+    
+    // Regex para validar formato (acepta +, espacios, guiones y números, longitud 8 a 17)
+    const phonePattern = /^[+]?[\d\s-]{8,17}$/;
+    
+    // Contamos cuantos números hay realmente
+    const digitCount = phone.replace(/\D/g, '').length;
+
+    if(!name || !surname) {
+        return alert("Por favor completa tu Nombre y Apellido.");
+    }
+    
+    // Si no cumple el formato o tiene muy pocos numeros reales
+    if (!phonePattern.test(phone) || digitCount < 8) {
+        return alert("Número de WhatsApp incorrecto. Por favor verifica que esté bien escrito (ej: 099123456 o +598...)");
+    }
+    
     localStorage.setItem("userName", name);
     localStorage.setItem("userSurname", surname);
     localStorage.setItem("whatsapp", phone);
-    userName = name; userSurname = surname; userPhone = phone;
+    
+    userName = name;
+    userSurname = surname;
+    userPhone = phone;
+    
     go("month"); 
 }
 
@@ -549,70 +512,102 @@ const BODY_ZONES=[
 ];
 
 function renderTattooOptions(){ 
-  const container=document.getElementById("tattooOptions"); container.innerHTML=""; 
+  const container=document.getElementById("tattooOptions"); 
+  container.innerHTML=""; 
   TATTOO_SIZES.forEach(t=>{ 
-    const card=document.createElement("div"); card.className="tattoo-card"; 
+    const card=document.createElement("div"); 
+    card.className="tattoo-card"; 
     card.innerHTML=`<img src="${t.img}"><div><strong>${t.label}</strong><p style="color:var(--gold); font-size:12px">${t.price}</p></div>`; 
-    card.onclick=()=>selectTattoo(t.id); container.appendChild(card); 
+    card.onclick=()=>selectTattoo(t.id);
+    container.appendChild(card); 
   }); 
 }
 
 function selectTattoo(id){ 
     selectedTattoo=TATTOO_SIZES.find(t=>t.id===id); 
-    if(id === "manga-brazo" || id === "espalda-completa"){ selectedZone = { id: "full", label: "Cuerpo Completo" }; renderHours(); go("hourSelection"); }
-    else { renderZones(); go("zoneSelection"); }
+    if(id === "manga-brazo" || id === "espalda-completa"){
+        selectedZone = { id: "full", label: "Cuerpo Completo" };
+        renderHours(); go("hourSelection");
+    } else {
+        renderZones(); go("zoneSelection"); 
+    }
 }
 
 function renderZones(){ 
-  const container=document.getElementById("zoneOptions"); container.innerHTML=""; 
+  const container=document.getElementById("zoneOptions"); 
+  container.innerHTML=""; 
   BODY_ZONES.forEach(z=>{ 
-    const card=document.createElement("div"); card.className="zone-card"; 
-    card.innerHTML=`<img src="${z.img}"><div>${z.label}</div>`; card.onclick=()=>selectZone(z.id); container.appendChild(card); 
+    const card=document.createElement("div"); 
+    card.className="zone-card"; 
+    card.innerHTML=`<img src="${z.img}"><div>${z.label}</div>`; 
+    card.onclick=()=>selectZone(z.id);
+    container.appendChild(card); 
   }); 
 }
 
-function selectZone(id){ selectedZone=BODY_ZONES.find(z=>z.id===id); renderHours(); go("hourSelection"); }
+function selectZone(id){ 
+  selectedZone=BODY_ZONES.find(z=>z.id===id); 
+  renderHours(); 
+  go("hourSelection"); 
+}
+
 function goBackFromHours(){ (selectedTattoo.id === "manga-brazo" || selectedTattoo.id === "espalda-completa") ? go("tattooDetails") : go("zoneSelection"); }
 
 function renderHours(){
   const grid=document.getElementById("hoursGrid"); grid.innerHTML=""; 
-  const duration=DURATIONS[selectedTattoo.id]; const timeUY = nowUY();
+  const duration=DURATIONS[selectedTattoo.id];
+  const timeUY = nowUY();
   const isToday = (selectedDay === timeUY.getDate() && selectedMonth === timeUY.getMonth());
+  
   for(let h=9; h<=21; h++){
     if(h===12) continue; 
     let btn=document.createElement("button"); btn.textContent=h+":00";
     let disabled = (isToday && h <= timeUY.getHours());
-    if(!disabled) bookings.forEach(b=>{
+    
+    if(!disabled){
+      bookings.forEach(b=>{
         const bd=b.date.split("-");
         if(parseInt(bd[2])===selectedDay && parseInt(bd[1])===(selectedMonth+1)){
           if ((h >= b.start && h < b.end) || (h < b.start && (h + duration) > b.start)) disabled = true;
         }
-    });
-    btn.disabled=disabled; btn.onclick=()=>selectHour(h); grid.appendChild(btn);
+      });
+    }
+    btn.disabled=disabled; 
+    btn.onclick=()=>selectHour(h); 
+    grid.appendChild(btn);
   }
 }
 
 function selectHour(hour){ selectedHour=hour; go('imageUploadScreen'); }
+
 function updateSummary() {
   const info = document.getElementById("userTattooInfo");
-  if(selectedTattoo && selectedZone && selectedHour) info.innerHTML = `${selectedTattoo.label} | ${selectedZone.label} | ${selectedHour}:00hs`;
+  if(selectedTattoo && selectedZone && selectedHour) {
+    info.innerHTML = `${selectedTattoo.label} | ${selectedZone.label} | ${selectedHour}:00hs`;
+  }
 }
 
 document.getElementById("userTattooImage").addEventListener("change",e=>{
   const file=e.target.files[0], preview=document.getElementById("userTattooPreview");
   if(file){ 
-    const reader=new FileReader(); reader.onload=e2=>{ 
+    const reader=new FileReader(); 
+    reader.onload=e2=>{ 
       preview.src=e2.target.result; preview.style.display="block"; 
-      updateSummary(); document.getElementById("confirmBtn").disabled=false; 
-    }; reader.readAsDataURL(file); 
+      updateSummary();
+      document.getElementById("confirmBtn").disabled=false; 
+    }; 
+    reader.readAsDataURL(file); 
   }
 });
 
 async function confirmBooking(){
   const duration=DURATIONS[selectedTattoo.id];
   const booking={ 
-    date:`${year}-${selectedMonth+1}-${selectedDay}`, start:selectedHour, end:selectedHour+duration, 
-    phone:userPhone, name: userName, surname: userSurname,
+    date:`${year}-${selectedMonth+1}-${selectedDay}`, 
+    start:selectedHour, end:selectedHour+duration, 
+    phone:userPhone, 
+    name: userName,
+    surname: userSurname,
     tattoo:{ image: document.getElementById("userTattooPreview").src, size:selectedTattoo.label, place:selectedZone.label } 
   };
   try {
@@ -621,51 +616,99 @@ async function confirmBooking(){
   } catch(e) { alert("Error"); }
 }
 
+// CAMBIO: Persistencia de Login de Admin
 function promptAdmin(){ 
-  if (localStorage.getItem("adminAuth") === "true") { openAdmin(); return; }
+  // Verifica si ya está autenticado
+  if (localStorage.getItem("adminAuth") === "true") {
+      openAdmin();
+      return;
+  }
+
   const pass=prompt("Password:"); 
-  if(pass==="richard123") { localStorage.setItem("adminAuth", "true"); if ("Notification" in window) Notification.requestPermission(); openAdmin(); }
+  if(pass==="richard123") {
+    localStorage.setItem("adminAuth", "true"); // Guarda la sesión
+    if ("Notification" in window) Notification.requestPermission();
+    openAdmin(); 
+  }
 }
 
-function logoutAdmin() { localStorage.removeItem("adminAuth"); go('home'); }
+// CAMBIO: Función para cerrar sesión Admin y borrar persistencia
+function logoutAdmin() {
+    localStorage.removeItem("adminAuth");
+    go('home');
+}
 
 function openAdmin(){ 
   fetch(SERVER_URL).then(r=>r.json()).then(data=>{ 
-    bookings=data; lastBookingCount = data.length; renderAdmin(); go("admin"); 
+    bookings=data; 
+    lastBookingCount = data.length; 
+    renderAdmin(); 
+    go("admin"); 
     notificationInterval = setInterval(checkForNewBookings, 30000);
   }); 
 }
 
 async function checkForNewBookings() {
   try {
-    const res = await fetch(SERVER_URL); const data = await res.json();
+    const res = await fetch(SERVER_URL);
+    const data = await res.json();
     if (data.length > lastBookingCount) {
-      const newBooking = data[data.length - 1]; showSystemNotification(newBooking);
-      lastBookingCount = data.length; bookings = data; renderAdmin();
-    }
-  } catch (e) { }
+      const newBooking = data[data.length - 1];
+      showSystemNotification(newBooking);
+      lastBookingCount = data.length;
+      bookings = data;
+      renderAdmin();
+        }
+  } catch (e) { console.log("Error checking bookings"); }
 }
 
 function showSystemNotification(booking) {
-  if (Notification.permission === "granted") new Notification("NUEVA CITA", { body: `${booking.name}`, icon: "logo.png" });
+  if (Notification.permission === "granted") {
+    new Notification("NUEVA CITA - Richard Tattoo", {
+      body: `Cliente: ${booking.name || ''} ${booking.surname || ''} (${booking.phone})\nFecha: ${booking.date} a las ${booking.start}:00hs`,
+      icon: "logo.png"
+    });
+    if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
+  }
 }
 
+// LÓGICA DE MARKETING AUTOMÁTICO (ENVÍO CADA 1 MINUTO)
 function toggleAutoMarketing() {
     const btn = document.getElementById("btnStartMarketing");
     const statusDiv = document.getElementById("marketingStatus");
+
     if (!isMarketingActive) {
-        isMarketingActive = true; btn.textContent = "Detener Auto-Mensaje"; btn.style.backgroundColor = "red";
-        statusDiv.style.display = "block"; sendMarketingMessages(); marketingInterval = setInterval(sendMarketingMessages, 60000);
+        isMarketingActive = true;
+        btn.textContent = "Detener Auto-Mensaje";
+        btn.style.backgroundColor = "red";
+        btn.style.color = "white";
+        statusDiv.style.display = "block";
+        
+        sendMarketingMessages();
+        marketingInterval = setInterval(sendMarketingMessages, 60000);
+        
+        alert("Sistema de Marketing Activo. El navegador intentará abrir WhatsApp cada 1 minuto para los clientes registrados. Asegúrate de permitir las ventanas emergentes.");
     } else {
-        isMarketingActive = false; btn.textContent = "Activar Auto-Mensaje"; btn.style.backgroundColor = "transparent";
-        statusDiv.style.display = "none"; clearInterval(marketingInterval);
+        isMarketingActive = false;
+        btn.textContent = "Activar Auto-Mensaje";
+        btn.style.backgroundColor = "transparent";
+        btn.style.color = "var(--gold)";
+        statusDiv.style.display = "none";
+        clearInterval(marketingInterval);
     }
 }
 
 function sendMarketingMessages() {
     const uniquePhones = [...new Set(bookings.map(b => b.phone.replace(/\s+/g, '')))];
+    const message = encodeURIComponent("hola queres hacerte un tatuaje??");
+
     uniquePhones.forEach((phone, index) => {
-        setTimeout(() => { if (isMarketingActive) window.open(`https://wa.me/${phone}?text=hola`, '_blank'); }, index * 2000); 
+        setTimeout(() => {
+            if (isMarketingActive) {
+                console.log("Enviando marketing a: " + phone);
+                window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+            }
+        }, index * 2000); 
     });
 }
 
@@ -676,30 +719,57 @@ function renderAdmin(){
   bookings.sort((a,b)=> new Date(a.date) - new Date(b.date)); 
   bookings.forEach((res,idx)=>{
     const cleanPhone = res.phone.replace(/\s+/g, '');
+    const clientName = res.name ? `${res.name} ${res.surname}` : "Usuario";
+    
     const div=document.createElement("div"); div.className="admin-card";
     div.innerHTML=`<div style="display:flex; align-items:center">
         <img src="${res.tattoo.image || 'placeholder.png'}" onclick="zoomImg('${res.tattoo.image}')" style="width:50px; height:50px; cursor:zoom-in; border-radius:2px">
         <div style="margin-left:15px">
-          <strong>${res.date}</strong><br>
-          <small>${res.name} ${res.surname}</small><br>
-          <small>${res.start}:00hs</small>
+          <strong style="font-size:14px">${res.date}</strong><br>
+          <small style="color:var(--gold); font-weight:bold;">${clientName}</small><br>
+          <small style="color:var(--text-secondary);">${res.start}:00hs - ${res.tattoo.size}</small><br>
+          <small style="color:var(--text-secondary); text-transform:uppercase; font-size:10px">${res.tattoo.place}</small>
         </div>
       </div>
       <div style="text-align:right">
-        <a href="https://wa.me/${cleanPhone}" target="_blank" style="color:var(--gold); font-size:11px;">WHATSAPP</a><br>
-        <button onclick="deleteBooking(${idx})" style="padding:2px; font-size:9px;">Eliminar</button>
+        <div style="color:var(--text-primary); font-size:10px; margin-bottom:5px;">${res.phone}</div>
+        <a href="https://wa.me/${cleanPhone}" target="_blank" style="color:var(--gold); text-decoration:none; font-size:11px; border:1px solid var(--gold); padding:2px 5px; border-radius:3px;">WHATSAPP</a><br>
+        <button onclick="deleteBooking(${idx})" style="padding:2px 5px; font-size:9px; margin-top:5px; border-color:rgba(255,0,0,0.2)">Eliminar</button>
       </div>`;
     list.appendChild(div);
   });
 }
 
-function deleteBooking(idx){ if(confirm("¿Eliminar?")) fetch(`${SERVER_URL}/${bookings[idx].id}`,{method:'DELETE'}).then(()=> { lastBookingCount--; openAdmin(); }); }
-
-function resetUserData() {
-    if(confirm("¿Limpiar sesión?")) { localStorage.removeItem("userName"); localStorage.removeItem("whatsapp"); location.reload(); }
+function deleteBooking(idx){ 
+  if(confirm("¿Eliminar?")) { 
+    fetch(`${SERVER_URL}/${bookings[idx].id}`,{method:'DELETE'}).then(()=> {
+      lastBookingCount--;
+      openAdmin();
+    }); 
+  } 
 }
 
-fetch(SERVER_URL).then(r=>r.json()).then(data=> { bookings=data; lastBookingCount = data.length; });
+// --- NUEVA FUNCIÓN: Resetear sesión de usuarios ---
+function resetUserData() {
+    if(confirm("¿Deseas obligar a que el próximo usuario ingrese sus datos de nuevo? Esto borrará el nombre y teléfono guardados en este dispositivo.")) {
+        localStorage.removeItem("userName");
+        localStorage.removeItem("userSurname");
+        localStorage.removeItem("whatsapp");
+        
+        // Limpiamos variables en tiempo real
+        userName = null;
+        userSurname = null;
+        userPhone = null;
+        
+        alert("Sesión de usuario limpiada. Al intentar agendar, pedirá los datos otra vez.");
+        go('home');
+    }
+}
+
+fetch(SERVER_URL).then(r=>r.json()).then(data=> {
+  bookings=data;
+  lastBookingCount = data.length;
+});
 </script>
 </body>
 </html>

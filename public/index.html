@@ -132,7 +132,7 @@ button:disabled{
 
 .admin-list{
   width:100%;
-  max-height:360px;
+  max-height:400px;
   overflow:auto;
   display:flex;
   flex-direction:column;
@@ -142,28 +142,22 @@ button:disabled{
 .admin-card{
   background:var(--dark-3);
   border-radius:14px;
-  padding:16px;
+  padding:12px;
   display:flex;
   justify-content:space-between;
   align-items:center;
   gap:14px;
   box-shadow:0 10px 25px rgba(0,0,0,.6);
+  border: 1px solid var(--border);
 }
 
-.admin-actions{ display:flex; gap:10px; align-items:center; }
+.admin-info{ display:flex; align-items:center; gap:12px; }
+.admin-info img{ width:60px; height:60px; object-fit:cover; border-radius:6px; }
 
-.delete-btn{ background:#b00020; color:#fff; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; }
-.save-btn{ background:#2ecc71; color:#111; border:none; border-radius:8px; padding:6px 10px; }
+.admin-actions{ display:flex; flex-direction:column; gap:6px; }
 
-.time-input{
-  width:70px;
-  padding:6px;
-  border-radius:6px;
-  border:1px solid var(--border);
-  background:#000;
-  color:#fff;
-  text-align:center;
-}
+.delete-btn{ background:#b00020; color:#fff; border-radius:8px; padding:6px 12px; font-size:12px; }
+.ws-btn{ background:#25d366; color:#fff; border-radius:8px; padding:6px 12px; font-size:12px; text-decoration:none; text-align:center; font-weight:bold; }
 
 img{ border-radius:8px; border:1px solid var(--border); max-width:100%; }
 
@@ -228,10 +222,6 @@ img{ border-radius:8px; border:1px solid var(--border); max-width:100%; }
   padding:12px 0;
   border-radius:12px;
   font-size:16px;
-}
-#hoursGrid button:disabled{
-  opacity:0.4;
-  cursor:not-allowed;
 }
 
 .body-zones{
@@ -369,7 +359,7 @@ img{ border-radius:8px; border:1px solid var(--border); max-width:100%; }
 
 <script>
 const SERVER_URL="/api/bookings";
-// Duraciones actualizadas según tu pedido
+// Duraciones solicitadas por el usuario
 const DURATIONS={ 
     "mini": 1, 
     "small": 1, 
@@ -384,9 +374,13 @@ let selectedMonth, selectedDay, selectedTattoo, selectedHour, selectedZone;
 let bookings=[];
 let userPhone=localStorage.getItem("whatsapp");
 
-function nowUY(){ return new Date(new Date().toLocaleString("en-US",{timeZone:"America/Montevideo"})); }
+// FUNCIÓN HORA REAL URUGUAY
+function nowUY(){ 
+    return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Montevideo"})); 
+}
+
 function go(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); document.getElementById(id).classList.add("active"); }
-function openMap(){ window.open("https://maps.google.com/?q=Cerro+Ejido+Calle+2+Casa+140","_blank"); }
+function openMap(){ window.open("https://www.google.com/maps?q=Cerro+Ejido+Artigas","_blank"); }
 function tryGoAgenda(){ userPhone?go("month"):go("login"); }
 function login(){ const phone=document.getElementById("phoneInput").value.trim(); if(phone.length<6) return alert("Número inválido"); localStorage.setItem("whatsapp",phone); userPhone=phone; go("month"); }
 
@@ -405,7 +399,8 @@ function renderDays(){
     const date=new Date(year,selectedMonth,d); 
     const b=document.createElement("button"); 
     b.textContent=d; 
-    if(date<new Date(today.getFullYear(),today.getMonth(),today.getDate())) b.disabled=true; 
+    // Bloquea días pasados
+    if(date.setHours(0,0,0,0) < today.setHours(0,0,0,0)) b.disabled=true; 
     b.onclick=()=>{ selectedDay=d; renderTattooOptions(); go("tattooDetails"); }; 
     daysEl.appendChild(b); 
   } 
@@ -447,7 +442,6 @@ function renderTattooOptions(){ const container=document.getElementById("tattooO
 
 function selectTattoo(id){ 
     selectedTattoo=TATTOO_SIZES.find(t=>t.id===id); 
-    // Si es manga o espalda, saltar zona
     if(id === "manga-brazo" || id === "espalda-completa"){
         selectedZone = { id: "full", label: "Cuerpo Completo" };
         renderHours();
@@ -472,22 +466,21 @@ function goBackFromHours(){
 function renderHours(){
   const grid=document.getElementById("hoursGrid"); grid.innerHTML=""; 
   const duration=DURATIONS[selectedTattoo.id];
-  const now = nowUY(), isToday = (selectedDay === now.getDate() && selectedMonth === now.getMonth());
+  const timeUY = nowUY();
+  const isToday = (selectedDay === timeUY.getDate() && selectedMonth === timeUY.getMonth());
   
   for(let h=9; h<=21; h++){
     if(h===12) continue; 
     let btn=document.createElement("button"); btn.textContent=h+":00";
     
-    // El tatuaje debe terminar antes de las 22:00
-    let disabled = (isToday && h <= now.getHours()) || (h + duration > 22);
+    // Bloqueo si el horario ya pasó hoy en Uruguay
+    let disabled = (isToday && h <= timeUY.getHours()) || (h + duration > 22);
     
     if(!disabled){
       bookings.forEach(b=>{
         const bd=b.date.split("-");
-        // Verificar si la reserva es para el mismo día
         if(parseInt(bd[2])===selectedDay && parseInt(bd[1])===(selectedMonth+1)){
-          // Un horario está ocupado si el inicio del nuevo tatuaje cae dentro de uno existente
-          // O si el tatuaje nuevo termina después de que uno existente empiece
+          // Lógica de colisión de tiempo
           if ((h >= b.start && h < b.end) || (h < b.start && (h + duration) > b.start)) {
               disabled = true;
           }
@@ -532,15 +525,32 @@ async function confirmBooking(){
 
 function promptAdmin(){ const pass=prompt("Password:"); if(pass==="richard7392") openAdmin(); }
 function openAdmin(){ fetch(SERVER_URL).then(r=>r.json()).then(data=>{ bookings=data; renderAdmin(); go("admin"); }); }
+
 function renderAdmin(){ 
   const list=document.getElementById("adminList"); list.innerHTML="";
+  bookings.sort((a,b)=> new Date(a.date) - new Date(b.date)); // Ordenar por fecha
+  
   bookings.forEach((res,idx)=>{
+    const cleanPhone = res.phone.replace(/\s+/g, '');
     const div=document.createElement("div"); div.className="admin-card";
-    div.innerHTML=`<div><strong>${res.date}</strong> - ${res.tattoo.size}<br>📲 ${res.phone}</div><button class="delete-btn" onclick="deleteBooking(${idx})">Eliminar</button>`;
+    div.innerHTML=`
+      <div class="admin-info">
+        <img src="${res.tattoo.image || 'placeholder.png'}" alt="Tatuaje">
+        <div>
+          <strong>${res.date}</strong> - ${res.start}:00hs<br>
+          <small>${res.tattoo.size} / ${res.tattoo.place}</small><br>
+          <span>📲 ${res.phone}</span>
+        </div>
+      </div>
+      <div class="admin-actions">
+        <a href="https://wa.me/${cleanPhone}" target="_blank" class="ws-btn">WhatsApp</a>
+        <button class="delete-btn" onclick="deleteBooking(${idx})">Eliminar</button>
+      </div>`;
     list.appendChild(div);
   });
 }
-function deleteBooking(idx){ if(confirm("¿Eliminar?")) { fetch(`${SERVER_URL}/${bookings[idx].id}`,{method:'DELETE'}).then(()=>openAdmin()); } }
+
+function deleteBooking(idx){ if(confirm("¿Eliminar reserva?")) { fetch(`${SERVER_URL}/${bookings[idx].id}`,{method:'DELETE'}).then(()=>openAdmin()); } }
 
 fetch(SERVER_URL).then(r=>r.json()).then(data=>bookings=data);
 </script>

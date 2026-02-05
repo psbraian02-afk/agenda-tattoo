@@ -251,29 +251,58 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 }
 #lightbox img { max-width: 85%; max-height: 85%; border: 1px solid var(--gold); }
 
-/* ESTILO NUEVO PARA EL QR */
-#qr-admin-container {
-  background: #fff;
-  padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  text-align: center;
-  color: #000;
-  display: flex;
-  flex-direction: column;
+/* --- ESTILOS DEL BOTÓN FLOTANTE QR --- */
+#floating-qr {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  background: var(--gold);
+  border-radius: 50%;
+  display: none; /* Se activa solo en admin */
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 0 0 20px rgba(197, 160, 89, 0.5);
+  transition: all 0.4s ease;
+  overflow: hidden;
+  border: 2px solid #fff;
 }
-#qr-admin-container img {
-  width: 180px;
-  height: 180px;
-  border: 1px solid #eee;
+#floating-qr img { width: 35px; filter: invert(1); }
+
+/* Estado expandido del QR */
+#floating-qr.expanded {
+  width: 250px;
+  height: 280px;
+  border-radius: 15px;
+  background: white;
+  flex-direction: column;
+}
+#floating-qr.expanded img {
+  width: 200px;
+  height: 200px;
+  filter: none;
+  margin-top: 10px;
+}
+#floating-qr.expanded::after {
+  content: "Cerrar";
+  color: #000;
+  font-size: 10px;
+  font-weight: bold;
+  margin-top: 5px;
 }
 
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
+
 </style>
 </head>
 <body>
+
+<div id="floating-qr" onclick="this.classList.toggle('expanded')">
+    <img id="qr-img-element" src="/api/get-qr" alt="QR" onerror="this.src='https://cdn-icons-png.flaticon.com/512/714/714390.png'">
+</div>
 
 <div id="lightbox" onclick="this.style.display='none'">
   <img id="lightboxImg" src="">
@@ -377,12 +406,6 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
       <div class="screen" id="admin">
         <h2>Agenda Privada</h2>
         
-        <div id="qr-admin-container">
-            <small style="font-weight: bold;">VINCULAR WHATSAPP</small>
-            <img id="admin-qr-img" src="/api/get-qr" alt="Cargando QR..." onerror="this.src='https://via.placeholder.com/150?text=WhatsApp+OK'">
-            <button onclick="refreshQR()" style="padding: 5px 10px; font-size: 10px; border-color: #000; color: #000;">Actualizar QR</button>
-        </div>
-
         <div id="marketingStatus" style="background:rgba(197, 160, 89, 0.1); padding:10px; border-radius:5px; margin-bottom:10px; width:100%; text-align:center; display:none; border:1px solid var(--gold);">
             <small id="marketingText" style="color:var(--gold); font-weight:600;">AUTO-MENSAJE ACTIVO (1 MIN)</small>
         </div>
@@ -415,10 +438,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 
 <script>
 const SERVER_URL="/api/bookings";
-const DURATIONS={ 
-    "mini": 1, "small": 1, "medium": 1.5, "large": 2.25, 
-    "muy-grande": 3.66, "manga-brazo": 4.5, "espalda-completa": 5 
-};
+const DURATIONS={ "mini": 1, "small": 1, "medium": 1.5, "large": 2.25, "muy-grande": 3.66, "manga-brazo": 4.5, "espalda-completa": 5 };
 
 let selectedMonth, selectedDay, selectedTattoo, selectedHour, selectedZone;
 let bookings=[];
@@ -429,8 +449,6 @@ let userName = localStorage.getItem("userName");
 let userSurname = localStorage.getItem("userSurname");
 
 let notificationInterval;
-
-// VARIABLES PARA MARKETING
 let marketingInterval;
 let isMarketingActive = false;
 
@@ -439,32 +457,27 @@ function nowUY(){ return new Date(new Date().toLocaleString("en-US", {timeZone: 
 function go(id){ 
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); 
   document.getElementById(id).classList.add("active"); 
+  
+  // Mostrar QR solo en panel Admin
+  const qrBtn = document.getElementById("floating-qr");
+  qrBtn.style.display = (id === "admin") ? "flex" : "none";
+
   if(id === 'imageUploadScreen') updateSummary(); 
-  if(id !== 'admin') {
-      clearInterval(notificationInterval);
-  }
+  if(id !== 'admin') clearInterval(notificationInterval);
 }
 
 function openMap(){ window.open("https://maps.google.com/?q=Cerro+Ejido+Calle+2+Artigas","_blank"); }
 
 function tryGoAgenda(){ 
-    if(userPhone && userName && userSurname) {
-        go("month");
-    } else {
-        go("login");
-    }
+    if(userPhone && userName && userSurname) go("month");
+    else go("login");
 }
 
 function login(){ 
     const name = document.getElementById("nameInput").value.trim();
     const surname = document.getElementById("surnameInput").value.trim();
     const phone = document.getElementById("phoneInput").value.trim();
-    const phonePattern = /^[+]?[\d\s-]{8,17}$/;
-    const digitCount = phone.replace(/\D/g, '').length;
-
-    if(!name || !surname) return alert("Por favor completa tu Nombre y Apellido.");
-    if (!phonePattern.test(phone) || digitCount < 8) return alert("Número incorrecto.");
-    
+    if(!name || !surname || phone.length < 8) return alert("Datos incompletos.");
     localStorage.setItem("userName", name);
     localStorage.setItem("userSurname", surname);
     localStorage.setItem("whatsapp", phone);
@@ -521,97 +534,70 @@ const BODY_ZONES=[
 ];
 
 function renderTattooOptions(){ 
-  const container=document.getElementById("tattooOptions"); 
-  container.innerHTML=""; 
+  const container=document.getElementById("tattooOptions"); container.innerHTML=""; 
   TATTOO_SIZES.forEach(t=>{ 
-    const card=document.createElement("div"); 
-    card.className="tattoo-card"; 
+    const card=document.createElement("div"); card.className="tattoo-card"; 
     card.innerHTML=`<img src="${t.img}"><div><strong>${t.label}</strong><p style="color:var(--gold); font-size:12px">${t.price}</p></div>`; 
-    card.onclick=()=>selectTattoo(t.id);
-    container.appendChild(card); 
+    card.onclick=()=>selectTattoo(t.id); container.appendChild(card); 
   }); 
 }
 
 function selectTattoo(id){ 
     selectedTattoo=TATTOO_SIZES.find(t=>t.id===id); 
-    if(id === "manga-brazo" || id === "espalda-completa"){
-        selectedZone = { id: "full", label: "Cuerpo Completo" };
-        renderHours(); go("hourSelection");
-    } else {
-        renderZones(); go("zoneSelection"); 
-    }
+    if(id === "manga-brazo" || id === "espalda-completa"){ selectedZone = { id: "full", label: "Cuerpo Completo" }; renderHours(); go("hourSelection"); }
+    else { renderZones(); go("zoneSelection"); }
 }
 
 function renderZones(){ 
-  const container=document.getElementById("zoneOptions"); 
-  container.innerHTML=""; 
+  const container=document.getElementById("zoneOptions"); container.innerHTML=""; 
   BODY_ZONES.forEach(z=>{ 
-    const card=document.createElement("div"); 
-    card.className="zone-card"; 
-    card.innerHTML=`<img src="${z.img}"><div>${z.label}</div>`; 
-    card.onclick=()=>selectZone(z.id);
-    container.appendChild(card); 
+    const card=document.createElement("div"); card.className="zone-card"; 
+    card.innerHTML=`<img src="${z.img}"><div>${z.label}</div>`; card.onclick=()=>selectZone(z.id); container.appendChild(card); 
   }); 
 }
 
 function selectZone(id){ selectedZone=BODY_ZONES.find(z=>z.id===id); renderHours(); go("hourSelection"); }
-
 function goBackFromHours(){ (selectedTattoo.id === "manga-brazo" || selectedTattoo.id === "espalda-completa") ? go("tattooDetails") : go("zoneSelection"); }
 
 function renderHours(){
   const grid=document.getElementById("hoursGrid"); grid.innerHTML=""; 
-  const duration=DURATIONS[selectedTattoo.id];
-  const timeUY = nowUY();
+  const duration=DURATIONS[selectedTattoo.id]; const timeUY = nowUY();
   const isToday = (selectedDay === timeUY.getDate() && selectedMonth === timeUY.getMonth());
-  
   for(let h=9; h<=21; h++){
     if(h===12) continue; 
     let btn=document.createElement("button"); btn.textContent=h+":00";
     let disabled = (isToday && h <= timeUY.getHours());
-    if(!disabled){
-      bookings.forEach(b=>{
+    if(!disabled) bookings.forEach(b=>{
         const bd=b.date.split("-");
         if(parseInt(bd[2])===selectedDay && parseInt(bd[1])===(selectedMonth+1)){
           if ((h >= b.start && h < b.end) || (h < b.start && (h + duration) > b.start)) disabled = true;
         }
-      });
-    }
-    btn.disabled=disabled; 
-    btn.onclick=()=>selectHour(h); 
-    grid.appendChild(btn);
+    });
+    btn.disabled=disabled; btn.onclick=()=>selectHour(h); grid.appendChild(btn);
   }
 }
 
 function selectHour(hour){ selectedHour=hour; go('imageUploadScreen'); }
-
 function updateSummary() {
   const info = document.getElementById("userTattooInfo");
-  if(selectedTattoo && selectedZone && selectedHour) {
-    info.innerHTML = `${selectedTattoo.label} | ${selectedZone.label} | ${selectedHour}:00hs`;
-  }
+  if(selectedTattoo && selectedZone && selectedHour) info.innerHTML = `${selectedTattoo.label} | ${selectedZone.label} | ${selectedHour}:00hs`;
 }
 
 document.getElementById("userTattooImage").addEventListener("change",e=>{
   const file=e.target.files[0], preview=document.getElementById("userTattooPreview");
   if(file){ 
-    const reader=new FileReader(); 
-    reader.onload=e2=>{ 
+    const reader=new FileReader(); reader.onload=e2=>{ 
       preview.src=e2.target.result; preview.style.display="block"; 
-      updateSummary();
-      document.getElementById("confirmBtn").disabled=false; 
-    }; 
-    reader.readAsDataURL(file); 
+      updateSummary(); document.getElementById("confirmBtn").disabled=false; 
+    }; reader.readAsDataURL(file); 
   }
 });
 
 async function confirmBooking(){
   const duration=DURATIONS[selectedTattoo.id];
   const booking={ 
-    date:`${year}-${selectedMonth+1}-${selectedDay}`, 
-    start:selectedHour, end:selectedHour+duration, 
-    phone:userPhone, 
-    name: userName,
-    surname: userSurname,
+    date:`${year}-${selectedMonth+1}-${selectedDay}`, start:selectedHour, end:selectedHour+duration, 
+    phone:userPhone, name: userName, surname: userSurname,
     tattoo:{ image: document.getElementById("userTattooPreview").src, size:selectedTattoo.label, place:selectedZone.label } 
   };
   try {
@@ -623,73 +609,48 @@ async function confirmBooking(){
 function promptAdmin(){ 
   if (localStorage.getItem("adminAuth") === "true") { openAdmin(); return; }
   const pass=prompt("Password:"); 
-  if(pass==="richard123") {
-    localStorage.setItem("adminAuth", "true"); 
-    if ("Notification" in window) Notification.requestPermission();
-    openAdmin(); 
-  }
+  if(pass==="richard123") { localStorage.setItem("adminAuth", "true"); if ("Notification" in window) Notification.requestPermission(); openAdmin(); }
 }
 
 function logoutAdmin() { localStorage.removeItem("adminAuth"); go('home'); }
 
 function openAdmin(){ 
   fetch(SERVER_URL).then(r=>r.json()).then(data=>{ 
-    bookings=data; 
-    lastBookingCount = data.length; 
-    renderAdmin(); 
-    go("admin"); 
-    refreshQR(); // Carga el QR al entrar al panel
+    bookings=data; lastBookingCount = data.length; renderAdmin(); go("admin"); 
     notificationInterval = setInterval(checkForNewBookings, 30000);
   }); 
 }
 
-// NUEVA FUNCIÓN: Recarga la imagen del QR
-function refreshQR() {
-    document.getElementById('admin-qr-img').src = '/api/get-qr?t=' + Date.now();
-}
-
 async function checkForNewBookings() {
   try {
-    const res = await fetch(SERVER_URL);
-    const data = await res.json();
+    const res = await fetch(SERVER_URL); const data = await res.json();
     if (data.length > lastBookingCount) {
-      const newBooking = data[data.length - 1];
-      showSystemNotification(newBooking);
+      const newBooking = data[data.length - 1]; showSystemNotification(newBooking);
       lastBookingCount = data.length; bookings = data; renderAdmin();
     }
-  } catch (e) { console.log("Error checking"); }
+  } catch (e) { }
 }
 
 function showSystemNotification(booking) {
-  if (Notification.permission === "granted") {
-    new Notification("NUEVA CITA", { body: `${booking.name} (${booking.phone})`, icon: "logo.png" });
-  }
+  if (Notification.permission === "granted") new Notification("NUEVA CITA", { body: `${booking.name}`, icon: "logo.png" });
 }
 
 function toggleAutoMarketing() {
     const btn = document.getElementById("btnStartMarketing");
     const statusDiv = document.getElementById("marketingStatus");
     if (!isMarketingActive) {
-        isMarketingActive = true;
-        btn.textContent = "Detener Auto-Mensaje";
-        btn.style.backgroundColor = "red";
-        statusDiv.style.display = "block";
-        sendMarketingMessages();
-        marketingInterval = setInterval(sendMarketingMessages, 60000);
+        isMarketingActive = true; btn.textContent = "Detener Auto-Mensaje"; btn.style.backgroundColor = "red";
+        statusDiv.style.display = "block"; sendMarketingMessages(); marketingInterval = setInterval(sendMarketingMessages, 60000);
     } else {
-        isMarketingActive = false;
-        btn.textContent = "Activar Auto-Mensaje";
-        btn.style.backgroundColor = "transparent";
-        statusDiv.style.display = "none";
-        clearInterval(marketingInterval);
+        isMarketingActive = false; btn.textContent = "Activar Auto-Mensaje"; btn.style.backgroundColor = "transparent";
+        statusDiv.style.display = "none"; clearInterval(marketingInterval);
     }
 }
 
 function sendMarketingMessages() {
     const uniquePhones = [...new Set(bookings.map(b => b.phone.replace(/\s+/g, '')))];
-    const message = encodeURIComponent("hola queres hacerte un tatuaje??");
     uniquePhones.forEach((phone, index) => {
-        setTimeout(() => { if (isMarketingActive) window.open(`https://wa.me/${phone}?text=${message}`, '_blank'); }, index * 2000); 
+        setTimeout(() => { if (isMarketingActive) window.open(`https://wa.me/${phone}?text=hola`, '_blank'); }, index * 2000); 
     });
 }
 
@@ -704,31 +665,23 @@ function renderAdmin(){
     div.innerHTML=`<div style="display:flex; align-items:center">
         <img src="${res.tattoo.image || 'placeholder.png'}" onclick="zoomImg('${res.tattoo.image}')" style="width:50px; height:50px; cursor:zoom-in; border-radius:2px">
         <div style="margin-left:15px">
-          <strong style="font-size:14px">${res.date}</strong><br>
-          <small style="color:var(--gold); font-weight:bold;">${res.name} ${res.surname}</small><br>
-          <small style="color:var(--text-secondary);">${res.start}:00hs - ${res.tattoo.size}</small>
+          <strong>${res.date}</strong><br>
+          <small>${res.name} ${res.surname}</small><br>
+          <small>${res.start}:00hs</small>
         </div>
       </div>
       <div style="text-align:right">
-        <a href="https://wa.me/${cleanPhone}" target="_blank" style="color:var(--gold); text-decoration:none; font-size:11px; border:1px solid var(--gold); padding:2px 5px; border-radius:3px;">WHATSAPP</a><br>
-        <button onclick="deleteBooking(${idx})" style="padding:2px 5px; font-size:9px; margin-top:5px; border-color:rgba(255,0,0,0.2)">Eliminar</button>
+        <a href="https://wa.me/${cleanPhone}" target="_blank" style="color:var(--gold); font-size:11px;">WHATSAPP</a><br>
+        <button onclick="deleteBooking(${idx})" style="padding:2px; font-size:9px;">Eliminar</button>
       </div>`;
     list.appendChild(div);
   });
 }
 
-function deleteBooking(idx){ 
-  if(confirm("¿Eliminar?")) { 
-    fetch(`${SERVER_URL}/${bookings[idx].id}`,{method:'DELETE'}).then(()=> { lastBookingCount--; openAdmin(); }); 
-  } 
-}
+function deleteBooking(idx){ if(confirm("¿Eliminar?")) fetch(`${SERVER_URL}/${bookings[idx].id}`,{method:'DELETE'}).then(()=> { lastBookingCount--; openAdmin(); }); }
 
 function resetUserData() {
-    if(confirm("¿Limpiar sesión?")) {
-        localStorage.removeItem("userName"); localStorage.removeItem("userSurname"); localStorage.removeItem("whatsapp");
-        userName = null; userSurname = null; userPhone = null;
-        go('home');
-    }
+    if(confirm("¿Limpiar sesión?")) { localStorage.removeItem("userName"); localStorage.removeItem("whatsapp"); location.reload(); }
 }
 
 fetch(SERVER_URL).then(r=>r.json()).then(data=> { bookings=data; lastBookingCount = data.length; });

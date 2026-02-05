@@ -130,6 +130,7 @@ button:disabled{
 .social-btn img{ display:block; width:24px; height:24px; }
 .social-btn:hover{ background:var(--yellow); transform:scale(1.1); }
 
+/* ADMIN LIST STYLES */
 .admin-list{
   width:100%;
   max-height:400px;
@@ -152,12 +153,39 @@ button:disabled{
 }
 
 .admin-info{ display:flex; align-items:center; gap:12px; }
-.admin-info img{ width:60px; height:60px; object-fit:cover; border-radius:6px; }
+.admin-info img{ 
+  width:60px; 
+  height:60px; 
+  object-fit:cover; 
+  border-radius:6px; 
+  cursor: zoom-in;
+  transition: .2s;
+}
+.admin-info img:hover { filter: brightness(1.2); }
 
 .admin-actions{ display:flex; flex-direction:column; gap:6px; }
 
 .delete-btn{ background:#b00020; color:#fff; border-radius:8px; padding:6px 12px; font-size:12px; }
 .ws-btn{ background:#25d366; color:#fff; border-radius:8px; padding:6px 12px; font-size:12px; text-decoration:none; text-align:center; font-weight:bold; }
+
+/* LIGHTBOX - IMAGEN GRANDE */
+#lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  display: none;
+  align-items: center;
+  justify-content:center;
+  z-index: 9999;
+  cursor: zoom-out;
+}
+#lightbox img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  border: 2px solid var(--yellow);
+}
 
 img{ border-radius:8px; border:1px solid var(--border); max-width:100%; }
 
@@ -275,6 +303,11 @@ img{ border-radius:8px; border:1px solid var(--border); max-width:100%; }
 </style>
 </head>
 <body>
+
+<div id="lightbox" onclick="this.style.display='none'">
+  <img id="lightboxImg" src="">
+</div>
+
 <div class="app">
 
 <div class="screen active" id="home">
@@ -359,7 +392,6 @@ img{ border-radius:8px; border:1px solid var(--border); max-width:100%; }
 
 <script>
 const SERVER_URL="/api/bookings";
-// Duraciones solicitadas por el usuario
 const DURATIONS={ 
     "mini": 1, 
     "small": 1, 
@@ -374,13 +406,12 @@ let selectedMonth, selectedDay, selectedTattoo, selectedHour, selectedZone;
 let bookings=[];
 let userPhone=localStorage.getItem("whatsapp");
 
-// FUNCIÓN HORA REAL URUGUAY
 function nowUY(){ 
     return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Montevideo"})); 
 }
 
 function go(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); document.getElementById(id).classList.add("active"); }
-function openMap(){ window.open("https://www.google.com/maps?q=Cerro+Ejido+Artigas","_blank"); }
+function openMap(){ window.open("https://www.google.com/maps?q=-30.416801,-56.495000","_blank"); }
 function tryGoAgenda(){ userPhone?go("month"):go("login"); }
 function login(){ const phone=document.getElementById("phoneInput").value.trim(); if(phone.length<6) return alert("Número inválido"); localStorage.setItem("whatsapp",phone); userPhone=phone; go("month"); }
 
@@ -399,7 +430,6 @@ function renderDays(){
     const date=new Date(year,selectedMonth,d); 
     const b=document.createElement("button"); 
     b.textContent=d; 
-    // Bloquea días pasados
     if(date.setHours(0,0,0,0) < today.setHours(0,0,0,0)) b.disabled=true; 
     b.onclick=()=>{ selectedDay=d; renderTattooOptions(); go("tattooDetails"); }; 
     daysEl.appendChild(b); 
@@ -424,18 +454,18 @@ const BODY_ZONES=[
   { id:"abdomen", label:"Abdomen", img:"abdomen.png" },
   { id:"costillas-izq", label:"Costillas Izquierdas", img:"costillas.png" },
   { id:"costillas-der", label:"Costillas Derechas", img:"costillas.png" },
-  { id:"espalda-alta", label:"Espalda Alta", img:"espalda.png" },
+  { id:"espalda-alta", label:"Espalda Alta", img:"espaldaalta.png" },
   { id:"espalda-baja", label:"Espalda Baja", img:"espalda.png" },
-  { id:"hombro-izq", label:"Hombro Izquierdo", img:"hombro-izq.png" },
-  { id:"hombro-der", label:"Hombro Derecho", img:"hombro-der.png" },
-  { id:"antebrazo-izq", label:"Antebrazo Izquierdo", img:"antebrazo-izq.png" },
-  { id:"antebrazo-der", label:"Antebrazo Derecho", img:"antebrazo-der.png" },
-  { id:"mano-izq", label:"Mano Izquierda", img:"mano-izq.png" },
-  { id:"mano-der", label:"Mano Derecho", img:"mano-der.png" },
-  { id:"muslo-izq", label:"Muslo Izquierdo", img:"muslo-izq.png" },
-  { id:"muslo-der", label:"Muslo Derecho", img:"muslo-der.png" },
-  { id:"gemelo-izq", label:"Gemelo Izquierdo", img:"gemelo-izq.png" },
-  { id:"gemelo-der", label:"Gemelo Derecho", img:"gemelo-der.png" }
+  { id:"hombro-izq", label:"Hombro Izquierdo", img:"hombro.png" },
+  { id:"hombro-der", label:"Hombro Derecho", img:"hombro.png" },
+  { id:"antebrazo-izq", label:"Antebrazo Izquierdo", img:"antebrazo.png" },
+  { id:"antebrazo-der", label:"Antebrazo Derecho", img:"antebrazo.png" },
+  { id:"mano-izq", label:"Mano Izquierda", img:"mano.png" },
+  { id:"mano-der", label:"Mano Derecho", img:"mano.png" },
+  { id:"muslo-izq", label:"Muslo Izquierdo", img:"muslo.png" },
+  { id:"muslo-der", label:"Muslo Derecho", img:"muslo.png" },
+  { id:"gemelo-izq", label:"Gemelo Izquierdo", img:"gemelo.png" },
+  { id:"gemelo-der", label:"Gemelo Derecho", img:"gemelo.png" }
 ];
 
 function renderTattooOptions(){ const container=document.getElementById("tattooOptions"); container.innerHTML=""; TATTOO_SIZES.forEach(t=>{ const card=document.createElement("div"); card.className="tattoo-card"; card.innerHTML=`<img src="${t.img}"><strong>${t.label}</strong><p>${t.price}</p><button onclick="selectTattoo('${t.id}')">Elegir</button>`; container.appendChild(card); }); }
@@ -472,22 +502,18 @@ function renderHours(){
   for(let h=9; h<=21; h++){
     if(h===12) continue; 
     let btn=document.createElement("button"); btn.textContent=h+":00";
-    
-    // Bloqueo si el horario ya pasó hoy en Uruguay
     let disabled = (isToday && h <= timeUY.getHours()) || (h + duration > 22);
     
     if(!disabled){
       bookings.forEach(b=>{
         const bd=b.date.split("-");
         if(parseInt(bd[2])===selectedDay && parseInt(bd[1])===(selectedMonth+1)){
-          // Lógica de colisión de tiempo
           if ((h >= b.start && h < b.end) || (h < b.start && (h + duration) > b.start)) {
               disabled = true;
           }
         }
       });
     }
-    
     btn.disabled=disabled; 
     btn.onclick=()=>selectHour(h); 
     grid.appendChild(btn);
@@ -526,16 +552,23 @@ async function confirmBooking(){
 function promptAdmin(){ const pass=prompt("Password:"); if(pass==="richard7392") openAdmin(); }
 function openAdmin(){ fetch(SERVER_URL).then(r=>r.json()).then(data=>{ bookings=data; renderAdmin(); go("admin"); }); }
 
+function zoomImg(src) {
+  const lb = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lightboxImg');
+  lbImg.src = src;
+  lb.style.display = 'flex';
+}
+
 function renderAdmin(){ 
   const list=document.getElementById("adminList"); list.innerHTML="";
-  bookings.sort((a,b)=> new Date(a.date) - new Date(b.date)); // Ordenar por fecha
+  bookings.sort((a,b)=> new Date(a.date) - new Date(b.date)); 
   
   bookings.forEach((res,idx)=>{
     const cleanPhone = res.phone.replace(/\s+/g, '');
     const div=document.createElement("div"); div.className="admin-card";
     div.innerHTML=`
       <div class="admin-info">
-        <img src="${res.tattoo.image || 'placeholder.png'}" alt="Tatuaje">
+        <img src="${res.tattoo.image || 'placeholder.png'}" onclick="zoomImg('${res.tattoo.image}')" title="Clic para ampliar">
         <div>
           <strong>${res.date}</strong> - ${res.start}:00hs<br>
           <small>${res.tattoo.size} / ${res.tattoo.place}</small><br>

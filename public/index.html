@@ -145,6 +145,7 @@ input {
   text-align: center;
   font-size: 16px;
   transition: 0.4s;
+  margin-bottom: 10px; /* Separación extra para los inputs nuevos */
 }
 input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(255,255,255,0.06); }
 
@@ -290,7 +291,10 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 
       <div class="screen" id="login">
         <h2>Identificación</h2>
-        <input id="phoneInput" placeholder="+598 9x xxx xxx">
+        <input id="nameInput" type="text" placeholder="Tu Nombre">
+        <input id="surnameInput" type="text" placeholder="Tu Apellido">
+        <input id="phoneInput" type="tel" placeholder="WhatsApp (+598 9x xxx xxx)">
+        
         <button onclick="login()">Acceder</button>
         <div class="nav"><button onclick="go('home')" style="border:none; font-size:12px">Cerrar</button></div>
       </div>
@@ -394,10 +398,15 @@ const DURATIONS={
 let selectedMonth, selectedDay, selectedTattoo, selectedHour, selectedZone;
 let bookings=[];
 let lastBookingCount = 0;
-let userPhone=localStorage.getItem("whatsapp");
+
+// Variables de Usuario actualizadas
+let userPhone = localStorage.getItem("whatsapp");
+let userName = localStorage.getItem("userName");
+let userSurname = localStorage.getItem("userSurname");
+
 let notificationInterval;
 
-// NUEVAS VARIABLES PARA MARKETING
+// VARIABLES PARA MARKETING
 let marketingInterval;
 let isMarketingActive = false;
 
@@ -409,18 +418,36 @@ function go(id){
   if(id === 'imageUploadScreen') updateSummary(); 
   if(id !== 'admin') {
       clearInterval(notificationInterval);
-      // No detenemos el marketing si sales de la pantalla para que siga funcionando en segundo plano
   }
 }
 
 function openMap(){ window.open("https://maps.google.com/?q=Cerro+Ejido+Calle+2+Artigas","_blank"); }
-function tryGoAgenda(){ userPhone?go("month"):go("login"); }
 
+// CAMBIO: Validación para requerir login si faltan datos
+function tryGoAgenda(){ 
+    if(userPhone && userName && userSurname) {
+        go("month");
+    } else {
+        go("login");
+    }
+}
+
+// CAMBIO: Lógica de Login para pedir nombre, apellido y teléfono
 function login(){ 
-    const phone=document.getElementById("phoneInput").value.trim(); 
-    if(phone.length<6) return alert("Número inválido"); 
-    localStorage.setItem("whatsapp",phone); 
-    userPhone=phone; 
+    const name = document.getElementById("nameInput").value.trim();
+    const surname = document.getElementById("surnameInput").value.trim();
+    const phone = document.getElementById("phoneInput").value.trim();
+    
+    if(!name || !surname || phone.length < 6) return alert("Por favor ingresa Nombre, Apellido y WhatsApp válidos.");
+    
+    localStorage.setItem("userName", name);
+    localStorage.setItem("userSurname", surname);
+    localStorage.setItem("whatsapp", phone);
+    
+    userName = name;
+    userSurname = surname;
+    userPhone = phone;
+    
     go("month"); 
 }
 
@@ -563,9 +590,13 @@ document.getElementById("userTattooImage").addEventListener("change",e=>{
 
 async function confirmBooking(){
   const duration=DURATIONS[selectedTattoo.id];
+  // CAMBIO: Se guardan name y surname en la reserva
   const booking={ 
     date:`${year}-${selectedMonth+1}-${selectedDay}`, 
-    start:selectedHour, end:selectedHour+duration, phone:userPhone, 
+    start:selectedHour, end:selectedHour+duration, 
+    phone:userPhone, 
+    name: userName, // Nuevo
+    surname: userSurname, // Nuevo
     tattoo:{ image: document.getElementById("userTattooPreview").src, size:selectedTattoo.label, place:selectedZone.label } 
   };
   try {
@@ -576,7 +607,7 @@ async function confirmBooking(){
 
 function promptAdmin(){ 
   const pass=prompt("Password:"); 
-  if(pass==="richard7392") {
+  if(pass==="richard123") {
     if ("Notification" in window) Notification.requestPermission();
     openAdmin(); 
   }
@@ -602,14 +633,14 @@ async function checkForNewBookings() {
       lastBookingCount = data.length;
       bookings = data;
       renderAdmin();
-    }
+        }
   } catch (e) { console.log("Error checking bookings"); }
 }
 
 function showSystemNotification(booking) {
   if (Notification.permission === "granted") {
     new Notification("NUEVA CITA - Richard Tattoo", {
-      body: `Cliente: ${booking.phone}\nFecha: ${booking.date} a las ${booking.start}:00hs`,
+      body: `Cliente: ${booking.name || ''} ${booking.surname || ''} (${booking.phone})\nFecha: ${booking.date} a las ${booking.start}:00hs`,
       icon: "logo.png"
     });
     if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
@@ -628,7 +659,6 @@ function toggleAutoMarketing() {
         btn.style.color = "white";
         statusDiv.style.display = "block";
         
-        // Ejecutar inmediatamente y luego cada 1 minuto (60000 ms)
         sendMarketingMessages();
         marketingInterval = setInterval(sendMarketingMessages, 60000);
         
@@ -644,12 +674,10 @@ function toggleAutoMarketing() {
 }
 
 function sendMarketingMessages() {
-    // Obtenemos todos los números únicos de las reservas
     const uniquePhones = [...new Set(bookings.map(b => b.phone.replace(/\s+/g, '')))];
     const message = encodeURIComponent("hola queres hacerte un tatuaje??");
 
     uniquePhones.forEach((phone, index) => {
-        // Usamos un pequeño retraso entre aperturas para que el navegador no se bloquee del todo
         setTimeout(() => {
             if (isMarketingActive) {
                 console.log("Enviando marketing a: " + phone);
@@ -666,17 +694,21 @@ function renderAdmin(){
   bookings.sort((a,b)=> new Date(a.date) - new Date(b.date)); 
   bookings.forEach((res,idx)=>{
     const cleanPhone = res.phone.replace(/\s+/g, '');
+    const clientName = res.name ? `${res.name} ${res.surname}` : "Usuario"; // Fallback por si hay datos viejos sin nombre
+    
     const div=document.createElement("div"); div.className="admin-card";
     div.innerHTML=`<div style="display:flex; align-items:center">
         <img src="${res.tattoo.image || 'placeholder.png'}" onclick="zoomImg('${res.tattoo.image}')" style="width:50px; height:50px; cursor:zoom-in; border-radius:2px">
         <div style="margin-left:15px">
           <strong style="font-size:14px">${res.date}</strong><br>
-          <small style="color:var(--gold)">${res.start}:00hs - ${res.tattoo.size}</small><br>
+          <small style="color:var(--gold); font-weight:bold;">${clientName}</small><br>
+          <small style="color:var(--text-secondary);">${res.start}:00hs - ${res.tattoo.size}</small><br>
           <small style="color:var(--text-secondary); text-transform:uppercase; font-size:10px">${res.tattoo.place}</small>
         </div>
       </div>
       <div style="text-align:right">
-        <a href="https://wa.me/${cleanPhone}" target="_blank" style="color:var(--gold); text-decoration:none; font-size:11px">WHATSAPP</a><br>
+        <div style="color:var(--text-primary); font-size:10px; margin-bottom:5px;">${res.phone}</div>
+        <a href="https://wa.me/${cleanPhone}" target="_blank" style="color:var(--gold); text-decoration:none; font-size:11px; border:1px solid var(--gold); padding:2px 5px; border-radius:3px;">WHATSAPP</a><br>
         <button onclick="deleteBooking(${idx})" style="padding:2px 5px; font-size:9px; margin-top:5px; border-color:rgba(255,0,0,0.2)">Eliminar</button>
       </div>`;
     list.appendChild(div);

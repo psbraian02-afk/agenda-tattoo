@@ -431,25 +431,20 @@ function tryGoAgenda(){
     }
 }
 
-// CAMBIO: Validación ESTRICTA de Teléfono
 function login(){ 
     const name = document.getElementById("nameInput").value.trim();
     const surname = document.getElementById("surnameInput").value.trim();
     const phone = document.getElementById("phoneInput").value.trim();
     
-    // Regex para validar formato (acepta +, espacios, guiones y números, longitud 8 a 17)
     const phonePattern = /^[+]?[\d\s-]{8,17}$/;
-    
-    // Contamos cuantos números hay realmente
     const digitCount = phone.replace(/\D/g, '').length;
 
     if(!name || !surname) {
         return alert("Por favor completa tu Nombre y Apellido.");
     }
     
-    // Si no cumple el formato o tiene muy pocos numeros reales
     if (!phonePattern.test(phone) || digitCount < 8) {
-        return alert("Número de WhatsApp incorrecto. Por favor verifica que esté bien escrito (ej: 099123456 o +598...)");
+        return alert("Número de WhatsApp incorrecto. Por favor verifica que esté bien escrito.");
     }
     
     localStorage.setItem("userName", name);
@@ -616,23 +611,25 @@ async function confirmBooking(){
   } catch(e) { alert("Error"); }
 }
 
-// CAMBIO: Persistencia de Login de Admin
+// CORRECCIÓN: Persistencia de Login de Admin
 function promptAdmin(){ 
-  // Verifica si ya está autenticado
+  // Si ya tiene el permiso guardado en el navegador, entra directo
   if (localStorage.getItem("adminAuth") === "true") {
       openAdmin();
       return;
   }
 
-  const pass=prompt("Password:"); 
+  // Si no, pide contraseña
+  const pass=prompt("Ingrese contraseña de artista:"); 
   if(pass==="richard123") {
-    localStorage.setItem("adminAuth", "true"); // Guarda la sesión
+    localStorage.setItem("adminAuth", "true"); 
     if ("Notification" in window) Notification.requestPermission();
     openAdmin(); 
+  } else if (pass !== null) {
+    alert("Contraseña incorrecta");
   }
 }
 
-// CAMBIO: Función para cerrar sesión Admin y borrar persistencia
 function logoutAdmin() {
     localStorage.removeItem("adminAuth");
     go('home');
@@ -668,11 +665,9 @@ function showSystemNotification(booking) {
       body: `Cliente: ${booking.name || ''} ${booking.surname || ''} (${booking.phone})\nFecha: ${booking.date} a las ${booking.start}:00hs`,
       icon: "logo.png"
     });
-    if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
   }
 }
 
-// LÓGICA DE MARKETING AUTOMÁTICO (ENVÍO CADA 1 MINUTO)
 function toggleAutoMarketing() {
     const btn = document.getElementById("btnStartMarketing");
     const statusDiv = document.getElementById("marketingStatus");
@@ -686,8 +681,6 @@ function toggleAutoMarketing() {
         
         sendMarketingMessages();
         marketingInterval = setInterval(sendMarketingMessages, 60000);
-        
-        alert("Sistema de Marketing Activo. El navegador intentará abrir WhatsApp cada 1 minuto para los clientes registrados. Asegúrate de permitir las ventanas emergentes.");
     } else {
         isMarketingActive = false;
         btn.textContent = "Activar Auto-Mensaje";
@@ -705,7 +698,6 @@ function sendMarketingMessages() {
     uniquePhones.forEach((phone, index) => {
         setTimeout(() => {
             if (isMarketingActive) {
-                console.log("Enviando marketing a: " + phone);
                 window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
             }
         }, index * 2000); 
@@ -749,19 +741,13 @@ function deleteBooking(idx){
   } 
 }
 
-// --- NUEVA FUNCIÓN: Resetear sesión de usuarios ---
 function resetUserData() {
-    if(confirm("¿Deseas obligar a que el próximo usuario ingrese sus datos de nuevo? Esto borrará el nombre y teléfono guardados en este dispositivo.")) {
+    if(confirm("¿Deseas obligar a que el próximo usuario ingrese sus datos de nuevo?")) {
         localStorage.removeItem("userName");
         localStorage.removeItem("userSurname");
         localStorage.removeItem("whatsapp");
-        
-        // Limpiamos variables en tiempo real
-        userName = null;
-        userSurname = null;
-        userPhone = null;
-        
-        alert("Sesión de usuario limpiada. Al intentar agendar, pedirá los datos otra vez.");
+        userName = null; userSurname = null; userPhone = null;
+        alert("Sesión de usuario limpiada.");
         go('home');
     }
 }

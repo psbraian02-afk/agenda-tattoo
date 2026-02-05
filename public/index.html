@@ -329,7 +329,9 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 
       <div class="screen" id="done">
         <h1 class="brand" style="font-size:32px">Confirmado</h1>
-        <button onclick="go('home')">Regresar</button>
+        <p style="color:var(--text-secondary); text-align:center; font-size:14px">Tu cita ha sido agendada con éxito.</p>
+        <button onclick="openMap()" style="background:var(--gold); color:#000; margin-bottom:10px">Ver Ubicación del Local</button>
+        <button onclick="go('home')" style="border:none; opacity:0.6">Regresar al Inicio</button>
       </div>
 
       <div class="screen" id="admin">
@@ -367,7 +369,11 @@ let bookings=[];
 let userPhone=localStorage.getItem("whatsapp");
 
 function nowUY(){ return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Montevideo"})); }
-function go(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); document.getElementById(id).classList.add("active"); }
+function go(id){ 
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); 
+  document.getElementById(id).classList.add("active"); 
+  if(id === 'imageUploadScreen') updateSummary(); // Actualiza el resumen siempre que entres a esa pantalla
+}
 function openMap(){ window.open("https://maps.google.com/?q=Cerro+Ejido+Calle+2+Artigas","_blank"); }
 function tryGoAgenda(){ userPhone?go("month"):go("login"); }
 function login(){ const phone=document.getElementById("phoneInput").value.trim(); if(phone.length<6) return alert("Número inválido"); localStorage.setItem("whatsapp",phone); userPhone=phone; go("month"); }
@@ -454,10 +460,14 @@ function renderZones(){
   }); 
 }
 
-function selectZone(id){ selectedZone=BODY_ZONES.find(z=>z.id===id); renderHours(); go("hourSelection"); }
+function selectZone(id){ 
+  selectedZone=BODY_ZONES.find(z=>z.id===id); 
+  renderHours(); 
+  go("hourSelection"); 
+}
+
 function goBackFromHours(){ (selectedTattoo.id === "manga-brazo" || selectedTattoo.id === "espalda-completa") ? go("tattooDetails") : go("zoneSelection"); }
 
-/* MODIFICADO: Se quitó el bloqueo por tamaño al final del día */
 function renderHours(){
   const grid=document.getElementById("hoursGrid"); grid.innerHTML=""; 
   const duration=DURATIONS[selectedTattoo.id];
@@ -467,16 +477,12 @@ function renderHours(){
   for(let h=9; h<=21; h++){
     if(h===12) continue; 
     let btn=document.createElement("button"); btn.textContent=h+":00";
-    
-    // Solo bloquea si la hora ya pasó (si es hoy)
     let disabled = (isToday && h <= timeUY.getHours());
     
-    // Bloqueo solo si hay una reserva previa que coincida
     if(!disabled){
       bookings.forEach(b=>{
         const bd=b.date.split("-");
         if(parseInt(bd[2])===selectedDay && parseInt(bd[1])===(selectedMonth+1)){
-          // Bloquea si la hora de inicio cae dentro de otra reserva O si el tatuaje choca con la siguiente reserva
           if ((h >= b.start && h < b.end) || (h < b.start && (h + duration) > b.start)) disabled = true;
         }
       });
@@ -489,13 +495,21 @@ function renderHours(){
 
 function selectHour(hour){ selectedHour=hour; go('imageUploadScreen'); }
 
+// Función para actualizar el texto del resumen correctamente
+function updateSummary() {
+  const info = document.getElementById("userTattooInfo");
+  if(selectedTattoo && selectedZone && selectedHour) {
+    info.innerHTML = `${selectedTattoo.label} | ${selectedZone.label} | ${selectedHour}:00hs`;
+  }
+}
+
 document.getElementById("userTattooImage").addEventListener("change",e=>{
-  const file=e.target.files[0], preview=document.getElementById("userTattooPreview"), info=document.getElementById("userTattooInfo");
+  const file=e.target.files[0], preview=document.getElementById("userTattooPreview");
   if(file){ 
     const reader=new FileReader(); 
     reader.onload=e2=>{ 
       preview.src=e2.target.result; preview.style.display="block"; 
-      info.innerHTML=`${selectedTattoo.label} | ${selectedZone.label} | ${selectedHour}:00hs`;
+      updateSummary();
       document.getElementById("confirmBtn").disabled=false; 
     }; 
     reader.readAsDataURL(file); 
@@ -525,12 +539,19 @@ function renderAdmin(){
   bookings.forEach((res,idx)=>{
     const cleanPhone = res.phone.replace(/\s+/g, '');
     const div=document.createElement("div"); div.className="admin-card";
+    // AÑADIDA LA ZONA (res.tattoo.place) EN EL PANEL
     div.innerHTML=`<div style="display:flex; align-items:center">
-        <img src="${res.tattoo.image || 'placeholder.png'}" onclick="zoomImg('${res.tattoo.image}')" style="width:50px; height:50px; cursor:zoom-in;">
-        <div style="margin-left:15px"><strong>${res.date}</strong><br><small>${res.start}:00hs - ${res.tattoo.size}</small></div>
+        <img src="${res.tattoo.image || 'placeholder.png'}" onclick="zoomImg('${res.tattoo.image}')" style="width:50px; height:50px; cursor:zoom-in; border-radius:2px">
+        <div style="margin-left:15px">
+          <strong style="font-size:14px">${res.date}</strong><br>
+          <small style="color:var(--gold)">${res.start}:00hs - ${res.tattoo.size}</small><br>
+          <small style="color:var(--text-secondary); text-transform:uppercase; font-size:10px">${res.tattoo.place}</small>
+        </div>
       </div>
-      <div style="text-align:right"><a href="https://wa.me/${cleanPhone}" target="_blank" style="color:var(--gold)">WHATSAPP</a><br>
-      <button onclick="deleteBooking(${idx})" style="padding:2px 5px; font-size:9px; margin-top:5px">Eliminar</button></div>`;
+      <div style="text-align:right">
+        <a href="https://wa.me/${cleanPhone}" target="_blank" style="color:var(--gold); text-decoration:none; font-size:11px">WHATSAPP</a><br>
+        <button onclick="deleteBooking(${idx})" style="padding:2px 5px; font-size:9px; margin-top:5px; border-color:rgba(255,0,0,0.2)">Eliminar</button>
+      </div>`;
     list.appendChild(div);
   });
 }

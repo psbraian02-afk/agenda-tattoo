@@ -18,78 +18,31 @@ if (!fssync.existsSync(publicDir)) {
     fssync.mkdirSync(publicDir);
 }
 
-/* =====================
-    RUTAS DE INTERFAZ
-===================== */
+// Middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static(publicDir));
-
-// RUTA PARA EL QR
-app.get("/scan-qr", (req, res) => {
-    const qrPath = path.join(publicDir, 'qr.png');
-    if (fssync.existsSync(qrPath)) {
-        res.send(`
-            <div style="text-align:center; font-family:sans-serif; margin-top:50px;">
-                <h1>Escanea el QR de WhatsApp</h1>
-                <img src="/qr.png?t=${Date.now()}" style="border: 5px solid #25D366; border-radius: 10px; width: 300px;">
-                <p>Si ya escaneaste, esta página dirá que no está disponible.</p>
-                <script>setInterval(() => location.reload(), 5000);</script>
-            </div>
-        `);
-    } else {
-        res.send(`
-            <div style="text-align:center; font-family:sans-serif; margin-top:50px;">
-                <h2>QR no disponible</h2>
-                <p>Esto puede ser porque: <br> 1. Ya estás conectado. <br> 2. El servidor aún está iniciando.</p>
-                <a href="/scan-qr">Reintentar</a>
-            </div>
-        `);
-    }
-});
-
-/* =====================
-    Configuración WhatsApp
-===================== */
-const client = new Client({
-    authStrategy: new LocalAuth(),
-    puppeteer: { 
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] 
-    }
-});
-
-client.on('qr', (qr) => {
-    console.log('--- GENERANDO QR ---');
-    const img = qrImage.image(qr, { type: 'png' });
-    const qrPath = path.join(publicDir, 'qr.png');
-    const fileStream = fssync.createWriteStream(qrPath);
-    img.pipe(fileStream);
-});
-
-client.on('ready', () => {
-    console.log('✅ WhatsApp Conectado');
-    const qrPath = path.join(publicDir, 'qr.png');
-    if (fssync.existsSync(qrPath)) fssync.unlinkSync(qrPath);
-    client.sendMessage("59891923107@c.us", "✅ Richard, ya estoy conectado y los mensajes están activos.");
-});
-
-client.initialize().catch(err => console.error("Error al iniciar WhatsApp:", err));
 
 /* =====================
     Lógica de Archivos
 ===================== */
-// Usamos una ruta persistente si es posible, sino /tmp
 const BOOKINGS_FILE = path.join(__dirname, "bookings.json");
 
 async function ensureBookingsFile() {
-  try { await fs.access(BOOKINGS_FILE); } 
-  catch { await fs.writeFile(BOOKINGS_FILE, "[]", "utf-8"); }
+  try { 
+      await fs.access(BOOKINGS_FILE); 
+  } catch { 
+      await fs.writeFile(BOOKINGS_FILE, "[]", "utf-8"); 
+  }
 }
 
 async function readBookings() {
   await ensureBookingsFile();
-  const data = await fs.readFile(BOOKINGS_FILE, "utf-8");
-  return JSON.parse(data);
+  try {
+      const data = await fs.readFile(BOOKINGS_FILE, "utf-8");
+      return JSON.parse(data);
+  } catch (e) {
+      return [];
+  }
 }
 
 async function writeBookings(bookings) {
@@ -97,15 +50,17 @@ async function writeBookings(bookings) {
 }
 
 /* =====================
-    API Bookings (CRUD COMPLETO)
+    API Bookings (Prioridad sobre rutas estáticas)
 ===================== */
 
-// 1. OBTENER TODAS LAS CITAS (Lo que le faltaba a tu panel)
+// 1. OBTENER CITAS
 app.get("/api/bookings", async (req, res) => {
     try {
         const bookings = await readBookings();
-        res.json(bookings);
+        res.setHeader('Content-Type', 'application/json');
+        res.status(200).json(bookings);
     } catch (err) {
+        console.error("Error al leer:", err);
         res.status(500).json({ error: "Error al leer citas" });
     }
 });
@@ -132,12 +87,11 @@ app.post("/api/bookings", async (req, res) => {
 
     res.status(201).json(newBooking);
   } catch (err) { 
-    console.error(err);
     res.status(500).json({ error: "Error interno" }); 
   }
 });
 
-// 3. ELIMINAR CITA (Para que funcione el botón de borrar en el panel)
+// 3. ELIMINAR CITA
 app.delete("/api/bookings/:id", async (req, res) => {
     try {
         let bookings = await readBookings();
@@ -150,27 +104,26 @@ app.delete("/api/bookings/:id", async (req, res) => {
 });
 
 /* =====================
-    Marketing (Cron)
+    RUTAS DE INTERFAZ
 ===================== */
-cron.schedule('0 10 * * *', async () => { // Cambiado a las 10:00 AM para no ser spam cada minuto
-    try {
-        const bookings = await readBookings();
-        if (bookings.length === 0) return;
-        
-        const uniquePhones = [...new Set(bookings.map(b => {
-            let num = b.phone.replace(/[^0-9]/g, "");
-            if (num.startsWith("0")) num = "598" + num.substring(1);
-            if (!num.startsWith("598")) num = "598" + num;
-            return `${num}@c.us`;
-        }))];
 
-        for (const chatId of uniquePhones) {
-            await client.sendMessage(chatId, "¡Hola! Tenemos nuevos diseños disponibles. ¿Te gustaría agendar un nuevo tatuaje?").catch(() => {});
-        }
-    } catch (err) { console.error("Error en Cron:", err); }
+// RUTA PARA EL QR
+app.get("/scan-qr", (req, res) => {
+    const qrPath = path.join(publicDir, 'qr.png');
+    if (fssync.existsSync(qrPath)) {
+        res.send(`
+            <div style="text-align:center; font-family:sans-serif; margin-top:50px;">
+                <h1>Escanea el QR de WhatsApp</h1>
+                <img src="/qr.png?t=${Date.now()}" style="border: 5px solid #25D366; border-radius: 10px; width: 300px;">
+                <script>setInterval(() => location.reload(), 5000);</script>
+            </div>
+        `);
+    } else {
+        res.send(`<div style="text-align:center; margin-top:50px;"><h2>QR no disponible o ya conectado</h2><a href="/">Ir al inicio</a></div>`);
+    }
 });
 
-// Catch-all para el frontend
+// Catch-all para el frontend (SIEMPRE AL FINAL)
 app.get("*", (req, res) => {
     const indexPath = path.join(publicDir, "index.html");
     if (fssync.existsSync(indexPath)) {
@@ -178,6 +131,51 @@ app.get("*", (req, res) => {
     } else {
         res.status(404).send("No se encontró index.html");
     }
+});
+
+/* =====================
+    Configuración WhatsApp
+===================== */
+const client = new Client({
+    authStrategy: new LocalAuth(),
+    puppeteer: { 
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] 
+    }
+});
+
+client.on('qr', (qr) => {
+    const img = qrImage.image(qr, { type: 'png' });
+    const qrPath = path.join(publicDir, 'qr.png');
+    img.pipe(fssync.createWriteStream(qrPath));
+});
+
+client.on('ready', () => {
+    console.log('✅ WhatsApp Conectado');
+    const qrPath = path.join(publicDir, 'qr.png');
+    if (fssync.existsSync(qrPath)) fssync.unlinkSync(qrPath);
+    client.sendMessage("59891923107@c.us", "✅ Richard, ya estoy conectado.");
+});
+
+client.initialize().catch(err => console.error("Error al iniciar WhatsApp:", err));
+
+/* =====================
+    Marketing (Cron)
+===================== */
+cron.schedule('0 10 * * *', async () => {
+    try {
+        const bookings = await readBookings();
+        if (bookings.length === 0) return;
+        const uniquePhones = [...new Set(bookings.map(b => {
+            let num = b.phone.replace(/[^0-9]/g, "");
+            if (num.startsWith("0")) num = "598" + num.substring(1);
+            if (!num.startsWith("598")) num = "598" + num;
+            return `${num}@c.us`;
+        }))];
+        for (const chatId of uniquePhones) {
+            await client.sendMessage(chatId, "¡Hola! ¿Te gustaría agendar un nuevo tatuaje?").catch(() => {});
+        }
+    } catch (err) { console.error("Error en Cron:", err); }
 });
 
 app.listen(PORT, () => console.log(`✅ Servidor en puerto ${PORT}`));

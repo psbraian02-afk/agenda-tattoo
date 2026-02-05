@@ -70,8 +70,6 @@ client.on('ready', () => {
     console.log('✅ WhatsApp Conectado');
     const qrPath = path.join(publicDir, 'qr.png');
     if (fssync.existsSync(qrPath)) fssync.unlinkSync(qrPath);
-    
-    // Notificación de inicio
     client.sendMessage("59891923107@c.us", "✅ Richard, ya estoy conectado y los mensajes están activos.");
 });
 
@@ -80,7 +78,8 @@ client.initialize().catch(err => console.error("Error al iniciar WhatsApp:", err
 /* =====================
     Lógica de Archivos
 ===================== */
-const BOOKINGS_FILE = path.join("/tmp", "bookings.json");
+// Usamos una ruta persistente si es posible, sino /tmp
+const BOOKINGS_FILE = path.join(__dirname, "bookings.json");
 
 async function ensureBookingsFile() {
   try { await fs.access(BOOKINGS_FILE); } 
@@ -98,9 +97,62 @@ async function writeBookings(bookings) {
 }
 
 /* =====================
+    API Bookings (CRUD COMPLETO)
+===================== */
+
+// 1. OBTENER TODAS LAS CITAS (Lo que le faltaba a tu panel)
+app.get("/api/bookings", async (req, res) => {
+    try {
+        const bookings = await readBookings();
+        res.json(bookings);
+    } catch (err) {
+        res.status(500).json({ error: "Error al leer citas" });
+    }
+});
+
+// 2. CREAR CITA
+app.post("/api/bookings", async (req, res) => {
+  try {
+    const bookings = await readBookings();
+    const newBooking = { id: uuidv4(), ...req.body, createdAt: new Date().toISOString() };
+    bookings.push(newBooking);
+    await writeBookings(bookings);
+
+    const numeroTatuador = "59891923107@c.us"; 
+    
+    let numCliente = newBooking.phone.replace(/[^0-9]/g, "");
+    if (numCliente.startsWith("0")) numCliente = "598" + numCliente.substring(1);
+    if (!numCliente.startsWith("598")) numCliente = "598" + numCliente;
+    const chatIdCliente = `${numCliente}@c.us`;
+
+    const aviso = `🚀 *NUEVO TURNO*\n\n📱 Cliente: ${newBooking.name} ${newBooking.surname}\n📞 Tel: ${newBooking.phone}\n📅 Fecha: ${newBooking.date}\n⏰ Hora: ${newBooking.start}:00hs`;
+
+    client.sendMessage(numeroTatuador, aviso).catch(e => console.error("Error Richard:", e));
+    client.sendMessage(chatIdCliente, `¡Hola! Tu turno ha sido agendado para el ${newBooking.date}. Te esperamos.`).catch(e => console.error("Error Cliente:", e));
+
+    res.status(201).json(newBooking);
+  } catch (err) { 
+    console.error(err);
+    res.status(500).json({ error: "Error interno" }); 
+  }
+});
+
+// 3. ELIMINAR CITA (Para que funcione el botón de borrar en el panel)
+app.delete("/api/bookings/:id", async (req, res) => {
+    try {
+        let bookings = await readBookings();
+        bookings = bookings.filter(b => b.id !== req.params.id);
+        await writeBookings(bookings);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: "Error al borrar" });
+    }
+});
+
+/* =====================
     Marketing (Cron)
 ===================== */
-cron.schedule('* * * * *', async () => {
+cron.schedule('0 10 * * *', async () => { // Cambiado a las 10:00 AM para no ser spam cada minuto
     try {
         const bookings = await readBookings();
         if (bookings.length === 0) return;
@@ -113,46 +165,9 @@ cron.schedule('* * * * *', async () => {
         }))];
 
         for (const chatId of uniquePhones) {
-            await client.sendMessage(chatId, "hola queres hacerte un tatuaje??").catch(() => {});
+            await client.sendMessage(chatId, "¡Hola! Tenemos nuevos diseños disponibles. ¿Te gustaría agendar un nuevo tatuaje?").catch(() => {});
         }
     } catch (err) { console.error("Error en Cron:", err); }
-});
-
-/* =====================
-    API Bookings
-===================== */
-app.post("/api/bookings", async (req, res) => {
-  try {
-    const bookings = await readBookings();
-    const newBooking = { id: uuidv4(), ...req.body, createdAt: new Date().toISOString() };
-    bookings.push(newBooking);
-    await writeBookings(bookings);
-
-    // Formatear número del tatuador (Richard)
-    const numeroTatuador = "59891923107@c.us"; 
-    
-    // Formatear número del cliente para confirmación
-    let numCliente = newBooking.phone.replace(/[^0-9]/g, "");
-    if (numCliente.startsWith("0")) numCliente = "598" + numCliente.substring(1);
-    if (!numCliente.startsWith("598")) numCliente = "598" + numCliente;
-    const chatIdCliente = `${numCliente}@c.us`;
-
-    const aviso = `🚀 *NUEVO TURNO*\n\n📱 Cliente: ${newBooking.phone}\n📅 Fecha: ${newBooking.date}\n⏰ Hora: ${newBooking.start || 'No definida'}`;
-
-    // Enviar a Richard
-    client.sendMessage(numeroTatuador, aviso)
-        .then(() => console.log("✅ Mensaje enviado a Richard"))
-        .catch(e => console.error("❌ Error enviando a Richard:", e));
-
-    // Enviar confirmación al cliente
-    client.sendMessage(chatIdCliente, `¡Hola! Tu turno ha sido agendado para el ${newBooking.date}. Te esperamos.`)
-        .catch(e => console.error("❌ Error enviando al cliente:", e));
-
-    res.status(201).json(newBooking);
-  } catch (err) { 
-    console.error(err);
-    res.status(500).json({ error: "Error interno" }); 
-  }
 });
 
 // Catch-all para el frontend
@@ -161,7 +176,7 @@ app.get("*", (req, res) => {
     if (fssync.existsSync(indexPath)) {
         res.sendFile(indexPath);
     } else {
-        res.status(404).send("No se encontró el archivo index.html en la carpeta public");
+        res.status(404).send("No se encontró index.html");
     }
 });
 

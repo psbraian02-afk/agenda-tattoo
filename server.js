@@ -50,7 +50,7 @@ async function writeBookings(bookings) {
 }
 
 /* =====================
-    API Bookings (Prioridad sobre rutas estáticas)
+    API Bookings
 ===================== */
 
 // 1. OBTENER CITAS
@@ -65,7 +65,7 @@ app.get("/api/bookings", async (req, res) => {
     }
 });
 
-// 2. CREAR CITA
+// 2. CREAR CITA (CON ENVÍO CORREGIDO)
 app.post("/api/bookings", async (req, res) => {
   try {
     const bookings = await readBookings();
@@ -73,8 +73,8 @@ app.post("/api/bookings", async (req, res) => {
     bookings.push(newBooking);
     await writeBookings(bookings);
 
+    // Formateo de números
     const numeroTatuador = "59891923107@c.us"; 
-    
     let numCliente = newBooking.phone.replace(/[^0-9]/g, "");
     if (numCliente.startsWith("0")) numCliente = "598" + numCliente.substring(1);
     if (!numCliente.startsWith("598")) numCliente = "598" + numCliente;
@@ -82,11 +82,22 @@ app.post("/api/bookings", async (req, res) => {
 
     const aviso = `🚀 *NUEVO TURNO*\n\n📱 Cliente: ${newBooking.name} ${newBooking.surname}\n📞 Tel: ${newBooking.phone}\n📅 Fecha: ${newBooking.date}\n⏰ Hora: ${newBooking.start}:00hs`;
 
-    client.sendMessage(numeroTatuador, aviso).catch(e => console.error("Error Richard:", e));
-    client.sendMessage(chatIdCliente, `¡Hola! Tu turno ha sido agendado para el ${newBooking.date}. Te esperamos.`).catch(e => console.error("Error Cliente:", e));
+    // Intentar envío solo si el cliente está listo
+    if (client && client.info && client.info.wid) {
+        client.sendMessage(numeroTatuador, aviso)
+            .then(() => console.log("✅ Aviso enviado a Richard"))
+            .catch(e => console.error("❌ Error Richard:", e.message));
+
+        client.sendMessage(chatIdCliente, `¡Hola! Tu turno ha sido agendado para el ${newBooking.date}. Te esperamos.`)
+            .then(() => console.log("✅ Confirmación enviada al cliente"))
+            .catch(e => console.error("❌ Error Cliente:", e.message));
+    } else {
+        console.log("⚠️ El mensaje no se envió: WhatsApp no está conectado todavía.");
+    }
 
     res.status(201).json(newBooking);
   } catch (err) { 
+    console.error("Error en POST:", err);
     res.status(500).json({ error: "Error interno" }); 
   }
 });
@@ -107,7 +118,6 @@ app.delete("/api/bookings/:id", async (req, res) => {
     RUTAS DE INTERFAZ
 ===================== */
 
-// RUTA PARA EL QR
 app.get("/scan-qr", (req, res) => {
     const qrPath = path.join(publicDir, 'qr.png');
     if (fssync.existsSync(qrPath)) {
@@ -115,21 +125,12 @@ app.get("/scan-qr", (req, res) => {
             <div style="text-align:center; font-family:sans-serif; margin-top:50px;">
                 <h1>Escanea el QR de WhatsApp</h1>
                 <img src="/qr.png?t=${Date.now()}" style="border: 5px solid #25D366; border-radius: 10px; width: 300px;">
+                <p>Refrescando automáticamente...</p>
                 <script>setInterval(() => location.reload(), 5000);</script>
             </div>
         `);
     } else {
-        res.send(`<div style="text-align:center; margin-top:50px;"><h2>QR no disponible o ya conectado</h2><a href="/">Ir al inicio</a></div>`);
-    }
-});
-
-// Catch-all para el frontend (SIEMPRE AL FINAL)
-app.get("*", (req, res) => {
-    const indexPath = path.join(publicDir, "index.html");
-    if (fssync.existsSync(indexPath)) {
-        res.sendFile(indexPath);
-    } else {
-        res.status(404).send("No se encontró index.html");
+        res.send(`<div style="text-align:center; margin-top:50px; font-family:sans-serif;"><h2>✅ Conectado o QR no generado</h2><p>Si no te llegan mensajes, reinicia el servidor en Render.</p><a href="/">Ir al inicio</a></div>`);
     }
 });
 
@@ -140,24 +141,34 @@ const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: { 
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'] 
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox', 
+            '--disable-dev-shm-usage',
+            '--disable-gpu'
+        ] 
     }
 });
 
 client.on('qr', (qr) => {
-    const img = qrImage.image(qr, { type: 'png' });
+    console.log('⚠️ NUEVO QR RECIBIDO');
+    const img = qrImage.image(qr, { type: 'png', margin: 4 });
     const qrPath = path.join(publicDir, 'qr.png');
-    img.pipe(fssync.createWriteStream(qrPath));
+    const stream = fssync.createWriteStream(qrPath);
+    img.pipe(stream);
 });
 
 client.on('ready', () => {
     console.log('✅ WhatsApp Conectado');
     const qrPath = path.join(publicDir, 'qr.png');
     if (fssync.existsSync(qrPath)) fssync.unlinkSync(qrPath);
-    client.sendMessage("59891923107@c.us", "✅ Richard, ya estoy conectado.");
+    
+    // Notificación inicial confirmada
+    client.sendMessage("59891923107@c.us", "✅ *SISTEMA CONECTADO*\nRichard, ya estoy listo para avisarte de nuevos turnos.");
 });
 
-client.initialize().catch(err => console.error("Error al iniciar WhatsApp:", err));
+// Manejo de errores de inicialización
+client.initialize().catch(err => console.error("❌ Error crítico al iniciar WhatsApp:", err));
 
 /* =====================
     Marketing (Cron)
@@ -173,9 +184,21 @@ cron.schedule('0 10 * * *', async () => {
             return `${num}@c.us`;
         }))];
         for (const chatId of uniquePhones) {
-            await client.sendMessage(chatId, "¡Hola! ¿Te gustaría agendar un nuevo tatuaje?").catch(() => {});
+            if (client.info && client.info.wid) {
+                await client.sendMessage(chatId, "¡Hola! ¿Te gustaría agendar un nuevo tatuaje?").catch(() => {});
+            }
         }
     } catch (err) { console.error("Error en Cron:", err); }
 });
 
-app.listen(PORT, () => console.log(`✅ Servidor en puerto ${PORT}`));
+// Catch-all para el frontend
+app.get("*", (req, res) => {
+    const indexPath = path.join(publicDir, "index.html");
+    if (fssync.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).send("No se encontró index.html");
+    }
+});
+
+app.listen(PORT, () => console.log(`🚀 Servidor encendido en puerto ${PORT}`));

@@ -167,15 +167,15 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 #days button { padding: 15px 5px; min-width: 45px; font-size: 14px; }
 #months { grid-template-columns: repeat(2, 1fr); gap: 15px; max-width: 300px; }
 
-/* AJUSTE DE HORARIOS PARA MAYOR DESPLAZAMIENTO */
 #hoursGrid { 
+  display: grid;
   grid-template-columns: repeat(3, 1fr); 
   gap: 15px; 
   max-height: 400px; 
   overflow-y: auto; 
-  padding: 20px 40px; /* Aumentado el padding lateral */
+  padding: 20px 40px; 
   width: 100%;
-  max-width: 450px; /* Aumentado para que "respire" más */
+  max-width: 450px; 
 }
 
 .tattoo-options, .body-zones {
@@ -384,14 +384,20 @@ const DURATIONS={
 
 let selectedMonth, selectedDay, selectedTattoo, selectedHour, selectedZone;
 let bookings=[];
+let lastBookingCount = 0; // Para rastrear nuevas notificaciones
 let userPhone=localStorage.getItem("whatsapp");
+let notificationInterval;
 
 function nowUY(){ return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Montevideo"})); }
+
 function go(id){ 
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); 
   document.getElementById(id).classList.add("active"); 
   if(id === 'imageUploadScreen') updateSummary(); 
+  // Si salimos del panel de admin, dejamos de escuchar notificaciones para ahorrar batería
+  if(id !== 'admin') clearInterval(notificationInterval);
 }
+
 function openMap(){ window.open("https://maps.google.com/?q=Cerro+Ejido+Calle+2+Artigas","_blank"); }
 function tryGoAgenda(){ userPhone?go("month"):go("login"); }
 function login(){ const phone=document.getElementById("phoneInput").value.trim(); if(phone.length<6) return alert("Número inválido"); localStorage.setItem("whatsapp",phone); userPhone=phone; go("month"); }
@@ -546,8 +552,56 @@ async function confirmBooking(){
   } catch(e) { alert("Error"); }
 }
 
-function promptAdmin(){ const pass=prompt("Password:"); if(pass==="richard7392") openAdmin(); }
-function openAdmin(){ fetch(SERVER_URL).then(r=>r.json()).then(data=>{ bookings=data; renderAdmin(); go("admin"); }); }
+// LÓGICA DE NOTIFICACIONES PARA EL TATUADOR
+function promptAdmin(){ 
+  const pass=prompt("Password:"); 
+  if(pass==="richard7392") {
+    // Solicitar permiso de notificaciones
+    if ("Notification" in window) {
+      Notification.requestPermission();
+    }
+    openAdmin(); 
+  }
+}
+
+function openAdmin(){ 
+  fetch(SERVER_URL).then(r=>r.json()).then(data=>{ 
+    bookings=data; 
+    lastBookingCount = data.length; // Guardamos cuántos hay ahora
+    renderAdmin(); 
+    go("admin"); 
+    
+    // Iniciar el "escuchador" de nuevas citas cada 30 segundos
+    notificationInterval = setInterval(checkForNewBookings, 30000);
+  }); 
+}
+
+async function checkForNewBookings() {
+  try {
+    const res = await fetch(SERVER_URL);
+    const data = await res.json();
+    
+    if (data.length > lastBookingCount) {
+      const newBooking = data[data.length - 1];
+      showSystemNotification(newBooking);
+      lastBookingCount = data.length;
+      bookings = data;
+      renderAdmin();
+    }
+  } catch (e) { console.log("Error checking bookings"); }
+}
+
+function showSystemNotification(booking) {
+  if (Notification.permission === "granted") {
+    const n = new Notification("NUEVA CITA - Richard Tattoo", {
+      body: `Cliente: ${booking.phone}\nFecha: ${booking.date} a las ${booking.start}:00hs`,
+      icon: "logo.png"
+    });
+    // Intentar vibrar si el cel lo permite
+    if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
+  }
+}
+
 function zoomImg(src) { const lb=document.getElementById('lightbox'); const img=document.getElementById('lightboxImg'); img.src=src; lb.style.display='flex'; }
 
 function renderAdmin(){ 
@@ -572,8 +626,19 @@ function renderAdmin(){
   });
 }
 
-function deleteBooking(idx){ if(confirm("¿Eliminar?")) { fetch(`${SERVER_URL}/${bookings[idx].id}`,{method:'DELETE'}).then(()=>openAdmin()); } }
-fetch(SERVER_URL).then(r=>r.json()).then(data=>bookings=data);
+function deleteBooking(idx){ 
+  if(confirm("¿Eliminar?")) { 
+    fetch(`${SERVER_URL}/${bookings[idx].id}`,{method:'DELETE'}).then(()=> {
+      lastBookingCount--;
+      openAdmin();
+    }); 
+  } 
+}
+
+fetch(SERVER_URL).then(r=>r.json()).then(data=> {
+  bookings=data;
+  lastBookingCount = data.length;
+});
 </script>
 </body>
 </html>

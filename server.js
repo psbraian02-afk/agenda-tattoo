@@ -19,7 +19,7 @@ app.use(express.json({ limit: "5mb" }));
 app.use(express.static(publicDir));
 
 /* =====================
-    CONFIGURACIÓN WHATSAPP (OPTIMIZADA)
+    CONFIGURACIÓN WHATSAPP
 ===================== */
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -29,11 +29,7 @@ const client = new Client({
             '--no-sandbox', 
             '--disable-setuid-sandbox', 
             '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--single-process',
-            '--disable-gpu'
+            '--no-zygote'
         ] 
     }
 });
@@ -48,24 +44,26 @@ client.on('qr', (qr) => {
 });
 
 client.on('ready', () => {
-    isReady = true;
-    console.log('✅ WhatsApp Conectado');
+    console.log('✅ BOT LISTO INTERNAMENTE');
     const qrPath = path.join(publicDir, 'qr.png');
     if (fssync.existsSync(qrPath)) fssync.unlinkSync(qrPath);
     
-    client.sendMessage("59891923107@c.us", "✅ Richard, ya estoy conectado.");
-});
-
-// Reiniciar si se desconecta para evitar el error 503
-client.on('disconnected', () => {
-    isReady = false;
-    client.initialize();
+    // Esperamos 5 segundos para asegurar que la conexión de red sea estable
+    setTimeout(async () => {
+        try {
+            await client.sendMessage("59891923107@c.us", "🔥 *BOT CONECTADO*\nRichard, si lees esto, el sistema de notificaciones está funcionando.");
+            isReady = true;
+            console.log("✅ Mensaje de prueba enviado con éxito");
+        } catch (err) {
+            console.error("❌ Error al enviar mensaje inicial:", err.message);
+        }
+    }, 5000);
 });
 
 client.initialize().catch(err => console.error("Error inicial:", err));
 
 /* =====================
-    LÓGICA DE ARCHIVOS
+    API Y RUTAS
 ===================== */
 const BOOKINGS_FILE = path.join(__dirname, "bookings.json");
 
@@ -79,45 +77,41 @@ async function readBookings() {
     }
 }
 
-/* =====================
-    API (RUTAS)
-===================== */
-
 app.get("/scan-qr", (req, res) => {
     const qrPath = path.join(publicDir, 'qr.png');
     if (fssync.existsSync(qrPath)) {
-        res.send(`<div style="text-align:center;padding:50px;"><h1>Escanea el QR</h1><img src="/qr.png?t=${Date.now()}" width="300"><script>setInterval(()=>location.reload(),5000)</script></div>`);
+        res.send(`<div style="text-align:center;padding:50px;font-family:sans-serif;"><h1>Escanea el QR</h1><img src="/qr.png?t=${Date.now()}" width="300"><script>setInterval(()=>location.reload(),5000)</script></div>`);
     } else {
-        res.send(`<div style="text-align:center;padding:50px;"><h2>${isReady ? '✅ Ya estás conectado' : '⏳ Iniciando...'}</h2><a href="/">Ir al Inicio</a></div>`);
+        res.send(`<div style="text-align:center;padding:50px;font-family:sans-serif;"><h2>${isReady ? '✅ Conectado' : '⏳ Iniciando conexión...'}</h2><p>Si el cel dice "Sesión activa" pero aquí no dice "Conectado", espera 10 segundos.</p><a href="/">Ir al Inicio</a></div>`);
     }
 });
 
 app.post("/api/bookings", async (req, res) => {
-  try {
-    const bookings = await readBookings();
-    const newBooking = { id: uuidv4(), ...req.body, createdAt: new Date().toISOString() };
-    bookings.push(newBooking);
-    await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookings, null, 2));
+    try {
+        const bookings = await readBookings();
+        const newBooking = { id: uuidv4(), ...req.body, createdAt: new Date().toISOString() };
+        bookings.push(newBooking);
+        await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookings, null, 2));
 
-    if (isReady) {
-        const aviso = `🚀 *NUEVO TURNO*\n\n📱 Cliente: ${newBooking.name}\n📅 Fecha: ${newBooking.date}\n⏰ Hora: ${newBooking.start}:00hs`;
-        await client.sendMessage("59891923107@c.us", aviso);
-        
-        let numCli = newBooking.phone.replace(/[^0-9]/g, "");
-        if (numCli.startsWith("0")) numCli = "598" + numCli.substring(1);
-        if (!numCli.startsWith("598")) numCli = "598" + numCli;
-        await client.sendMessage(`${numCli}@c.us`, `¡Hola! Turno agendado para el ${newBooking.date}.`).catch(()=>{});
+        const miNumero = "59891923107@c.us";
+        const aviso = `🚀 *NUEVO TURNO*\n\n📱 Cliente: ${newBooking.name} ${newBooking.surname}\n📅 Fecha: ${newBooking.date}\n⏰ Hora: ${newBooking.start}:00hs`;
+
+        if (isReady) {
+            await client.sendMessage(miNumero, aviso);
+            console.log("✅ Notificación enviada");
+        } else {
+            console.log("⚠️ Intento de envío fallido: Bot no estaba Ready");
+        }
+
+        res.status(201).json(newBooking);
+    } catch (err) {
+        console.error("Error en el POST:", err);
+        res.status(500).json({ error: "Error" });
     }
-
-    res.status(201).json(newBooking);
-  } catch (err) { res.status(500).json({ error: "Error" }); }
 });
 
-app.get("/api/bookings", async (req, res) => {
-    const b = await readBookings();
-    res.json(b);
-});
-
+// Mantener el resto de tus rutas (get bookings, delete, etc.) abajo igual que antes...
+app.get("/api/bookings", async (req, res) => { res.json(await readBookings()); });
 app.delete("/api/bookings/:id", async (req, res) => {
     let b = await readBookings();
     b = b.filter(x => x.id !== req.params.id);
@@ -127,7 +121,7 @@ app.delete("/api/bookings/:id", async (req, res) => {
 
 app.get("*", (req, res) => {
     const indexPath = path.join(publicDir, "index.html");
-    fssync.existsSync(indexPath) ? res.sendFile(indexPath) : res.status(404).send("Error: index.html no encontrado");
+    fssync.existsSync(indexPath) ? res.sendFile(indexPath) : res.status(404).send("index.html no encontrado");
 });
 
 app.listen(PORT, () => console.log(`🚀 Puerto ${PORT}`));

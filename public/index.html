@@ -251,47 +251,60 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 }
 #lightbox img { max-width: 85%; max-height: 85%; border: 1px solid var(--gold); }
 
-/* --- ESTILOS DEL BOTÓN FLOTANTE QR --- */
+/* --- CORRECCIÓN QR PERFECTO --- */
 #floating-qr {
   position: absolute;
   top: 20px;
   right: 20px;
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   background: var(--gold);
   border-radius: 50%;
-  display: none; /* Se activa solo en admin */
+  display: none;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 1000;
-  box-shadow: 0 0 20px rgba(197, 160, 89, 0.5);
-  transition: all 0.4s ease;
+  box-shadow: 0 0 15px rgba(197, 160, 89, 0.4);
+  transition: all 0.3s ease-out;
   overflow: hidden;
-  border: 2px solid #fff;
 }
-#floating-qr img { width: 35px; filter: invert(1); }
 
-/* Estado expandido del QR */
 #floating-qr.expanded {
-  width: 250px;
-  height: 280px;
-  border-radius: 15px;
-  background: white;
+  width: 280px;
+  height: 320px;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 20px;
   flex-direction: column;
 }
-#floating-qr.expanded img {
-  width: 200px;
-  height: 200px;
-  filter: none;
-  margin-top: 10px;
+
+#qr-img-element {
+  width: 30px; /* Tamaño icono cerrado */
+  height: 30px;
+  filter: invert(1);
+  transition: all 0.3s;
+  object-fit: contain;
+  image-rendering: pixelated; /* Mantiene la nitidez del QR */
 }
-#floating-qr.expanded::after {
-  content: "Cerrar";
+
+#floating-qr.expanded #qr-img-element {
+  width: 220px; /* Tamaño QR perfecto para escaneo */
+  height: 220px;
+  filter: none;
+  margin-bottom: 10px;
+}
+
+#qr-status-text {
+  display: none;
   color: #000;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: bold;
-  margin-top: 5px;
+  text-transform: uppercase;
+}
+
+#floating-qr.expanded #qr-status-text {
+  display: block;
 }
 
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
@@ -302,6 +315,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 
 <div id="floating-qr" onclick="this.classList.toggle('expanded')">
     <img id="qr-img-element" src="/api/get-qr" alt="QR" onerror="this.src='https://cdn-icons-png.flaticon.com/512/714/714390.png'">
+    <span id="qr-status-text">Cerrar</span>
 </div>
 
 <div id="lightbox" onclick="this.style.display='none'">
@@ -458,7 +472,6 @@ function go(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); 
   document.getElementById(id).classList.add("active"); 
   
-  // Mostrar QR solo en panel Admin
   const qrBtn = document.getElementById("floating-qr");
   qrBtn.style.display = (id === "admin") ? "flex" : "none";
 

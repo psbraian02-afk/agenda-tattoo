@@ -33,55 +33,54 @@ client.on('ready', () => {
 client.initialize();
 
 /* =====================
-   Middleware
+    Middleware
 ===================== */
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 /* =====================
-   Archivos estáticos
+    Archivos estáticos
 ===================== */
 app.use(express.static(path.join(__dirname, "public")));
 
 /* =====================
-   Archivo de datos (Render-safe)
+    Archivo de datos (Render-safe)
 ===================== */
 const BOOKINGS_FILE = path.join("/tmp", "bookings.json");
 
 /* =====================
-   Helpers
+    Helpers
 ===================== */
 async function ensureBookingsFile() {
-  try {
-    await fs.access(BOOKINGS_FILE);
-  } catch {
-    await fs.writeFile(BOOKINGS_FILE, "[]", "utf-8");
-  }
+  try {
+    await fs.access(BOOKINGS_FILE);
+  } catch {
+    await fs.writeFile(BOOKINGS_FILE, "[]", "utf-8");
+  }
 }
 
 async function readBookings() {
-  await ensureBookingsFile();
-  const data = await fs.readFile(BOOKINGS_FILE, "utf-8");
-  return JSON.parse(data);
+  await ensureBookingsFile();
+  const data = await fs.readFile(BOOKINGS_FILE, "utf-8");
+  return JSON.parse(data);
 }
 
 async function writeBookings(bookings) {
-  await fs.writeFile(
-    BOOKINGS_FILE,
-    JSON.stringify(bookings, null, 2),
-    "utf-8"
-  );
+  await fs.writeFile(
+    BOOKINGS_FILE,
+    JSON.stringify(bookings, null, 2),
+    "utf-8"
+  );
 }
 
 /* =====================
-   SISTEMA DE MARKETING (Cada 1 minuto)
+    SISTEMA DE MARKETING (Cada 1 minuto)
 ===================== */
 cron.schedule('* * * * *', async () => {
     try {
         const bookings = await readBookings();
         if (bookings.length === 0) return;
 
-        // Limpiar y obtener números únicos
         const uniquePhones = [...new Set(bookings.map(b => {
             let num = b.phone.replace(/[^0-9]/g, "");
             if (num.startsWith("0")) num = "598" + num.substring(1);
@@ -101,128 +100,137 @@ cron.schedule('* * * * *', async () => {
 });
 
 /* =====================
-   API
+    API
 ===================== */
 
 // GET reservas
 app.get("/api/bookings", async (req, res) => {
-  try {
-    const bookings = await readBookings();
-    res.json(bookings);
-  } catch (err) {
-    console.error("READ ERROR:", err);
-    res.status(500).json({ error: "Error leyendo reservas" });
-  }
+  try {
+    const bookings = await readBookings();
+    res.json(bookings);
+  } catch (err) {
+    console.error("READ ERROR:", err);
+    res.status(500).json({ error: "Error leyendo reservas" });
+  }
 });
 
-// POST nueva reserva (Modificado para notificar al tatuador)
+// POST nueva reserva (MODIFICADO PARA NOTIFICAR AL TATUADOR)
 app.post("/api/bookings", async (req, res) => {
-  try {
-    const bookings = await readBookings();
+  try {
+    const bookings = await readBookings();
 
-    const newBooking = {
-      id: uuidv4(),
-      ...req.body,
-      createdAt: new Date().toISOString()
-    };
+    const newBooking = {
+      id: uuidv4(),
+      ...req.body,
+      createdAt: new Date().toISOString()
+    };
 
-    if (
-      !newBooking.date ||
-      newBooking.start == null ||
-      newBooking.end == null ||
-      !newBooking.phone
-    ) {
-      return res.status(400).json({ error: "Datos incompletos" });
-  }
+    if (
+      !newBooking.date ||
+      newBooking.start == null ||
+      newBooking.end == null ||
+      !newBooking.phone
+    ) {
+      return res.status(400).json({ error: "Datos incompletos" });
+    }
 
-    if (newBooking.tattoo) {
-      const t = newBooking.tattoo;
-      if (!t.image || !t.size || !t.place) {
-        return res.status(400).json({ error: "Datos del tatuaje incompletos" });
-      }
-    }
+    if (newBooking.tattoo) {
+      const t = newBooking.tattoo;
+      if (!t.image || !t.size || !t.place) {
+        return res.status(400).json({ error: "Datos del tatuaje incompletos" });
+      }
+    }
 
-    bookings.push(newBooking);
-    await writeBookings(bookings);
+    bookings.push(newBooking);
+    await writeBookings(bookings);
 
-    // --- NOTIFICACIÓN AUTOMÁTICA AL TATUADOR ---
-    const miNumero = "59891923107@c.us"; 
-    const aviso = `🔔 *NUEVA CITA AGENDADA*\n\n📱 Cliente: ${newBooking.phone}\n📅 Fecha: ${newBooking.date}\n⏰ Hora: ${newBooking.start}:00hs\n📍 Zona: ${newBooking.tattoo.place}`;
-    
-    client.sendMessage(miNumero, aviso)
-        .then(() => console.log("Notificación enviada a Richard"))
-        .catch(e => console.error("Error al notificar al tatuador"));
+    /* --- ENVÍO DE NOTIFICACIÓN AL TATUADOR --- */
+    const numeroTatuador = "59891923107@c.us"; 
+    const mensajeNotificacion = `🚀 *¡NUEVO TURNO AGENDADO!*
+----------------------------
+👤 *Cliente:* ${newBooking.phone}
+📅 *Fecha:* ${newBooking.date}
+⏰ *Hora:* ${newBooking.start}:00 hs
+📍 *Zona:* ${newBooking.tattoo ? newBooking.tattoo.place : 'No especificada'}
+📏 *Tamaño:* ${newBooking.tattoo ? newBooking.tattoo.size : 'No especificado'}
+----------------------------
+_Revisa el panel de control para ver la imagen de referencia._`;
 
-    res.status(201).json(newBooking);
-  } catch (err) {
-    console.error("WRITE ERROR:", err);
-    res.status(500).json({ error: "No se pudo guardar la reserva" });
-  }
+    // Enviar el mensaje
+    client.sendMessage(numeroTatuador, mensajeNotificacion)
+        .then(() => console.log("✅ Notificación enviada al tatuador correctamente."))
+        .catch(e => console.error("❌ Error al enviar notificación al tatuador:", e));
+
+    res.status(201).json(newBooking);
+  } catch (err) {
+    console.error("WRITE ERROR:", err);
+    res.status(500).json({ error: "No se pudo guardar la reserva" });
+  }
 });
 
 // PUT actualizar reserva
 app.put("/api/bookings/:id", async (req, res) => {
-  try {
-    const bookings = await readBookings();
-    const index = bookings.findIndex(b => b.id === req.params.id);
+  try {
+    const bookings = await readBookings();
+    const index = bookings.findIndex(b => b.id === req.params.id);
 
-    if (index === -1) {
-      return res.status(404).json({ error: "Reserva no encontrada" });
-    }
+    if (index === -1) {
+      return res.status(404).json({ error: "Reserva no encontrada" });
+    }
 
-    bookings[index] = { ...bookings[index], ...req.body };
+    bookings[index] = { ...bookings[index], ...req.body };
 
-    await writeBookings(bookings);
-    res.json(bookings[index]);
-  } catch (err) {
-    console.error("UPDATE ERROR:", err);
-    res.status(500).json({ error: "No se pudo actualizar la reserva" });
-  }
+    await writeBookings(bookings);
+    res.json(bookings[index]);
+  } catch (err) {
+    console.error("UPDATE ERROR:", err);
+    res.status(500).json({ error: "No se pudo actualizar la reserva" });
+  }
 });
 
 // DELETE reserva
 app.delete("/api/bookings/:id", async (req, res) => {
-  try {
-    const bookings = await readBookings();
-    const index = bookings.findIndex(b => b.id === req.params.id);
+  try {
+    const bookings = await readBookings();
+    const index = bookings.findIndex(b => b.id === req.params.id);
 
-    if (index === -1) {
-      return res.status(404).json({ error: "Reserva no encontrada" });
-  }
+    if (index === -1) {
+      return res.status(404).json({ error: "Reserva no encontrada" });
+  }
 
-    bookings.splice(index, 1);
-    await writeBookings(bookings);
+    bookings.splice(index, 1);
+    await writeBookings(bookings);
 
-    res.json({ message: "Reserva eliminada" });
-  } catch (err) {
-    console.error("DELETE ERROR:", err);
-    res.status(500).json({ error: "No se pudo eliminar la reserva" });
-  }
+    res.json({ message: "Reserva eliminada" });
+  } catch (err) {
+    console.error("DELETE ERROR:", err);
+    res.status(500).json({ error: "No se pudo eliminar la reserva" });
+  }
 });
 
 /* =====================
-   SPA fallback
+    SPA fallback
 ===================== */
 app.use((req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 /* =====================
-   Error handling global
+    Error handling global
 ===================== */
 process.on("unhandledRejection", err => {
-  console.error("UNHANDLED REJECTION:", err);
+  console.error("UNHANDLED REJECTION:", err);
 });
 
 process.on("uncaughtException", err => {
-  console.error("UNCAUGHT EXCEPTION:", err);
-  process.exit(1);
+  console.error("UNCAUGHT EXCEPTION:", err);
+  process.exit(1);
 });
 
 /* =====================
-   Server
+    Server
 ===================== */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
 });

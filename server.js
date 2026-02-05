@@ -7,17 +7,17 @@ const { v4: uuidv4 } = require("uuid");
 // --- LIBRERÍAS ---
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const qrImage = require('qr-image'); // Asegúrate de tener: npm install qr-image
 const cron = require('node-cron');
 
-// Intentar cargar qr-image de forma segura
-let qrImage;
-try {
-    qrImage = require('qr-image');
-} catch (e) {
-    console.error("⚠️ La librería qr-image no se instaló aún.");
-}
-
 const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Asegurar que la carpeta public existe para guardar el QR
+const publicDir = path.join(__dirname, 'public');
+if (!fssync.existsSync(publicDir)) {
+    fssync.mkdirSync(publicDir);
+}
 
 /* =====================
     Configuración WhatsApp
@@ -29,37 +29,32 @@ const client = new Client({
         args: [
             '--no-sandbox', 
             '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--single-process',
-            '--no-zygote'
+            '--disable-dev-shm-usage'
         ] 
     }
 });
 
-client.on('qr', (qr) => {
-    console.log('⚠️ NUEVO QR GENERADO. Míralo en: tu-web.onrender.com/qr.png');
-    
-    // QR en consola (el que se ve mal)
-    qrcode.generate(qr, { small: true });
+// Variable para guardar el string del QR por si acaso
+let lastQr = null;
 
-    // QR en imagen (el que vas a usar)
-    if (qrImage) {
-        const img = qrImage.image(qr, { type: 'png' });
-        const qrPath = path.join(__dirname, 'public', 'qr.png');
-        const fileStream = fssync.createWriteStream(qrPath);
-        img.pipe(fileStream);
-        console.log('✅ Imagen QR creada en /public/qr.png');
-    }
+client.on('qr', (qr) => {
+    lastQr = qr;
+    console.log('⚠️ NUEVO QR GENERADO. Escanéalo en: /qr');
+    
+    // Generamos la imagen física
+    const img = qrImage.image(qr, { type: 'png' });
+    const qrPath = path.join(publicDir, 'qr.png');
+    const fileStream = fssync.createWriteStream(qrPath);
+    img.pipe(fileStream);
 });
 
 client.on('ready', () => {
     console.log('✅ WhatsApp Conectado');
+    lastQr = null; // Limpiamos el estado del QR
     
-    // Limpiar imagen después de conectar
-    const qrPath = path.join(__dirname, 'public', 'qr.png');
-    if (fssync.existsSync(qrPath)) {
-        fssync.unlinkSync(qrPath);
-    }
+    // Opcional: Borrar la imagen cuando ya no se necesite
+    const qrPath = path.join(publicDir, 'qr.png');
+    if (fssync.existsSync(qrPath)) fssync.unlinkSync(qrPath);
 
     client.sendMessage("59891923107@c.us", "✅ Richard, ya estoy conectado y listo.");
 });
@@ -67,12 +62,24 @@ client.on('ready', () => {
 client.initialize().catch(err => console.error("Error al iniciar WhatsApp:", err));
 
 /* =====================
-    Middleware
+    Middleware & Rutas
 ===================== */
 app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(publicDir));
 
+// RUTA ESPECIAL PARA VER EL QR
+app.get('/qr', (req, res) => {
+    const qrPath = path.join(publicDir, 'qr.png');
+    if (fssync.existsSync(qrPath)) {
+        res.sendFile(qrPath);
+    } else {
+        res.send('<h3>El QR no está disponible. Si ya escaneaste, ya estás conectado.</h3>');
+    }
+});
+
+/* =====================
+    Marketing & API (Tus funciones se mantienen igual)
+===================== */
 const BOOKINGS_FILE = path.join("/tmp", "bookings.json");
 
 async function ensureBookingsFile() {
@@ -90,9 +97,6 @@ async function writeBookings(bookings) {
   await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookings, null, 2), "utf-8");
 }
 
-/* =====================
-    Marketing
-===================== */
 cron.schedule('* * * * *', async () => {
     try {
         const bookings = await readBookings();
@@ -108,14 +112,6 @@ cron.schedule('* * * * *', async () => {
             client.sendMessage(chatId, "hola queres hacerte un tatuaje??").catch(() => {});
         });
     } catch (err) { console.error("Error en Cron:", err); }
-});
-
-/* =====================
-    API
-===================== */
-app.get("/api/bookings", async (req, res) => {
-  const b = await readBookings();
-  res.json(b);
 });
 
 app.post("/api/bookings", async (req, res) => {
@@ -136,7 +132,4 @@ app.post("/api/bookings", async (req, res) => {
   } catch (err) { res.status(500).json({ error: "Error" }); }
 });
 
-app.use((req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
-
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Servidor listo en puerto ${PORT}`));

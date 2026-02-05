@@ -145,7 +145,7 @@ input {
   text-align: center;
   font-size: 16px;
   transition: 0.4s;
-  margin-bottom: 10px; /* Separación extra para los inputs nuevos */
+  margin-bottom: 10px;
 }
 input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(255,255,255,0.06); }
 
@@ -368,7 +368,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
         </div>
 
         <div class="admin-list" id="adminList" style="width:100%; overflow-y:auto"></div>
-        <div class="nav"><button onclick="go('home')" style="border:none; font-size:12px">Cerrar Sesión</button></div>
+        <div class="nav"><button onclick="logoutAdmin()" style="border:none; font-size:12px">Cerrar Sesión</button></div>
       </div>
 
     </div>
@@ -399,7 +399,6 @@ let selectedMonth, selectedDay, selectedTattoo, selectedHour, selectedZone;
 let bookings=[];
 let lastBookingCount = 0;
 
-// Variables de Usuario actualizadas
 let userPhone = localStorage.getItem("whatsapp");
 let userName = localStorage.getItem("userName");
 let userSurname = localStorage.getItem("userSurname");
@@ -423,7 +422,6 @@ function go(id){
 
 function openMap(){ window.open("https://maps.google.com/?q=Cerro+Ejido+Calle+2+Artigas","_blank"); }
 
-// CAMBIO: Validación para requerir login si faltan datos
 function tryGoAgenda(){ 
     if(userPhone && userName && userSurname) {
         go("month");
@@ -432,13 +430,26 @@ function tryGoAgenda(){
     }
 }
 
-// CAMBIO: Lógica de Login para pedir nombre, apellido y teléfono
+// CAMBIO: Validación ESTRICTA de Teléfono
 function login(){ 
     const name = document.getElementById("nameInput").value.trim();
     const surname = document.getElementById("surnameInput").value.trim();
     const phone = document.getElementById("phoneInput").value.trim();
     
-    if(!name || !surname || phone.length < 6) return alert("Por favor ingresa Nombre, Apellido y WhatsApp válidos.");
+    // Regex para validar formato (acepta +, espacios, guiones y números, longitud 8 a 17)
+    const phonePattern = /^[+]?[\d\s-]{8,17}$/;
+    
+    // Contamos cuantos números hay realmente
+    const digitCount = phone.replace(/\D/g, '').length;
+
+    if(!name || !surname) {
+        return alert("Por favor completa tu Nombre y Apellido.");
+    }
+    
+    // Si no cumple el formato o tiene muy pocos numeros reales
+    if (!phonePattern.test(phone) || digitCount < 8) {
+        return alert("Número de WhatsApp incorrecto. Por favor verifica que esté bien escrito (ej: 099123456 o +598...)");
+    }
     
     localStorage.setItem("userName", name);
     localStorage.setItem("userSurname", surname);
@@ -590,13 +601,12 @@ document.getElementById("userTattooImage").addEventListener("change",e=>{
 
 async function confirmBooking(){
   const duration=DURATIONS[selectedTattoo.id];
-  // CAMBIO: Se guardan name y surname en la reserva
   const booking={ 
     date:`${year}-${selectedMonth+1}-${selectedDay}`, 
     start:selectedHour, end:selectedHour+duration, 
     phone:userPhone, 
-    name: userName, // Nuevo
-    surname: userSurname, // Nuevo
+    name: userName,
+    surname: userSurname,
     tattoo:{ image: document.getElementById("userTattooPreview").src, size:selectedTattoo.label, place:selectedZone.label } 
   };
   try {
@@ -605,12 +615,26 @@ async function confirmBooking(){
   } catch(e) { alert("Error"); }
 }
 
+// CAMBIO: Persistencia de Login de Admin
 function promptAdmin(){ 
+  // Verifica si ya está autenticado
+  if (localStorage.getItem("adminAuth") === "true") {
+      openAdmin();
+      return;
+  }
+
   const pass=prompt("Password:"); 
   if(pass==="richard123") {
+    localStorage.setItem("adminAuth", "true"); // Guarda la sesión
     if ("Notification" in window) Notification.requestPermission();
     openAdmin(); 
   }
+}
+
+// CAMBIO: Función para cerrar sesión Admin y borrar persistencia
+function logoutAdmin() {
+    localStorage.removeItem("adminAuth");
+    go('home');
 }
 
 function openAdmin(){ 
@@ -694,7 +718,7 @@ function renderAdmin(){
   bookings.sort((a,b)=> new Date(a.date) - new Date(b.date)); 
   bookings.forEach((res,idx)=>{
     const cleanPhone = res.phone.replace(/\s+/g, '');
-    const clientName = res.name ? `${res.name} ${res.surname}` : "Usuario"; // Fallback por si hay datos viejos sin nombre
+    const clientName = res.name ? `${res.name} ${res.surname}` : "Usuario";
     
     const div=document.createElement("div"); div.className="admin-card";
     div.innerHTML=`<div style="display:flex; align-items:center">

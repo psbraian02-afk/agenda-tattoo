@@ -251,17 +251,38 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 }
 #lightbox img { max-width: 85%; max-height: 85%; border: 1px solid var(--gold); }
 
-/* --- NUEVO BOTÓN QR 100% EFECTIVO --- */
-#qr-launcher {
-  position: absolute; top: 20px; right: 20px;
-  width: 60px; height: 60px; background: var(--gold);
-  border-radius: 50%; display: none; align-items: center; justify-content: center;
-  cursor: pointer; z-index: 2000; border: 2px solid white;
-  box-shadow: 0 0 20px rgba(197, 160, 89, 0.5);
-  transition: transform 0.3s;
+/* --- SECCIÓN QR MEJORADA --- */
+#qr-modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+  display: none; align-items: center; justify-content: center; z-index: 10001;
 }
-#qr-launcher:hover { transform: scale(1.1); }
-#qr-launcher img { width: 30px; filter: invert(1); }
+
+.qr-container {
+  background: white; padding: 30px; border-radius: 20px;
+  display: flex; flex-direction: column; align-items: center;
+  box-shadow: 0 0 50px rgba(197, 160, 89, 0.5);
+  max-width: 90%;
+}
+
+#qr-code-box {
+  background: white;
+  color: black;
+  font-family: monospace;
+  font-size: 9px;
+  line-height: 1;
+  white-space: pre;
+  padding: 10px;
+  border: 2px solid #000;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+#qr-status-btn {
+  position: absolute; top: 20px; right: 20px;
+  width: 50px; height: 50px; background: var(--gold);
+  border-radius: 50%; display: none; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 2000; border: 2px solid #fff;
+}
 
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
 
@@ -269,8 +290,20 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 </head>
 <body>
 
-<div id="qr-launcher" onclick="openQRWindow()" title="Vincular WhatsApp">
-    <img src="https://cdn-icons-png.flaticon.com/512/714/714390.png">
+<div id="qr-status-btn" onclick="openQRModal()" title="Vincular WhatsApp">
+    <img src="https://cdn-icons-png.flaticon.com/512/714/714390.png" style="width:25px; filter:invert(1);">
+</div>
+
+<div id="qr-modal">
+    <div class="qr-container">
+        <h3 style="color:black; margin:0 0 10px 0; font-family:'Cinzel';">Vincular WhatsApp</h3>
+        <p style="color:#666; font-size:12px; margin-bottom:20px;">Escanea para activar los mensajes automáticos</p>
+        <pre id="qr-code-box">Cargando código...</pre>
+        <div style="display:flex; gap:10px; width:100%;">
+            <button onclick="refreshQR()" style="flex:1; background:#f0f0f0; color:black; border-color:#ccc; padding:10px; font-size:12px;">ACTUALIZAR</button>
+            <button onclick="closeQRModal()" style="flex:1; background:black; color:white; border:none; padding:10px; font-size:12px;">CERRAR</button>
+        </div>
+    </div>
 </div>
 
 <div id="lightbox" onclick="this.style.display='none'">
@@ -415,25 +448,43 @@ let isMarketingActive = false;
 
 function nowUY(){ return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Montevideo"})); }
 
-// --- FUNCION PARA ABRIR EL QR EN PESTAÑA LIMPIA ---
-function openQRWindow() {
-    // Abrimos el endpoint que devuelve la imagen del QR directamente
-    window.open('/api/get-qr', '_blank', 'width=500,height=500');
+/* --- NUEVAS FUNCIONES QR --- */
+function openQRModal() {
+    document.getElementById('qr-modal').style.display = 'flex';
+    refreshQR();
+}
+
+function closeQRModal() {
+    document.getElementById('qr-modal').style.display = 'none';
+}
+
+async function refreshQR() {
+    const box = document.getElementById('qr-code-box');
+    box.textContent = "Obteniendo código...";
+    try {
+        const res = await fetch('/api/get-qr');
+        const text = await res.text();
+        // Limpiamos posibles secuencias de escape ANSI que Render a veces envía
+        const cleanText = text.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
+        box.textContent = cleanText;
+    } catch (e) {
+        box.textContent = "Error de conexión. Intenta de nuevo.";
+    }
 }
 
 function go(id){ 
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); 
   document.getElementById(id).classList.add("active"); 
   
-  // Mostrar el botón de QR solo en el panel admin
-  const qrBtn = document.getElementById("qr-launcher");
+  // Mostrar botón QR solo si es admin
+  const qrBtn = document.getElementById("qr-status-btn");
   qrBtn.style.display = (id === "admin") ? "flex" : "none";
 
   if(id === 'imageUploadScreen') updateSummary(); 
   if(id !== 'admin') clearInterval(notificationInterval);
 }
 
-function openMap(){ window.open("https://maps.google.com/?q=Av.Lecueder,Artigas,Uruguay","_blank"); }
+function openMap(){ window.open("https://www.google.com/maps/search/?api=1&query=Artigas+Uruguay","_blank"); }
 
 function tryGoAgenda(){ 
     if(userPhone && userName && userSurname) go("month");

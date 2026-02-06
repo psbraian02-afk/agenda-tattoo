@@ -227,13 +227,12 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
   font-size: 11px;
 }
 
-/* MEJORAS EN TARJETAS DE IMAGEN */
 .tattoo-options, .body-zones {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 15px;
   width: 100%;
-  max-width: 480px; /* Reducido para mejor control */
+  max-width: 480px; 
   max-height: 450px;
   overflow-y: auto;
   padding: 15px;
@@ -250,7 +249,6 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
   overflow: hidden;
 }
 
-/* Efecto de Brillo y Color al pasar el mouse */
 .tattoo-card:hover, .zone-card:hover {
   border-color: var(--gold);
   box-shadow: 0 0 20px rgba(179, 142, 68, 0.3);
@@ -260,16 +258,15 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 .tattoo-card img, .zone-card img {
   width: 100%; 
   height: 130px; 
-  object-fit: contain; /* Encaja perfectamente sin estirarse */
+  object-fit: contain; 
   margin-bottom: 10px;
-  filter: grayscale(100%) brightness(0.8); /* Inicialmente b/n y oscuras */
+  filter: grayscale(100%) brightness(0.8); 
   transition: all 0.5s ease;
   background: #fafafa;
 }
 
-/* Al pasar el mouse: recupera color y brilla */
 .tattoo-card:hover img, .zone-card:hover img {
-  filter: grayscale(0%) brightness(1.1); /* Toma color y brilla */
+  filter: grayscale(0%) brightness(1.1); 
   transform: scale(1.05);
 }
 
@@ -381,7 +378,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
         <h2>Mis Datos</h2>
         <input id="nameInput" type="text" placeholder="NOMBRE">
         <input id="surnameInput" type="text" placeholder="APELLIDO">
-        <input id="emailInput" type="email" placeholder="CORREO ELECTRÓNICO">
+        <input id="emailInput" type="email" placeholder="CORREO (Ej: usuario@gmail.com)">
         <input id="phoneInput" type="tel" placeholder="TELÉFONO (8 NÚMEROS)" maxlength="8">
         <button onclick="login()" style="margin-top:20px">Guardar y Continuar</button>
         <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px">Cancelar</button></div>
@@ -488,6 +485,12 @@ function updateProfileButton(){
     if(userPhone && userName) btn.style.display = "block";
 }
 
+// VALIDACIÓN DE CORREO ELECTRÓNICO
+function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email.toLowerCase());
+}
+
 function go(id, isBack = false) { 
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active")); 
   const target = document.getElementById(id);
@@ -536,7 +539,7 @@ function openMap(){
 }
 
 function tryGoAgenda(){ 
-    if(userPhone && userName && userSurname && userEmail) go("month");
+    if(userPhone && userName && userSurname && userEmail && validateEmail(userEmail)) go("month");
     else go("login");
 }
 
@@ -547,6 +550,7 @@ function login(){
     const phone = document.getElementById("phoneInput").value.trim();
     
     if(!name || !surname || !email) return alert("Por favor, completa nombre, apellido y correo.");
+    if(!validateEmail(email)) return alert("Por favor, ingresa un correo electrónico válido (ejemplo@gmail.com).");
     if(phone.length !== 8) return alert("El teléfono debe tener exactamente 8 números.");
     
     localStorage.setItem("userName", name);

@@ -353,7 +353,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
         </div>
 
         <button onclick="openMap()" style="background:var(--gold); color:#000; margin-bottom:10px">Ver en Google Maps</button>
-        <button onclick="go('home')" style="border:none; opacity:0.6">Regresar al Inicio</button>
+        <button onclick="resetBookingFlow()" style="border:none; opacity:0.6">Regresar al Inicio</button>
       </div>
 
       <div class="screen" id="admin">
@@ -391,7 +391,6 @@ const DURATIONS={
 
 let selectedMonth, selectedDay, selectedTattoo, selectedHour, selectedZone;
 let bookings=[];
-let lastBookingCount = 0;
 
 let userPhone = localStorage.getItem("whatsapp");
 let userName = localStorage.getItem("userName");
@@ -406,7 +405,28 @@ function go(id){
   if(id === 'imageUploadScreen') updateSummary(); 
 }
 
-function openMap(){ window.open("https://maps.google.com/","_blank"); }
+// NUEVA FUNCIÓN: Limpia todo para una segunda agenda
+function resetBookingFlow() {
+  selectedMonth = null; selectedDay = null; selectedTattoo = null; 
+  selectedHour = null; selectedZone = null;
+  
+  const preview = document.getElementById("userTattooPreview");
+  preview.src = "";
+  preview.style.display = "none";
+  
+  const btn = document.getElementById("confirmBtn");
+  btn.disabled = false;
+  btn.textContent = "Confirmar Reserva";
+  
+  document.getElementById("userTattooImage").value = "";
+  
+  // Recargar bookings para que el nuevo turno bloquee el horario
+  fetch(SERVER_URL).then(r=>r.json()).then(data=> { bookings=data; });
+  
+  go('home');
+}
+
+function openMap(){ window.open("https://maps.google.com", "_blank"); }
 
 function tryGoAgenda(){ 
     if(userPhone && userName && userSurname) go("month");
@@ -535,7 +555,6 @@ function updateSummary() {
   }
 }
 
-// CORRECCIÓN: Manejo de imagen más robusto
 document.getElementById("userTattooImage").addEventListener("change",e=>{
   const file=e.target.files[0], preview=document.getElementById("userTattooPreview");
   if(file){ 
@@ -553,9 +572,8 @@ async function confirmBooking(){
   const preview = document.getElementById("userTattooPreview");
   const btn = document.getElementById("confirmBtn");
 
-  // Validamos que haya una imagen antes de enviar
-  if(!preview.src || preview.style.display === "none") {
-      return alert("Por favor, sube una foto de referencia antes de confirmar.");
+  if(!preview.src || preview.style.display === "none" || preview.src.includes("window.location")) {
+      return alert("Por favor, sube una foto de referencia.");
   }
 
   btn.disabled = true;
@@ -575,8 +593,11 @@ async function confirmBooking(){
         headers:{'Content-Type':'application/json'}, 
         body:JSON.stringify(booking) 
     });
-    if(res.ok) go("done");
-    else throw new Error();
+    if(res.ok) {
+        go("done");
+    } else {
+        throw new Error();
+    }
   } catch(e) { 
     alert("Error al guardar. Revisa tu conexión."); 
     btn.disabled = false;
@@ -615,6 +636,7 @@ function resetUserData() {
 
 function logoutAdmin(){ go('home'); }
 
+// Carga inicial de bookings
 fetch(SERVER_URL).then(r=>r.json()).then(data=> { bookings=data; });
 </script>
 </body>

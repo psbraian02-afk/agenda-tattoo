@@ -83,16 +83,69 @@ body {
   position: relative; 
 }
 
+/* --- ESTILO DEL LOGO --- */
+.logo-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.logo-circle {
+  width: 80px;
+  height: 80px;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  position: relative;
+  box-shadow: 0 0 15px rgba(179, 142, 68, 0.2);
+}
+
+.logo-circle::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  opacity: 0.3;
+}
+
+.logo-symbol {
+  width: 70%; /* Ajuste para que el logo no toque los bordes del círculo */
+  height: 70%;
+  object-fit: contain;
+}
+
 h1.brand {
   font-family: 'Cinzel', serif;
-  font-size: clamp(32px, 8vw, 48px);
+  font-size: clamp(28px, 6vw, 36px);
   font-weight: 400;
   color: var(--text-dark);
   margin: 0;
-  letter-spacing: 8px;
+  letter-spacing: 6px;
   text-transform: uppercase;
   text-align: center;
 }
+
+.brand-divider {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+  max-width: 300px;
+  margin-top: 5px;
+}
+
+.line {
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold), transparent);
+  flex: 1;
+}
+
+/* --- FIN ESTILO LOGO --- */
 
 h2 { 
   font-family: 'Cinzel', serif;
@@ -199,7 +252,6 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
   transform: translateY(-5px);
 }
 
-/* EFECTO GRIS A COLOR IMPLEMENTADO AQUÍ */
 .tattoo-card img, .zone-card img {
   width: 100%; 
   height: 120px; 
@@ -254,7 +306,14 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 .btn-whatsapp { border-color: #25D366 !important; color: #25D366 !important; }
 .btn-whatsapp:hover { background: #25D366 !important; color: white !important; }
 
-.nav { position: absolute; bottom: 30px; right: 40px; }
+.nav { 
+  margin-top: 50px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding-bottom: 20px;
+}
+
 .social { display: flex; gap: 20px; margin-top: 10px; }
 .social-btn img { width: 22px; filter: grayscale(1) opacity(0.5); transition: 0.3s; }
 .social-btn:hover img { filter: grayscale(0) opacity(1); }
@@ -280,13 +339,23 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
     <div class="app">
 
       <div class="screen active" id="home">
-        <h1 class="brand">Richard Tattoo</h1>
-        <div style="height: 1px; width: 50px; background: var(--gold); margin-top: -10px;"></div>
-        <p style="letter-spacing: 8px; color: var(--text-muted); font-size: 11px; font-weight: 300; text-transform: uppercase;">Estudio de Arte Privado</p>
+        <div class="logo-container">
+          <div class="logo-circle">
+            <img src="logo.png" alt="Logo" class="logo-symbol">
+          </div>
+          <h1 class="brand">Richard Tattoo</h1>
+          <div class="brand-divider">
+            <div class="line"></div>
+            <p style="letter-spacing: 3px; color: var(--text-muted); font-size: 9px; font-weight: 300; text-transform: uppercase; margin: 0;">Artigas, UY</p>
+            <div class="line"></div>
+          </div>
+        </div>
+        
+        <p style="letter-spacing: 5px; color: var(--gold); font-size: 11px; font-weight: 400; text-transform: uppercase; margin-top: -10px;">Estudio de Arte Privado</p>
         
         <div style="display:flex; flex-direction:column; gap:15px; width: 260px; margin-top: 20px;">
           <button onclick="tryGoAgenda()">Agendar Cita</button>
-          <button style="border:none; font-size:10px; opacity:0.5; letter-spacing:2px" onclick="promptAdmin()">Acceso Artista</button>
+          <button style="border:none; font-size:10px; opacity:0.5; letter-spacing:2px; cursor:pointer;" onclick="promptAdmin()">Acceso Artista</button>
         </div>
         
         <div class="social">
@@ -614,7 +683,6 @@ async function confirmBooking(){
   }
 }
 
-/* LÓGICA DE PERSISTENCIA PARA EL ARTISTA */
 function promptAdmin(){ 
   const isAdmin = localStorage.getItem("isAdminAuthenticated");
   if(isAdmin === "true") {

@@ -48,7 +48,8 @@ body {
 .app {
   width: 100%;
   max-width: 1000px;
-  height: 750px;
+  height: auto; 
+  min-height: 750px;
   background: var(--bg-white);
   border: 1px solid var(--border);
   border-radius: 0; 
@@ -72,12 +73,14 @@ body {
   transform: scale(1.01);
   pointer-events: none;
   transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--bg-white); 
 }
 
 .screen.active {
   opacity: 1;
   transform: scale(1);
   pointer-events: auto;
+  position: relative; 
 }
 
 h1.brand {
@@ -141,13 +144,12 @@ input {
 }
 input:focus { outline: none; border-bottom-color: var(--gold); }
 
-/* AJUSTE DE ANCHO PARA CELULARES */
 .grid { 
   display: grid; 
   grid-template-columns: repeat(4, 1fr); 
   gap: 10px; 
   width: 100%; 
-  max-width: 280px; /* Reducido para que entre en cualquier móvil */
+  max-width: 280px; 
 }
 
 #days {
@@ -161,12 +163,18 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 
 #hoursGrid { 
   display: grid;
-  grid-template-columns: repeat(3, 1fr); 
-  gap: 10px; 
-  max-height: 400px; 
-  overflow-y: auto; 
+  grid-template-columns: repeat(2, 1fr); 
+  gap: 12px; 
   width: 100%;
-  max-width: 280px; /* Reducido para que entre en cualquier móvil */
+  max-width: 220px; 
+  max-height: none; 
+  overflow-y: visible; 
+  padding: 10px 0;
+}
+
+#hoursGrid button {
+  padding: 15px 0;
+  font-size: 12px;
 }
 
 .tattoo-options, .body-zones {
@@ -273,7 +281,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
         </div>
         
         <div class="social">
-          <a class="social-btn" href="https://www.facebook.com/TU_PERFIL" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/733/733547.png"></a>
+          <a class="social-btn" href="https://www.facebook.com/richardtattoo/?locale=es_LA" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/733/733547.png"></a>
           <a class="social-btn" href="https://www.instagram.com/richardtattooartigas/" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/1384/1384063.png"></a>
           <a class="social-btn" href="https://wa.me/59891923107" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/733/733585.png"></a>
         </div>
@@ -318,7 +326,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 
       <div class="screen" id="hourSelection">
         <h2>Horario Disponible</h2>
-        <div class="grid" id="hoursGrid"></div>
+        <div id="hoursGrid"></div>
         <div class="nav"><button onclick="goBackFromHours()" style="border:none; font-size:11px">Atrás</button></div>
       </div>
 
@@ -349,9 +357,10 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
         <h2>Gestión de Agenda</h2>
         <div style="display:flex; gap:10px; margin-bottom:10px;">
              <button onclick="resetUserData()" style="font-size:9px; padding:10px; border-color:#eee; color:#999">Reset Usuarios</button>
+             <button onclick="logoutAdminSession()" style="font-size:9px; padding:10px; border-color:#ffcccc; color:#ff4d4d">Cerrar Sesión Artista</button>
         </div>
         <div class="admin-list" id="adminList" style="width:100%; overflow-y:auto; flex:1"></div>
-        <div class="nav"><button onclick="logoutAdmin()" style="border:none; font-size:11px">Cerrar</button></div>
+        <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px">Cerrar</button></div>
       </div>
 
     </div>
@@ -364,7 +373,9 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
     <div class="about-content" style="flex:1">
       <p style="color:var(--gold); letter-spacing:4px; font-size:12px; margin-bottom:10px">EST. 2011</p>
       <h2>FILOSOFÍA</h2>
-      <p>Richard Artigas crea piezas únicas que fusionan el realismo con la expresión personal. Cada tatuaje es tratado como una obra de arte para toda la vida en un entorno privado y profesional.</p>
+      <p>Richard Pereira es un tatuador profesional con más de 15 años de experiencia en el arte del tatuaje. A lo largo de su carrera, ha perfeccionado su técnica y estilo, logrando trabajos de alta calidad, con líneas limpias, sombreado preciso y diseños personalizados que se adaptan a la idea de cada cliente.
+         Su enfoque se basa en combinar creatividad, prolijidad y compromiso, cuidando cada detalle desde el primer boceto hasta el resultado final en la piel.
+         “Tem espaço, faz tatuagem.”</p>
     </div>
   </section>
 </div>
@@ -404,9 +415,8 @@ function resetBookingFlow() {
   go('home');
 }
 
-// UBICACIÓN DIRECTA POR COORDENADAS PARA CERRO EJIDO
 function openMap(){ 
-    window.open("https://www.google.com/maps?q=-30.418386,-56.484214", "_blank"); 
+    window.open("https://maps.google.com/?q=-30.4067,-56.466060", "_blank"); 
 }
 
 function tryGoAgenda(){ 
@@ -458,15 +468,36 @@ const TATTOO_SIZES=[
   { id:"small", label:"Pequeño (15cm)", price:"$800", img:"pequeño.png" }, 
   { id:"medium", label:"Mediano (25cm)", price:"$1400", img:"mediano.png" }, 
   { id:"large", label:"Grande (35cm)", price:"$2500", img:"grande.png" }, 
-  { id:"muy-grande", label:"Muy Grande (45cm)", price:"$4000", img:"muy-grande.png" },
-  { id:"manga-brazo", label:"Manga Completa", price:"$4500", img:"manga.png" },
+  { id:"muy-grande", label:"Media Manga", price:"$4000", img:"muy-grande.png" },
+  { id:"manga-brazo", label:"Manga Completa", price:"$4600", img:"manga.png" },
   { id:"espalda-completa", label:"Espalda Completa", price:"$5500", img:"espalda-full.png" }
 ];
 
 const BODY_ZONES=[ 
-  { id:"cuello", label:"Cuello", img:"cuello.png" }, { id:"antebrazo", label:"Antebrazo", img:"antebrazo.png" },
-  { id:"brazo", label:"Brazo", img:"brazo.png" }, { id:"pecho", label:"Pecho", img:"pecho.png" },
-  { id:"espalda", label:"Espalda", img:"espalda.png" }, { id:"muslo", label:"Muslo", img:"muslo.png" }
+  { id:"cara", label:"Cara", img:"cara.png" },
+  { id:"nuca", label:"Nuca", img:"nuca.png" },
+  { id:"cuello", label:"Cuello", img:"cuello.png" }, 
+  { id:"clavicula", label:"Clavícula", img:"clavicula.png" },
+  { id:"hombro", label:"Hombro", img:"hombro.png" },
+  { id:"pecho", label:"Pecho", img:"pecho.png" },
+  { id:"abdomen", label:"Abdomen", img:"abdomen.png" },
+  { id:"costillas", label:"Costillas", img:"costillas.png" },
+  { id:"brazo", label:"Brazo", img:"brazo.png" }, 
+  { id:"biceps", label:"Biceps", img:"biceps.png" }, 
+  { id:"triceps", label:"Triceps", img:"triceps.png" }, 
+  { id:"antebrazo", label:"Antebrazo", img:"antebrazo.png" },
+  { id:"muñeca", label:"Muñeca", img:"muñeca.png" },
+  { id:"mano", label:"Mano", img:"mano.png" },
+  { id:"dedos", label:"Dedos", img:"dedos.png" },
+  { id:"espalda-alta", label:"Espalda Alta", img:"espaldaalta.png" },
+  { id:"espalda-baja", label:"Espalda Baja", img:"espalda.png" }, 
+  { id:"gluteos", label:"Glúteos", img:"gluteos.png" },
+  { id:"muslo", label:"Muslo / Pierna", img:"muslo.png" }, 
+  { id:"rodilla", label:"Rodilla", img:"rodilla.png" },
+  { id:"pantorrilla", label:"Pantorrilla", img:"gemelo.png" },
+  { id:"canilla", label:"Canilla", img:"canilla.png" },
+  { id:"tobillo", label:"Tobillo", img:"tobillo.png" },
+  { id:"pie", label:"Pie", img:"pie.png" }
 ];
 
 function renderTattooOptions(){ 
@@ -505,7 +536,6 @@ function goBackFromHours(){ (selectedTattoo.id === "manga-brazo" || selectedTatt
 
 function renderHours(){
   const grid=document.getElementById("hoursGrid"); grid.innerHTML=""; 
-  const duration=DURATIONS[selectedTattoo.id];
   const timeUY = nowUY();
   const isToday = (selectedDay === timeUY.getDate() && selectedMonth === timeUY.getMonth());
   
@@ -552,10 +582,7 @@ document.getElementById("userTattooImage").addEventListener("change",e=>{
 async function confirmBooking(){
   const preview = document.getElementById("userTattooPreview");
   const btn = document.getElementById("confirmBtn");
-
-  if(!preview.src || preview.style.display === "none") {
-      return alert("Por favor, sube una foto de referencia.");
-  }
+  if(!preview.src || preview.style.display === "none") return alert("Por favor, sube una foto de referencia.");
 
   btn.disabled = true;
   btn.textContent = "ENVIANDO...";
@@ -569,22 +596,35 @@ async function confirmBooking(){
   };
 
   try {
-    const res=await fetch(SERVER_URL,{ 
-        method:'POST', 
-        headers:{'Content-Type':'application/json'}, 
-        body:JSON.stringify(booking) 
-    });
+    const res=await fetch(SERVER_URL,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(booking) });
     if(res.ok) { go("done"); } else { throw new Error(); }
   } catch(e) { 
     alert("Error al guardar."); 
-    btn.disabled = false;
-    btn.textContent = "Confirmar Reserva";
+    btn.disabled = false; btn.textContent = "Confirmar Reserva";
   }
 }
 
+/* LÓGICA DE PERSISTENCIA PARA EL ARTISTA */
 function promptAdmin(){ 
-  const pass=prompt("Contraseña:"); 
-  if(pass==="richard123") openAdmin(); 
+  const isAdmin = localStorage.getItem("isAdminAuthenticated");
+  if(isAdmin === "true") {
+    openAdmin(); 
+  } else {
+    const pass=prompt("Contraseña:"); 
+    if(pass==="richard123") {
+      localStorage.setItem("isAdminAuthenticated", "true");
+      openAdmin(); 
+    } else if (pass !== null) {
+      alert("Acceso denegado.");
+    }
+  }
+}
+
+function logoutAdminSession() {
+  if(confirm("¿Cerrar sesión de artista? Se volverá a pedir la contraseña.")) {
+    localStorage.removeItem("isAdminAuthenticated");
+    go('home');
+  }
 }
 
 function openAdmin(){ 
@@ -622,13 +662,15 @@ function renderAdmin(){
 }
 
 function deleteBooking(id){
-    if(confirm("¿Borrar cita?")) {
-        fetch(`${SERVER_URL}/${id}`, {method:'DELETE'}).then(()=>openAdmin());
-    }
+    if(confirm("¿Borrar cita?")) fetch(`${SERVER_URL}/${id}`, {method:'DELETE'}).then(()=>openAdmin());
 }
 
-function resetUserData() { localStorage.clear(); location.reload(); }
-function logoutAdmin(){ go('home'); }
+function resetUserData() { 
+  if(confirm("¿Borrar todos tus datos locales (incluyendo sesión de artista)?")) {
+    localStorage.clear(); 
+    location.reload(); 
+  }
+}
 
 fetch(SERVER_URL).then(r=>r.json()).then(data=> { bookings=data; });
 </script>

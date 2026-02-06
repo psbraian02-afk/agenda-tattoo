@@ -227,36 +227,50 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
   font-size: 11px;
 }
 
-/* AJUSTE DE ANCHO Y IMÁGENES PARA PROYECTOS Y ZONAS */
+/* MEJORAS EN TARJETAS DE IMAGEN */
 .tattoo-options, .body-zones {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 15px;
   width: 100%;
-  max-width: 500px; /* Limitamos el ancho para que no sea tan ancho */
+  max-width: 480px; /* Reducido para mejor control */
   max-height: 450px;
   overflow-y: auto;
-  padding: 10px;
+  padding: 15px;
 }
 
 .tattoo-card, .zone-card {
   background: #fff;
   border: 1px solid #f0f0f0;
-  padding: 10px;
-  transition: 0.4s;
+  padding: 12px;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Efecto de Brillo y Color al pasar el mouse */
+.tattoo-card:hover, .zone-card:hover {
+  border-color: var(--gold);
+  box-shadow: 0 0 20px rgba(179, 142, 68, 0.3);
+  transform: translateY(-3px);
 }
 
 .tattoo-card img, .zone-card img {
   width: 100%; 
-  height: 120px; /* Altura fija para consistencia */
-  object-fit: contain; /* Para que la imagen se vea completa sin cortarse */
+  height: 130px; 
+  object-fit: contain; /* Encaja perfectamente sin estirarse */
   margin-bottom: 10px;
-  filter: grayscale(100%); 
-  background: #f9f9f9;
+  filter: grayscale(100%) brightness(0.8); /* Inicialmente b/n y oscuras */
+  transition: all 0.5s ease;
+  background: #fafafa;
+}
+
+/* Al pasar el mouse: recupera color y brilla */
+.tattoo-card:hover img, .zone-card:hover img {
+  filter: grayscale(0%) brightness(1.1); /* Toma color y brilla */
+  transform: scale(1.05);
 }
 
 .about-section {
@@ -462,7 +476,6 @@ const DURATIONS={
 let selectedMonth, selectedDay, selectedTattoo, selectedHour, selectedZone;
 let bookings=[];
 
-// CARGAR DATOS
 let userPhone = localStorage.getItem("whatsapp");
 let userName = localStorage.getItem("userName");
 let userSurname = localStorage.getItem("userSurname");
@@ -470,7 +483,6 @@ let userEmail = localStorage.getItem("userEmail");
 
 function nowUY(){ return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Montevideo"})); }
 
-// MOSTRAR BOTÓN PERFIL SI YA EXISTE USUARIO
 function updateProfileButton(){
     const btn = document.getElementById("btnProfile");
     if(userPhone && userName) btn.style.display = "block";
@@ -481,7 +493,6 @@ function go(id, isBack = false) {
   const target = document.getElementById(id);
   if (target) {
     target.classList.add("active");
-    // Pre-cargar inputs si va a login
     if(id === 'login' && userPhone){
         document.getElementById("nameInput").value = userName;
         document.getElementById("surnameInput").value = userSurname;

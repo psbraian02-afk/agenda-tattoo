@@ -42,7 +42,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px 10px; /* Ajustado para móvil */
+  padding: 20px 10px;
 }
 
 .app {
@@ -63,7 +63,7 @@ body {
 .screen {
   position: absolute;
   inset: 0;
-  padding: 30px 15px; /* Ajustado para móvil */
+  padding: 30px 15px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -83,7 +83,6 @@ body {
   position: relative; 
 }
 
-/* --- ESTILO DEL LOGO --- */
 .logo-container {
   display: flex;
   flex-direction: column;
@@ -121,7 +120,7 @@ body {
 
 h1.brand {
   font-family: 'Cinzel', serif;
-  font-size: clamp(24px, 6vw, 36px); /* Ajustado para móvil */
+  font-size: clamp(24px, 6vw, 36px);
   font-weight: 400;
   color: var(--text-dark);
   margin: 0;
@@ -144,8 +143,6 @@ h1.brand {
   background: linear-gradient(to right, transparent, var(--gold), transparent);
   flex: 1;
 }
-
-/* --- FIN ESTILO LOGO --- */
 
 h2 { 
   font-family: 'Cinzel', serif;
@@ -198,20 +195,19 @@ input {
 }
 input:focus { outline: none; border-bottom-color: var(--gold); }
 
-/* --- AJUSTE CALENDARIO --- */
 .grid { 
   display: grid; 
   grid-template-columns: repeat(4, 1fr); 
   gap: 8px; 
   width: 100%; 
-  max-width: 260px; /* Más estrecho para móvil */
+  max-width: 260px;
 }
 
 #days {
   max-height: 380px; 
   overflow-y: auto;
   padding: 5px;
-  grid-template-columns: repeat(5, 1fr); /* 5 columnas para ahorrar espacio vertical */
+  grid-template-columns: repeat(5, 1fr);
 }
 
 #days button { padding: 10px 0; font-size: 12px; border-color: #eee; color: #666; }
@@ -230,14 +226,15 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
   padding: 12px 0;
   font-size: 11px;
 }
-/* --- FIN AJUSTE CALENDARIO --- */
 
+/* AJUSTE DE ANCHO Y IMÁGENES PARA PROYECTOS Y ZONAS */
 .tattoo-options, .body-zones {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* Forzado 2 columnas en móvil */
+  grid-template-columns: repeat(2, 1fr);
   gap: 15px;
   width: 100%;
-  max-height: 400px;
+  max-width: 500px; /* Limitamos el ancho para que no sea tan ancho */
+  max-height: 450px;
   overflow-y: auto;
   padding: 10px;
 }
@@ -245,17 +242,21 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 .tattoo-card, .zone-card {
   background: #fff;
   border: 1px solid #f0f0f0;
-  padding: 15px;
+  padding: 10px;
   transition: 0.4s;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .tattoo-card img, .zone-card img {
   width: 100%; 
-  height: 100px; 
-  object-fit: cover; 
+  height: 120px; /* Altura fija para consistencia */
+  object-fit: contain; /* Para que la imagen se vea completa sin cortarse */
   margin-bottom: 10px;
   filter: grayscale(100%); 
+  background: #f9f9f9;
 }
 
 .about-section {
@@ -263,7 +264,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
   max-width: 1100px;
   margin: 0 auto;
   display: flex;
-  flex-direction: column; /* Apilado para móvil */
+  flex-direction: column;
   align-items: center;
   gap: 40px;
 }
@@ -345,8 +346,9 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
         
         <p style="letter-spacing: 5px; color: var(--gold); font-size: 11px; font-weight: 400; text-transform: uppercase; margin-top: -10px;">Estudio de Arte Privado</p>
         
-        <div style="display:flex; flex-direction:column; gap:15px; width: 260px; margin-top: 20px;">
+        <div style="display:flex; flex-direction:column; gap:10px; width: 260px; margin-top: 20px;">
           <button onclick="tryGoAgenda()">Agendar Cita</button>
+          <button id="btnProfile" style="display:none; font-size:9px;" onclick="go('login')">Mi Perfil / Editar Datos</button>
           <button style="border:none; font-size:10px; opacity:0.5; letter-spacing:2px; cursor:pointer;" onclick="promptAdmin()">Acceso Artista</button>
         </div>
         
@@ -362,12 +364,13 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
       </div>
 
       <div class="screen" id="login">
-        <h2>Identificación</h2>
+        <h2>Mis Datos</h2>
         <input id="nameInput" type="text" placeholder="NOMBRE">
         <input id="surnameInput" type="text" placeholder="APELLIDO">
-        <input id="phoneInput" type="tel" placeholder="TELÉFONO">
-        <button onclick="login()" style="margin-top:20px">Continuar</button>
-        <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px">Salir</button></div>
+        <input id="emailInput" type="email" placeholder="CORREO ELECTRÓNICO">
+        <input id="phoneInput" type="tel" placeholder="TELÉFONO (8 NÚMEROS)" maxlength="8">
+        <button onclick="login()" style="margin-top:20px">Guardar y Continuar</button>
+        <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px">Cancelar</button></div>
       </div>
 
       <div class="screen" id="month">
@@ -444,7 +447,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
       <p style="color:var(--gold); letter-spacing:4px; font-size:12px; margin-bottom:10px">RichardTattoo</p>
       <h2>SOBRE MI</h2>
       <p>Richard Pereira es un tatuador profesional con más de 15 años de experiencia en el arte del tatuaje.
-         “Tem espaço, faz tatuagem.”</p>
+          “Tem espaço, faz tatuagem.”</p>
     </div>
   </section>
 </div>
@@ -459,16 +462,33 @@ const DURATIONS={
 let selectedMonth, selectedDay, selectedTattoo, selectedHour, selectedZone;
 let bookings=[];
 
+// CARGAR DATOS
 let userPhone = localStorage.getItem("whatsapp");
 let userName = localStorage.getItem("userName");
 let userSurname = localStorage.getItem("userSurname");
+let userEmail = localStorage.getItem("userEmail");
 
 function nowUY(){ return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Montevideo"})); }
+
+// MOSTRAR BOTÓN PERFIL SI YA EXISTE USUARIO
+function updateProfileButton(){
+    const btn = document.getElementById("btnProfile");
+    if(userPhone && userName) btn.style.display = "block";
+}
 
 function go(id, isBack = false) { 
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active")); 
   const target = document.getElementById(id);
-  if (target) target.classList.add("active"); 
+  if (target) {
+    target.classList.add("active");
+    // Pre-cargar inputs si va a login
+    if(id === 'login' && userPhone){
+        document.getElementById("nameInput").value = userName;
+        document.getElementById("surnameInput").value = userSurname;
+        document.getElementById("phoneInput").value = userPhone;
+        document.getElementById("emailInput").value = userEmail || "";
+    }
+  }
   if (id === 'imageUploadScreen') updateSummary(); 
   if (!isBack) {
     history.pushState({ screenId: id }, "", "");
@@ -485,6 +505,7 @@ window.onpopstate = function(event) {
 
 window.addEventListener('load', () => {
   history.replaceState({ screenId: 'home' }, "", "");
+  updateProfileButton();
 });
 
 function resetBookingFlow() {
@@ -504,19 +525,28 @@ function openMap(){
 }
 
 function tryGoAgenda(){ 
-    if(userPhone && userName && userSurname) go("month");
+    if(userPhone && userName && userSurname && userEmail) go("month");
     else go("login");
 }
 
 function login(){ 
     const name = document.getElementById("nameInput").value.trim();
     const surname = document.getElementById("surnameInput").value.trim();
+    const email = document.getElementById("emailInput").value.trim();
     const phone = document.getElementById("phoneInput").value.trim();
-    if(!name || !surname || phone.length < 8) return alert("Completa tus datos.");
+    
+    if(!name || !surname || !email) return alert("Por favor, completa nombre, apellido y correo.");
+    if(phone.length !== 8) return alert("El teléfono debe tener exactamente 8 números.");
+    
     localStorage.setItem("userName", name);
     localStorage.setItem("userSurname", surname);
     localStorage.setItem("whatsapp", phone);
-    userName = name; userSurname = surname; userPhone = phone;
+    localStorage.setItem("userEmail", email);
+    
+    userName = name; userSurname = surname; userPhone = phone; userEmail = email;
+    
+    updateProfileButton();
+    alert("Datos guardados correctamente.");
     go("month"); 
 }
 
@@ -676,7 +706,7 @@ async function confirmBooking(){
   const booking={ 
     date:`${year}-${selectedMonth+1}-${selectedDay}`, 
     start:selectedHour, end:selectedHour+duration, 
-    phone:userPhone, name: userName, surname: userSurname,
+    phone:userPhone, name: userName, surname: userSurname, email: userEmail,
     tattoo:{ image: preview.src, size:selectedTattoo.label, place:selectedZone.label } 
   };
 
@@ -734,6 +764,7 @@ function renderAdmin(){
         <div class="admin-info">
             <strong>${res.date} @ ${res.start}:00hs</strong><br>
             ${res.name} ${res.surname}<br>
+            <span style="font-size:9px; color:var(--text-muted)">${res.email || 'Sin correo'}</span><br>
             <span style="font-size:10px; opacity:0.7">${res.tattoo ? res.tattoo.size + ' - ' + res.tattoo.place : ''}</span>
         </div>
         <div class="admin-actions" style="display:flex; flex-direction:column; gap:5px">

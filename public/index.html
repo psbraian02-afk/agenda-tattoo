@@ -114,7 +114,7 @@ body {
 }
 
 .logo-symbol {
-  width: 70%; /* Ajuste para que el logo no toque los bordes del círculo */
+  width: 70%; 
   height: 70%;
   object-fit: contain;
 }
@@ -446,7 +446,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 
   <section class="about-section">
     <div class="about-img" style="flex:1">
-      <img src="richard-working.png" alt="Richard Tatuando" onerror="this.src='https://via.placeholder.com/400x500'">
+      <img src="richard-working.png" alt="Richard" onerror="this.src='https://via.placeholder.com/400x500'">
     </div>
     <div class="about-content" style="flex:1">
       <p style="color:var(--gold); letter-spacing:4px; font-size:12px; margin-bottom:10px">RichardTattoo</p>
@@ -474,12 +474,35 @@ let userSurname = localStorage.getItem("userSurname");
 
 function nowUY(){ return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Montevideo"})); }
 
-function go(id){ 
-  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); 
+// --- LOGICA DE NAVEGACION CON BOTON ATRAS ---
+function go(id, isBack = false) { 
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active")); 
   const target = document.getElementById(id);
-  if(target) target.classList.add("active"); 
-  if(id === 'imageUploadScreen') updateSummary(); 
+  if (target) target.classList.add("active"); 
+  
+  if (id === 'imageUploadScreen') updateSummary(); 
+
+  // Si no es un retroceso (es decir, el usuario hizo clic en un botón), guardamos en el historial
+  if (!isBack) {
+    history.pushState({ screenId: id }, "", "");
+  }
 }
+
+// Escuchar el evento de retroceso del navegador/celular
+window.onpopstate = function(event) {
+  if (event.state && event.state.screenId) {
+    go(event.state.screenId, true);
+  } else {
+    // Si no hay estado (llegamos al inicio), forzamos ir a home
+    go('home', true);
+  }
+};
+
+// Inicializamos el historial con la pantalla de home al cargar
+window.addEventListener('load', () => {
+  history.replaceState({ screenId: 'home' }, "", "");
+});
+// -------------------------------------------
 
 function resetBookingFlow() {
   selectedMonth = null; selectedDay = null; selectedTattoo = null; 
@@ -546,7 +569,7 @@ const TATTOO_SIZES=[
   { id:"small", label:"Pequeño (15cm)", price:"$800", img:"pequeño.png" }, 
   { id:"medium", label:"Mediano (25cm)", price:"$1400", img:"mediano.png" }, 
   { id:"large", label:"Grande (35cm)", price:"$2500", img:"grande.png" }, 
-  { id:"muy-grande", label:"Muy Grande (45cm)", price:"$4000", img:"muy-grande.png" },
+  { id:"muy-grande", label:"Media Manga", price:"$4000", img:"muy-grande.png" },
   { id:"manga-brazo", label:"Manga Completa", price:"$4500", img:"manga.png" },
   { id:"espalda-completa", label:"Espalda Completa", price:"$5500", img:"espalda-full.png" }
 ];

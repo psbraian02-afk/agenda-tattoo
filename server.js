@@ -3,7 +3,6 @@ const path = require("path");
 const fs = require("fs/promises");
 const fssync = require("fs"); 
 const { v4: uuidv4 } = require("uuid");
-const nodemailer = require("nodemailer");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,53 +10,42 @@ const PORT = process.env.PORT || 3000;
 const publicDir = path.join(__dirname, 'public');
 if (!fssync.existsSync(publicDir)) fssync.mkdirSync(publicDir);
 
-// 1. AUMENTAMOS EL LÍMITE (Para que las fotos de referencia no bloqueen el proceso)
+// 1. AUMENTAMOS EL LÍMITE
 app.use(express.json({ limit: "20mb" }));
 app.use(express.static(publicDir));
 
 /* =====================
-    CONFIGURACIÓN DE EMAIL (Versión Robusta para Render - Service Mode)
+    CONFIGURACIÓN DE NOTIFICACIÓN (Vía Formspree - Bye bye bloqueos)
 ===================== */
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: 'richardtattoo2026@gmail.com',
-        pass: 'ktmeidxvfkfvgudi' 
-    }
-});
+async function enviarNotificacionFormspree(booking) {
+    const FORMSPREE_URL = "https://formspree.io/f/xzdapoze"; 
 
-// Verificación de conexión (Verás esto en los Logs de Render)
-transporter.verify((error, success) => {
-    if (error) {
-        console.log("❌ Error de configuración de mail:", error);
-    } else {
-        console.log("✅ Servidor conectado y listo vía Gmail Service");
-    }
-});
-
-async function enviarNotificacionEmail(booking) {
-    const mailOptions = {
-        from: '"Agenda Richard Tattoo" <richardtattoo2026@gmail.com>',
-        to: 'richardtattoo2026@gmail.com', 
-        subject: `🚀 NUEVO TURNO: ${booking.name} ${booking.surname}`,
-        html: `
-            <div style="font-family: sans-serif; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
-                <h2 style="color: #333;">🔥 Tienes una nueva reserva</h2>
-                <p><strong>Cliente:</strong> ${booking.name} ${booking.surname}</p>
-                <p><strong>Teléfono:</strong> ${booking.phone}</p>
-                <p><strong>Fecha:</strong> ${booking.date}</p>
-                <p><strong>Hora:</strong> ${booking.start}:00hs</p>
-                <hr>
-                <p style="font-size: 12px; color: #666;">Notificación enviada automáticamente desde tu sistema de agenda.</p>
-            </div>
-        `
+    const datos = {
+        _subject: `🚀 NUEVO TURNO: ${booking.name} ${booking.surname}`,
+        cliente: `${booking.name} ${booking.surname}`,
+        whatsapp: booking.phone,
+        fecha: booking.date,
+        hora: `${booking.start}:00hs`,
+        tamaño: booking.tattoo.size,
+        zona: booking.tattoo.place,
+        link_referencia: "Ver imagen en Panel de Artista"
     };
 
     try {
-        await transporter.sendMail(mailOptions);
-        console.log("✅ Notificación de correo enviada");
+        // Importación dinámica de node-fetch para compatibilidad con Render
+        const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+        
+        await (await fetch)(FORMSPREE_URL, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json' 
+            },
+            body: JSON.stringify(datos)
+        });
+        console.log("✅ Notificación enviada correctamente a tu email");
     } catch (error) {
-        console.error("❌ Error enviando email:", error);
+        console.error("❌ Error enviando notificación:", error);
     }
 }
 
@@ -98,8 +86,8 @@ app.post("/api/bookings", async (req, res) => {
         bookings.push(newBooking);
         await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookings, null, 2));
 
-        // 2. AGREGAMOS EL AWAIT (Fundamental para que no se salte el envío)
-        await enviarNotificacionEmail(newBooking);
+        // Enviar notificación a través del puente de Formspree
+        await enviarNotificacionFormspree(newBooking);
 
         res.status(201).json(newBooking);
     } catch (err) {
@@ -109,7 +97,7 @@ app.post("/api/bookings", async (req, res) => {
 });
 
 app.get("/scan-qr", (req, res) => {
-    res.send(`<div style="text-align:center;padding:50px;font-family:sans-serif;"><h2>Sistema por Email activo</h2><p>Recibirás avisos en richardtattoo2026@gmail.com</p><a href="/">Ir al Inicio</a></div>`);
+    res.send(`<div style="text-align:center;padding:50px;font-family:sans-serif;"><h2>Sistema de Notificación Activo</h2><p>Recibirás los avisos en tu email.</p><a href="/">Ir al Inicio</a></div>`);
 });
 
 app.get("*", (req, res) => {
@@ -117,4 +105,4 @@ app.get("*", (req, res) => {
     fssync.existsSync(indexPath) ? res.sendFile(indexPath) : res.status(404).send("index.html no encontrado");
 });
 
-app.listen(PORT, () => console.log(`🚀 Servidor en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Servidor activo y usando Formspree en puerto ${PORT}`));

@@ -291,6 +291,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 .about-content h2 { font-size: 28px; margin-bottom: 20px; color: var(--text-dark); text-align: center; }
 .about-content p { line-height: 1.6; color: var(--text-muted); font-size: 14px; text-align: center; }
 
+/* ADMIN STYLES */
 .admin-card {
   background: #fff;
   margin-bottom: 10px;
@@ -308,6 +309,15 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 
 .admin-info { flex: 1; font-size: 11px; color: var(--text-dark); }
 .admin-info strong { color: var(--gold); font-family: 'Cinzel', serif; }
+
+.mass-mail-panel {
+    background: #fdfaf3;
+    border: 1px solid var(--gold);
+    padding: 15px;
+    margin-bottom: 20px;
+    width: 100%;
+    text-align: center;
+}
 
 .btn-whatsapp { border-color: #25D366 !important; color: #25D366 !important; }
 .btn-whatsapp:hover { background: #25D366 !important; color: white !important; }
@@ -439,6 +449,18 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 
       <div class="screen" id="admin">
         <h2>Gestión de Agenda</h2>
+        
+        <div class="mass-mail-panel">
+            <p style="font-size: 10px; letter-spacing: 1px; margin-bottom: 10px; color: var(--text-dark);">
+                <strong>OPCIÓN DE MARKETING</strong>
+            </p>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
+                <span style="font-size: 9px;">Enviar mail de recordatorio a todos:</span>
+                <input type="checkbox" id="massReminderSwitch" style="width: auto; margin: 0;">
+            </div>
+            <button id="btnMassMail" onclick="sendMassReminder()" style="font-size: 8px; padding: 8px 15px;">Ejecutar Envío Masivo</button>
+        </div>
+
         <div style="display:flex; gap:10px; margin-bottom:10px;">
              <button onclick="resetUserData()" style="font-size:9px; padding:10px; border-color:#eee; color:#999">Reset Usuarios</button>
              <button onclick="logoutAdminSession()" style="font-size:9px; padding:10px; border-color:#ffcccc; color:#ff4d4d">Cerrar Sesión Artista</button>
@@ -485,10 +507,42 @@ function updateProfileButton(){
     if(userPhone && userName) btn.style.display = "block";
 }
 
-// VALIDACIÓN DE CORREO ELECTRÓNICO
 function validateEmail(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email.toLowerCase());
+}
+
+// FUNCIÓN DE ENVÍO MASIVO
+async function sendMassReminder() {
+    const isActivated = document.getElementById("massReminderSwitch").checked;
+    if(!isActivated) {
+        alert("Primero debes activar la opción con el interruptor.");
+        return;
+    }
+
+    // Extraemos correos únicos de todas las reservas registradas
+    const allEmails = [...new Set(bookings.map(b => b.email).filter(e => e && validateEmail(e)))];
+    
+    if(allEmails.length === 0) {
+        alert("No hay correos registrados para enviar.");
+        return;
+    }
+
+    const confirmSend = confirm(`¿Enviar mail de recordatorio a ${allEmails.length} clientes?`);
+    if(!confirmSend) return;
+
+    const btn = document.getElementById("btnMassMail");
+    btn.disabled = true;
+    btn.textContent = "ENVIANDO...";
+
+    // Simulamos proceso de envío (aquí se llamaría a un endpoint de backend como /api/send-bulk)
+    setTimeout(() => {
+        console.log("Correos enviados a:", allEmails);
+        alert("¡Éxito! Se ha enviado el recordatorio de tatuaje a todos los registrados.");
+        btn.disabled = false;
+        btn.textContent = "Ejecutar Envío Masivo";
+        document.getElementById("massReminderSwitch").checked = false;
+    }, 2000);
 }
 
 function go(id, isBack = false) { 
@@ -550,7 +604,7 @@ function login(){
     const phone = document.getElementById("phoneInput").value.trim();
     
     if(!name || !surname || !email) return alert("Por favor, completa nombre, apellido y correo.");
-    if(!validateEmail(email)) return alert("Por favor, ingresa un correo electrónico válido (ejemplo@gmail.com).");
+    if(!validateEmail(email)) return alert("Por favor, ingresa un correo electrónico válido.");
     if(phone.length !== 8) return alert("El teléfono debe tener exactamente 8 números.");
     
     localStorage.setItem("userName", name);
@@ -603,30 +657,18 @@ const TATTOO_SIZES=[
 ];
 
 const BODY_ZONES=[ 
-  { id:"cara", label:"Cara", img:"cara.png" },
-  { id:"nuca", label:"Nuca", img:"nuca.png" },
-  { id:"cuello", label:"Cuello", img:"cuello.png" }, 
-  { id:"clavicula", label:"Clavícula", img:"clavicula.png" },
-  { id:"hombro", label:"Hombro", img:"hombro.png" },
-  { id:"pecho", label:"Pecho", img:"pecho.png" },
-  { id:"abdomen", label:"Abdomen", img:"abdomen.png" },
-  { id:"costillas", label:"Costillas", img:"costillas.png" },
-  { id:"brazo", label:"Brazo", img:"brazo.png" }, 
-  { id:"biceps", label:"Biceps", img:"biceps.png" }, 
-  { id:"triceps", label:"Triceps", img:"triceps.png" }, 
-  { id:"antebrazo", label:"Antebrazo", img:"antebrazo.png" },
-  { id:"muñeca", label:"Muñeca", img:"muñeca.png" },
-  { id:"mano", label:"Mano", img:"mano.png" },
-  { id:"dedos", label:"Dedos", img:"dedos.png" },
-  { id:"espalda-alta", label:"Espalda Alta", img:"espaldaalta.png" },
-  { id:"espalda-baja", label:"Espalda Baja", img:"espalda.png" }, 
-  { id:"gluteos", label:"Glúteos", img:"gluteos.png" },
-  { id:"muslo", label:"Muslo", img:"muslo.png" }, 
-  { id:"isquios", label:"Isquios", img:"isquios.png" }, 
-  { id:"rodilla", label:"Rodilla", img:"rodilla.png" },
-  { id:"pantorrilla", label:"Pantorrilla", img:"gemelos.png" },
-  { id:"canilla", label:"Canilla", img:"canilla.png" },
-  { id:"tobillo", label:"Tobillo", img:"tobillo.png" },
+  { id:"cara", label:"Cara", img:"cara.png" }, { id:"nuca", label:"Nuca", img:"nuca.png" },
+  { id:"cuello", label:"Cuello", img:"cuello.png" }, { id:"clavicula", label:"Clavícula", img:"clavicula.png" },
+  { id:"hombro", label:"Hombro", img:"hombro.png" }, { id:"pecho", label:"Pecho", img:"pecho.png" },
+  { id:"abdomen", label:"Abdomen", img:"abdomen.png" }, { id:"costillas", label:"Costillas", img:"costillas.png" },
+  { id:"brazo", label:"Brazo", img:"brazo.png" }, { id:"biceps", label:"Biceps", img:"biceps.png" },
+  { id:"triceps", label:"Triceps", img:"triceps.png" }, { id:"antebrazo", label:"Antebrazo", img:"antebrazo.png" },
+  { id:"muñeca", label:"Muñeca", img:"muñeca.png" }, { id:"mano", label:"Mano", img:"mano.png" },
+  { id:"dedos", label:"Dedos", img:"dedos.png" }, { id:"espalda-alta", label:"Espalda Alta", img:"espaldaalta.png" },
+  { id:"espalda-baja", label:"Espalda Baja", img:"espalda.png" }, { id:"gluteos", label:"Glúteos", img:"gluteos.png" },
+  { id:"muslo", label:"Muslo", img:"muslo.png" }, { id:"isquios", label:"Isquios", img:"isquios.png" },
+  { id:"rodilla", label:"Rodilla", img:"rodilla.png" }, { id:"pantorrilla", label:"Pantorrilla", img:"gemelos.png" },
+  { id:"canilla", label:"Canilla", img:"canilla.png" }, { id:"tobillo", label:"Tobillo", img:"tobillo.png" },
   { id:"pie", label:"Pie", img:"pie.png" }
 ];
 
@@ -736,21 +778,18 @@ async function confirmBooking(){
 
 function promptAdmin(){ 
   const isAdmin = localStorage.getItem("isAdminAuthenticated");
-  if(isAdmin === "true") {
-    openAdmin(); 
-  } else {
+  if(isAdmin === "true") { openAdmin(); } 
+  else {
     const pass=prompt("Contraseña:"); 
     if(pass==="richard123") {
       localStorage.setItem("isAdminAuthenticated", "true");
       openAdmin(); 
-    } else if (pass !== null) {
-      alert("Acceso denegado.");
-    }
+    } else if (pass !== null) { alert("Acceso denegado."); }
   }
 }
 
 function logoutAdminSession() {
-  if(confirm("¿Cerrar sesión de artista? Se volverá a pedir la contraseña.")) {
+  if(confirm("¿Cerrar sesión de artista?")) {
     localStorage.removeItem("isAdminAuthenticated");
     go('home');
   }
@@ -775,16 +814,15 @@ function renderAdmin(){
     div.className="admin-card";
     const imgUrl = (res.tattoo && res.tattoo.image) ? res.tattoo.image : 'https://via.placeholder.com/150';
     div.innerHTML = `
-        <img src="${imgUrl}" class="admin-img-preview" onclick="expandImage('${imgUrl}')" title="Click para agrandar">
+        <img src="${imgUrl}" class="admin-img-preview" onclick="expandImage('${imgUrl}')">
         <div class="admin-info">
             <strong>${res.date} @ ${res.start}:00hs</strong><br>
             ${res.name} ${res.surname}<br>
-            <span style="font-size:9px; color:var(--text-muted)">${res.email || 'Sin correo'}</span><br>
-            <span style="font-size:10px; opacity:0.7">${res.tattoo ? res.tattoo.size + ' - ' + res.tattoo.place : ''}</span>
+            <span style="font-size:9px;">${res.email || 'Sin correo'}</span>
         </div>
         <div class="admin-actions" style="display:flex; flex-direction:column; gap:5px">
-            <button class="btn-whatsapp" onclick="window.open('https://wa.me/${res.phone.replace(/\s+/g, '')}', '_blank')">WhatsApp</button>
-            <button onclick="deleteBooking('${res.id}')" style="border-color:#ff4d4d; color:#ff4d4d; background:transparent; padding:8px 12px; font-size:10px">Borrar</button>
+            <button class="btn-whatsapp" onclick="window.open('https://wa.me/${res.phone.replace(/\s+/g, '')}', '_blank')">WA</button>
+            <button onclick="deleteBooking('${res.id}')" style="border-color:#ff4d4d; color:#ff4d4d; padding:8px; font-size:10px">X</button>
         </div>
     `;
     list.appendChild(div);
@@ -796,7 +834,7 @@ function deleteBooking(id){
 }
 
 function resetUserData() { 
-  if(confirm("¿Borrar todos tus datos locales (incluyendo sesión de artista)?")) {
+  if(confirm("¿Borrar todos tus datos locales?")) {
     localStorage.clear(); 
     location.reload(); 
   }

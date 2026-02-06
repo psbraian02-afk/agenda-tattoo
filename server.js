@@ -3,7 +3,7 @@ const path = require("path");
 const fs = require("fs/promises");
 const fssync = require("fs"); 
 const { v4: uuidv4 } = require("uuid");
-const nodemailer = require("nodemailer"); // Nueva librería para correos
+const nodemailer = require("nodemailer");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,18 +11,28 @@ const PORT = process.env.PORT || 3000;
 const publicDir = path.join(__dirname, 'public');
 if (!fssync.existsSync(publicDir)) fssync.mkdirSync(publicDir);
 
-app.use(express.json({ limit: "5mb" }));
+// 1. AUMENTAMOS EL LÍMITE (Para que las fotos de referencia no bloqueen el proceso)
+app.use(express.json({ limit: "20mb" }));
 app.use(express.static(publicDir));
 
 /* =====================
-    CONFIGURACIÓN DE EMAIL (Reemplaza a WhatsApp)
+    CONFIGURACIÓN DE EMAIL
 ===================== */
 const transporter = nodemailer.createTransport({
     service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
         user: 'richardtattoo2026@gmail.com',
-        pass: 'ktmeidxvfkfvgudi' // RECUERDA: Aquí van las 16 letras de Google sin espacios
+        pass: 'ktmeidxvfkfvgudi' 
     }
+});
+
+// Verificación de conexión (Verás esto en los Logs de Render)
+transporter.verify((error, success) => {
+    if (error) console.log("❌ Error de configuración de mail:", error);
+    else console.log("✅ Servidor listo para enviar correos");
 });
 
 async function enviarNotificacionEmail(booking) {
@@ -66,7 +76,6 @@ async function readBookings() {
     }
 }
 
-// Mantengo tus rutas originales de obtener y borrar
 app.get("/api/bookings", async (req, res) => { 
     res.json(await readBookings()); 
 });
@@ -82,7 +91,6 @@ app.delete("/api/bookings/:id", async (req, res) => {
     }
 });
 
-// RUTA DE CREAR CITA (Ahora usa Email)
 app.post("/api/bookings", async (req, res) => {
     try {
         const bookings = await readBookings();
@@ -90,8 +98,8 @@ app.post("/api/bookings", async (req, res) => {
         bookings.push(newBooking);
         await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookings, null, 2));
 
-        // Enviar aviso por correo al tatuador
-        enviarNotificacionEmail(newBooking);
+        // 2. AGREGAMOS EL AWAIT (Fundamental para que no se salte el envío)
+        await enviarNotificacionEmail(newBooking);
 
         res.status(201).json(newBooking);
     } catch (err) {
@@ -100,9 +108,8 @@ app.post("/api/bookings", async (req, res) => {
     }
 });
 
-// Ruta vieja de QR como aviso
 app.get("/scan-qr", (req, res) => {
-    res.send(`<div style="text-align:center;padding:50px;font-family:sans-serif;"><h2>El sistema de WhatsApp se cambió por Email</h2><p>Ya no necesitas escanear nada. Recibirás avisos en richardtattoo2026@gmail.com</p><a href="/">Ir al Inicio</a></div>`);
+    res.send(`<div style="text-align:center;padding:50px;font-family:sans-serif;"><h2>Sistema por Email activo</h2><p>Recibirás avisos en richardtattoo2026@gmail.com</p><a href="/">Ir al Inicio</a></div>`);
 });
 
 app.get("*", (req, res) => {
@@ -110,4 +117,4 @@ app.get("*", (req, res) => {
     fssync.existsSync(indexPath) ? res.sendFile(indexPath) : res.status(404).send("index.html no encontrado");
 });
 
-app.listen(PORT, () => console.log(`🚀 Servidor en puerto ${PORT} - Notificaciones por Email listas`));
+app.listen(PORT, () => console.log(`🚀 Servidor en puerto ${PORT}`));

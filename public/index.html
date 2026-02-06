@@ -89,7 +89,6 @@ body {
   z-index: 2;
 }
 
-/* RESALTE DE SELECCIÓN */
 .card-selected {
   border-color: var(--gold) !important;
   background: #fdfaf3 !important;
@@ -273,10 +272,10 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 }
 
 .about-section {
+  display: none; /* Biografía oculta por solicitud del usuario sin eliminar código */
   padding: 60px 20px;
   max-width: 1100px;
   margin: 0 auto;
-  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 40px;
@@ -293,7 +292,6 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 .about-content h2 { font-size: 28px; margin-bottom: 20px; color: var(--text-dark); text-align: center; }
 .about-content p { line-height: 1.6; color: var(--text-muted); font-size: 14px; text-align: center; }
 
-/* ADMIN STYLES */
 .admin-card {
   background: #fff;
   margin-bottom: 10px;
@@ -391,7 +389,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
         <h2>Mis Datos</h2>
         <input id="nameInput" type="text" placeholder="NOMBRE" autocomplete="name">
         <input id="surnameInput" type="text" placeholder="APELLIDO" autocomplete="family-name">
-        <input id="emailInput" type="email" placeholder="CORREO" autocomplete="email">
+        <input id="emailInput" type="email" placeholder="CORREO (OPCIONAL)" autocomplete="email">
         <input id="phoneInput" type="tel" placeholder="TELÉFONO (8 NÚMEROS)" maxlength="8">
         <button onclick="login()" style="margin-top:20px; background: var(--gold); color: white;">Guardar y Continuar</button>
         <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px">Cancelar</button></div>
@@ -500,7 +498,6 @@ const DURATIONS={
     "muy-grande": 3.66, "manga-brazo": 4.5, "espalda-completa": 5 
 };
 
-// Variables globales para el estado de la reserva
 let selectedMonth = null, selectedDay = null, selectedTattoo = null, selectedHour = null, selectedZone = null;
 let bookings = [];
 
@@ -519,14 +516,15 @@ function updateProfileButton(){
 }
 
 function validateEmail(email) {
+    if(!email) return true; // El correo ahora es opcional
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.toLowerCase());
 }
 
 async function sendMassReminder() {
     const isActivated = document.getElementById("massReminderSwitch").checked;
     if(!isActivated) return alert("Primero debes activar la opción con el interruptor.");
-    const allEmails = [...new Set(bookings.map(b => b.email).filter(e => e && validateEmail(e)))];
-    if(allEmails.length === 0) return alert("No hay correos registrados para enviar.");
+    const allEmails = [...new Set(bookings.map(b => b.email).filter(e => e && e !== "" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.toLowerCase())))];
+    if(allEmails.length === 0) return alert("No hay correos válidos registrados.");
     if(!confirm(`¿Enviar mail de recordatorio a ${allEmails.length} clientes?`)) return;
     const btn = document.getElementById("btnMassMail");
     btn.disabled = true;
@@ -540,7 +538,7 @@ async function sendMassReminder() {
 }
 
 function go(id, isBack = false) { 
-  window.scrollTo(0,0); // Asegurar que se ve desde arriba
+  window.scrollTo(0,0);
   const screens = document.querySelectorAll(".screen");
   screens.forEach(s => {
       if(s.id === id) s.classList.add("active");
@@ -583,17 +581,17 @@ function resetBookingFlow() {
   preview.src = "";
   preview.style.display = "none";
   document.getElementById("confirmBtn").disabled = false;
-  document.getElementById("userTattooImage").value = ""; // Reset file input
+  document.getElementById("userTattooImage").value = "";
   refreshBookings();
   go('home');
 }
 
 function openMap(){ 
-    window.open("https://www.google.com/maps/search/?api=1&query=Cerro+Ejido+Calle+2+Artigas", "_blank"); 
+    window.open("https://www.google.com/maps/search/?api=1&query=Cerro+Ejido+Calle+2+Artigas+Uruguay", "_blank"); 
 }
 
 function tryGoAgenda(){ 
-    if(user.phone && user.name && validateEmail(user.email)) go("month");
+    if(user.phone && user.name) go("month");
     else go("login");
 }
 
@@ -602,8 +600,10 @@ function login(){
     const s = document.getElementById("surnameInput").value.trim();
     const e = document.getElementById("emailInput").value.trim();
     const p = document.getElementById("phoneInput").value.trim();
-    if(!n || !s || !validateEmail(e)) return alert("Datos inválidos.");
+    if(!n || !s) return alert("Nombre y Apellido son obligatorios.");
+    if(e && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.toLowerCase())) return alert("El correo no es válido.");
     if(p.length !== 8) return alert("Teléfono debe tener 8 dígitos.");
+    
     localStorage.setItem("userName", n);
     localStorage.setItem("userSurname", s);
     localStorage.setItem("whatsapp", p);
@@ -672,19 +672,12 @@ function renderTattooOptions(){
   const frag = document.createDocumentFragment();
   const btnNext = document.getElementById("nextTattooBtn");
   
-  // Resetear botón si no hay selección previa válida
-  if(!selectedTattoo) {
-     btnNext.disabled = true;
-  } else {
-     btnNext.disabled = false;
-  }
+  if(!selectedTattoo) btnNext.disabled = true;
+  else btnNext.disabled = false;
 
   TATTOO_SIZES.forEach(t=>{ 
     const card=document.createElement("div"); card.className="tattoo-card";
-    // Si ya estaba seleccionado (al volver atrás), marcarlo
-    if(selectedTattoo && selectedTattoo.id === t.id) {
-        card.classList.add("card-selected");
-    }
+    if(selectedTattoo && selectedTattoo.id === t.id) card.classList.add("card-selected");
     
     card.innerHTML=`<img src="${t.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div><strong>${t.label}</strong><p style="color:var(--gold); font-size:12px">${t.price}</p></div>`; 
     card.onclick=()=>{
@@ -713,19 +706,12 @@ function renderZones(){
   const frag = document.createDocumentFragment();
   const btnNext = document.getElementById("nextZoneBtn");
 
-  if(!selectedZone) {
-      btnNext.disabled = true;
-  } else {
-      btnNext.disabled = false;
-  }
+  if(!selectedZone) btnNext.disabled = true;
+  else btnNext.disabled = false;
 
   BODY_ZONES.forEach(z=>{ 
     const card=document.createElement("div"); card.className="zone-card"; 
-    
-    // Persistencia de selección al volver atrás
-    if(selectedZone && selectedZone.id === z.id) {
-        card.classList.add("card-selected");
-    }
+    if(selectedZone && selectedZone.id === z.id) card.classList.add("card-selected");
 
     card.innerHTML=`<img src="${z.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div>${z.label}</div>`; 
     card.onclick=()=>{
@@ -781,7 +767,6 @@ function selectHour(hour){ selectedHour=hour; go('imageUploadScreen'); }
 function updateSummary() {
   const info = document.getElementById("userTattooInfo");
   if(selectedTattoo && selectedHour) {
-    // Verificamos si la zona es manual o automática (full body)
     let zoneLabel = selectedZone ? selectedZone.label : "Cuerpo Completo";
     info.innerHTML = `${selectedTattoo.label} | ${zoneLabel} | ${selectedHour}:00hs`;
   }
@@ -816,7 +801,7 @@ async function confirmBooking(){
   const booking={ 
     date:`${nowUY().getFullYear()}-${selectedMonth+1}-${selectedDay}`, 
     start:selectedHour, end:selectedHour+DURATIONS[selectedTattoo.id], 
-    phone:user.phone, name: user.name, surname: user.surname, email: user.email,
+    phone:user.phone, name: user.name, surname: user.surname, email: user.email || "",
     tattoo:{ image: preview.src, size:selectedTattoo.label, place:zoneLabel } 
   };
   
@@ -826,11 +811,8 @@ async function confirmBooking(){
         headers:{'Content-Type':'application/json'}, 
         body:JSON.stringify(booking) 
     });
-    if(res.ok) {
-        go("done"); 
-    } else {
-        throw new Error("Error en servidor");
-    }
+    if(res.ok) go("done"); 
+    else throw new Error("Error en servidor");
   } catch(e) { 
     alert("Error de conexión. Intenta nuevamente."); 
     btn.disabled = false; btn.textContent = "Confirmar Reserva";

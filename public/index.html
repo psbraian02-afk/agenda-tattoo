@@ -231,19 +231,31 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
 
 .admin-card {
   background: rgba(255,255,255,0.03);
-  margin-bottom: 20px;
-  padding: 20px;
-  border-radius: 4px;
-  border-left: 2px solid var(--gold);
+  margin-bottom: 15px;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 3px solid var(--gold);
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  width: 100%;
+  gap: 15px;
 }
 
-.admin-details-box { display: flex; align-items: center; gap: 15px; }
-.admin-photo-thumb { width: 50px; height: 50px; object-fit: cover; border: 1px solid var(--gold); cursor: pointer; }
-.btn-wa-admin { background: #25d366; color: white; border: none; padding: 5px 10px; font-size: 10px; margin-top: 5px; cursor: pointer; border-radius: 3px; }
+.admin-info { flex: 1; font-size: 13px; }
+.admin-info strong { color: var(--gold); }
+
+.admin-img-preview {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border: 1px solid var(--gold);
+    cursor: zoom-in;
+    border-radius: 4px;
+}
+
+.admin-actions { display: flex; flex-direction: column; gap: 5px; }
+.admin-actions button { padding: 8px 12px; font-size: 10px; letter-spacing: 1px; }
+.btn-whatsapp { border-color: #25D366; color: #25D366; }
+.btn-whatsapp:hover { background: #25D366; color: white; }
 
 .nav { position: absolute; bottom: 30px; right: 40px; }
 .social { display: flex; gap: 25px; margin-top: 15px; }
@@ -254,7 +266,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
   display: none; align-items: center; justify-content: center; z-index: 10000;
   backdrop-filter: blur(10px);
 }
-#lightbox img { max-width: 85%; max-height: 85%; border: 1px solid var(--gold); cursor: zoom-out; }
+#lightbox img { max-width: 85%; max-height: 85%; border: 1px solid var(--gold); box-shadow: 0 0 50px rgba(0,0,0,0.5); }
 
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
 
@@ -339,7 +351,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
         <div style="text-align:center">
           <input type="file" id="userTattooImage" accept="image/*" style="display:none">
           <button onclick="document.getElementById('userTattooImage').click()" style="font-size:12px">Subir Referencia</button>
-          <img id="userTattooPreview" style="display:none; margin: 20px auto; width: 140px; border: 1px solid var(--gold); padding: 5px;" onclick="expandPhoto(this.src)">
+          <img id="userTattooPreview" style="display:none; margin: 20px auto; width: 140px; border: 1px solid var(--gold); padding: 5px;">
           <p id="userTattooInfo" style="font-size:12px; color: var(--gold); letter-spacing:1px; margin-bottom:20px"></p>
           <button id="confirmBtn" onclick="confirmBooking()">Confirmar Reserva</button>
         </div>
@@ -351,10 +363,10 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
         <p style="color:var(--text-secondary); text-align:center; font-size:14px; margin-bottom: 5px;">Tu cita ha sido agendada con éxito.</p>
         
         <div style="text-align:center; background: rgba(197, 160, 89, 0.1); padding: 15px; border-radius: 10px; border: 1px dashed var(--gold); margin-bottom: 15px;">
-           <p style="color:var(--gold); font-size:13px; margin:0 0 10px 0; font-weight:600;">TE ESPERAMOS EN:</p>
+           <p style="color:var(--gold); font-size:13px; margin:0 0 10px 0; font-weight:600;">UBICACIÓN:</p>
            <p style="font-size:14px; margin:0; color:#fff;">Richard Tattoo Studio<br>Artigas, Uruguay</p>
            <hr style="opacity:0.1; margin:15px 0">
-           <p style="font-size:12px; color:var(--gold-light); margin:0;">📍 <strong>Ubicación confirmada</strong></p>
+           <p style="font-size:12px; color:var(--gold-light); margin:0;">📧 <strong>Te avisaremos por Email</strong></p>
         </div>
 
         <button onclick="openMap()" style="background:var(--gold); color:#000; margin-bottom:10px">Ver en Google Maps</button>
@@ -410,13 +422,6 @@ function go(id){
   if(id === 'imageUploadScreen') updateSummary(); 
 }
 
-function expandPhoto(src) {
-  const lb = document.getElementById("lightbox");
-  const img = document.getElementById("lightboxImg");
-  img.src = src;
-  lb.style.display = "flex";
-}
-
 function resetBookingFlow() {
   selectedMonth = null; selectedDay = null; selectedTattoo = null; 
   selectedHour = null; selectedZone = null;
@@ -429,7 +434,7 @@ function resetBookingFlow() {
   go('home');
 }
 
-function openMap(){ window.open("https://maps.google.com", "_blank"); }
+function openMap(){ window.open("https://www.google.com/maps", "_blank"); }
 
 function tryGoAgenda(){ 
     if(userPhone && userName && userSurname) go("month");
@@ -485,18 +490,10 @@ const TATTOO_SIZES=[
   { id:"espalda-completa", label:"Espalda Completa", price:"$5500", img:"espalda-full.png" }
 ];
 
-// ZONAS AMPLIADAS
 const BODY_ZONES=[ 
-  { id:"cuello", label:"Cuello", img:"cuello.png" }, 
-  { id:"antebrazo", label:"Antebrazo", img:"antebrazo.png" },
-  { id:"brazo", label:"Brazo", img:"brazo.png" }, 
-  { id:"pecho", label:"Pecho", img:"pecho.png" },
-  { id:"espalda", label:"Espalda", img:"espalda.png" }, 
-  { id:"muslo", label:"Muslo", img:"muslo.png" },
-  { id:"costillas", label:"Costillas", img:"costillas.png" },
-  { id:"pantorrilla", label:"Pantorrilla", img:"pantorrilla.png" },
-  { id:"mano", label:"Mano / Muñeca", img:"mano.png" },
-  { id:"hombro", label:"Hombro", img:"hombro.png" }
+  { id:"cuello", label:"Cuello", img:"cuello.png" }, { id:"antebrazo", label:"Antebrazo", img:"antebrazo.png" },
+  { id:"brazo", label:"Brazo", img:"brazo.png" }, { id:"pecho", label:"Pecho", img:"pecho.png" },
+  { id:"espalda", label:"Espalda", img:"espalda.png" }, { id:"muslo", label:"Muslo", img:"muslo.png" }
 ];
 
 function renderTattooOptions(){ 
@@ -570,7 +567,11 @@ document.getElementById("userTattooImage").addEventListener("change",e=>{
   const file=e.target.files[0], preview=document.getElementById("userTattooPreview");
   if(file){ 
     const reader=new FileReader(); 
-    reader.onload=e2=>{ preview.src=e2.target.result; preview.style.display="block"; updateSummary(); }; 
+    reader.onload=e2=>{ 
+      preview.src=e2.target.result; 
+      preview.style.display="block"; 
+      updateSummary();
+    }; 
     reader.readAsDataURL(file); 
   }
 });
@@ -578,8 +579,14 @@ document.getElementById("userTattooImage").addEventListener("change",e=>{
 async function confirmBooking(){
   const preview = document.getElementById("userTattooPreview");
   const btn = document.getElementById("confirmBtn");
-  if(!preview.src || preview.style.display === "none") return alert("Por favor, sube una foto de referencia.");
-  btn.disabled = true; btn.textContent = "ENVIANDO...";
+
+  if(!preview.src || preview.style.display === "none") {
+      return alert("Por favor, sube una foto de referencia.");
+  }
+
+  btn.disabled = true;
+  btn.textContent = "ENVIANDO...";
+
   const duration=DURATIONS[selectedTattoo.id];
   const booking={ 
     date:`${year}-${selectedMonth+1}-${selectedDay}`, 
@@ -587,10 +594,19 @@ async function confirmBooking(){
     phone:userPhone, name: userName, surname: userSurname,
     tattoo:{ image: preview.src, size:selectedTattoo.label, place:selectedZone.label } 
   };
+
   try {
-    const res=await fetch(SERVER_URL,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(booking) });
-    if(res.ok) go("done"); else throw new Error();
-  } catch(e) { alert("Error al guardar."); btn.disabled = false; btn.textContent = "Confirmar Reserva"; }
+    const res=await fetch(SERVER_URL,{ 
+        method:'POST', 
+        headers:{'Content-Type':'application/json'}, 
+        body:JSON.stringify(booking) 
+    });
+    if(res.ok) { go("done"); } else { throw new Error(); }
+  } catch(e) { 
+    alert("Error al guardar."); 
+    btn.disabled = false;
+    btn.textContent = "Confirmar Reserva";
+  }
 }
 
 function promptAdmin(){ 
@@ -602,27 +618,46 @@ function openAdmin(){
   fetch(SERVER_URL).then(r=>r.json()).then(data=>{ bookings=data; renderAdmin(); go("admin"); });
 }
 
+function expandImage(src) {
+    const lb = document.getElementById("lightbox");
+    const lbImg = document.getElementById("lightboxImg");
+    lbImg.src = src;
+    lb.style.display = 'flex';
+}
+
 function renderAdmin(){
   const list=document.getElementById("adminList"); list.innerHTML="";
-  bookings.forEach(res=>{
-    const div=document.createElement("div"); div.className="admin-card";
-    const cleanPhone = res.phone.replace(/\D/g,'');
-    div.innerHTML=`
-      <div class="admin-details-box">
-        <img src="${res.tattoo.image}" class="admin-photo-thumb" onclick="expandPhoto(this.src)">
-        <div>
-          <strong style="color:var(--gold)">${res.date} @ ${res.start}:00</strong><br>
-          ${res.name} ${res.surname}<br>
-          <button class="btn-wa-admin" onclick="window.open('https://wa.me/${cleanPhone}')">WhatsApp</button>
+  
+  // Ordenar por fecha (más cercana primero)
+  const sorted = [...bookings].sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  sorted.forEach(res=>{
+    const div=document.createElement("div"); 
+    div.className="admin-card";
+    
+    // Si no tiene imagen guardada, usamos un placeholder
+    const imgUrl = (res.tattoo && res.tattoo.image) ? res.tattoo.image : 'https://via.placeholder.com/150';
+    
+    div.innerHTML = `
+        <img src="${imgUrl}" class="admin-img-preview" onclick="expandImage('${imgUrl}')" title="Click para agrandar">
+        <div class="admin-info">
+            <strong>${res.date} @ ${res.start}:00hs</strong><br>
+            ${res.name} ${res.surname}<br>
+            <span style="font-size:10px; opacity:0.7">${res.tattoo ? res.tattoo.size + ' - ' + res.tattoo.place : ''}</span>
         </div>
-      </div>
-      <button onclick="deleteBooking('${res.id}')" style="border-color:red; color:red; padding:5px 10px; font-size:10px">Eliminar</button>`;
+        <div class="admin-actions">
+            <button class="btn-whatsapp" onclick="window.open('https://wa.me/${res.phone.replace(/\s+/g, '')}', '_blank')">WhatsApp</button>
+            <button onclick="deleteBooking('${res.id}')" style="border-color:#ff4d4d; color:#ff4d4d; background:transparent">Borrar</button>
+        </div>
+    `;
     list.appendChild(div);
   });
 }
 
 function deleteBooking(id){
-    if(confirm("¿Borrar cita?")) fetch(`${SERVER_URL}/${id}`, {method:'DELETE'}).then(()=>openAdmin());
+    if(confirm("¿Borrar cita?")) {
+        fetch(`${SERVER_URL}/${id}`, {method:'DELETE'}).then(()=>openAdmin());
+    }
 }
 
 function resetUserData() { localStorage.clear(); location.reload(); }

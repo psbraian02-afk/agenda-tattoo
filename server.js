@@ -16,23 +16,25 @@ app.use(express.json({ limit: "20mb" }));
 app.use(express.static(publicDir));
 
 /* =====================
-    CONFIGURACIÓN DE EMAIL
+    CONFIGURACIÓN DE EMAIL (Ajustada para evitar Timeout en Render)
 ===================== */
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false, // false para puerto 587
     auth: {
         user: 'richardtattoo2026@gmail.com',
         pass: 'ktmeidxvfkfvgudi' 
+    },
+    tls: {
+        rejectUnauthorized: false // Evita bloqueos de certificados en la nube
     }
 });
 
 // Verificación de conexión (Verás esto en los Logs de Render)
 transporter.verify((error, success) => {
     if (error) console.log("❌ Error de configuración de mail:", error);
-    else console.log("✅ Servidor listo para enviar correos");
+    else console.log("✅ Servidor listo para enviar correos (Puerto 587)");
 });
 
 async function enviarNotificacionEmail(booking) {

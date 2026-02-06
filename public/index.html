@@ -277,7 +277,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
         
         <div class="social">
           <a class="social-btn" href="https://www.instagram.com/richardtattooartigas/" target="_blank"><img src="iconsinstagram.png"></a>
-          <a class="social-btn" href="https://wa.me/59892528388" target="_blank"><img src="iconswhatsapp.png"></a>
+          <a class="social-btn" href="https://wa.me/59891923107" target="_blank"><img src="iconswhatsapp.png"></a>
         </div>
         
         <div id="mapButton" onclick="openMap()" style="cursor:pointer; font-size: 11px; letter-spacing: 2px; color: var(--text-secondary); margin-top:20px; border-bottom: 1px solid var(--gold); padding-bottom: 5px;">
@@ -293,7 +293,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
         <h2>Identificación</h2>
         <input id="nameInput" type="text" placeholder="Tu Nombre">
         <input id="surnameInput" type="text" placeholder="Tu Apellido">
-        <input id="phoneInput" type="tel" placeholder="WhatsApp (+598 9x xxx xxx)">
+        <input id="phoneInput" type="tel" placeholder="Teléfono (+598 9x xxx xxx)">
         
         <button onclick="login()">Acceder</button>
         <div class="nav"><button onclick="go('home')" style="border:none; font-size:12px">Cerrar</button></div>
@@ -347,9 +347,9 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
         
         <div style="text-align:center; background: rgba(197, 160, 89, 0.1); padding: 15px; border-radius: 10px; border: 1px dashed var(--gold); margin-bottom: 15px;">
            <p style="color:var(--gold); font-size:13px; margin:0 0 10px 0; font-weight:600;">UBICACIÓN:</p>
-           <p style="font-size:14px; margin:0; color:#fff;">Av. Lecueder 123 (Esquina Calle Falsa)<br>Artigas, Uruguay</p>
+           <p style="font-size:14px; margin:0; color:#fff;">Richard Tattoo Studio<br>Artigas, Uruguay</p>
            <hr style="opacity:0.1; margin:15px 0">
-           <p style="font-size:12px; color:var(--gold-light); margin:0;">📸 <strong>Toma una captura de pantalla de esto</strong></p>
+           <p style="font-size:12px; color:var(--gold-light); margin:0;">📧 <strong>Revisa tu correo para confirmar</strong></p>
         </div>
 
         <button onclick="openMap()" style="background:var(--gold); color:#000; margin-bottom:10px">Ver en Google Maps</button>
@@ -359,12 +359,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); background: rgba(
       <div class="screen" id="admin">
         <h2>Agenda Privada</h2>
         
-        <div id="marketingStatus" style="background:rgba(197, 160, 89, 0.1); padding:10px; border-radius:5px; margin-bottom:10px; width:100%; text-align:center; display:none; border:1px solid var(--gold);">
-            <small id="marketingText" style="color:var(--gold); font-weight:600;">AUTO-MENSAJE ACTIVO (1 MIN)</small>
-        </div>
-
         <div style="display:flex; gap:10px; margin-bottom:20px;">
-            <button id="btnStartMarketing" onclick="toggleAutoMarketing()" style="font-size:10px; padding:10px;">Activar Auto-Mensaje</button>
             <button onclick="resetUserData()" style="font-size:10px; padding:10px; border-color: #ff4d4d; color: #ff4d4d;">Limpiar Sesión Usuarios</button>
         </div>
 
@@ -405,8 +400,6 @@ let userName = localStorage.getItem("userName");
 let userSurname = localStorage.getItem("userSurname");
 
 let notificationInterval;
-let marketingInterval;
-let isMarketingActive = false;
 
 function nowUY(){ return new Date(new Date().toLocaleString("en-US", {timeZone: "America/Montevideo"})); }
 
@@ -420,7 +413,7 @@ function go(id){
   }
 }
 
-function openMap(){ window.open("https://www.google.com/maps?q=Artigas,Uruguay","_blank"); }
+function openMap(){ window.open("https://maps.google.com/","_blank"); }
 
 function tryGoAgenda(){ 
     if(userPhone && userName && userSurname) {
@@ -606,7 +599,6 @@ async function confirmBooking(){
   } catch(e) { alert("Error al guardar la cita."); }
 }
 
-// ADMIN LOGIC
 function promptAdmin(){ 
   if (localStorage.getItem("adminAuth") === "true") {
       openAdmin();
@@ -638,8 +630,7 @@ function openAdmin(){
         notificationInterval = setInterval(checkForNewBookings, 30000);
     })
     .catch(e => {
-        alert("Error al conectar con el servidor para cargar las citas.");
-        console.error(e);
+        alert("Error al conectar con el servidor.");
     }); 
 }
 
@@ -659,43 +650,11 @@ async function checkForNewBookings() {
 
 function showSystemNotification(booking) {
   if (Notification.permission === "granted") {
-    new Notification("NUEVA CITA - Richard Tattoo", {
-      body: `Cliente: ${booking.name || ''} ${booking.surname || ''}\nFecha: ${booking.date} a las ${booking.start}:00hs`,
+    new Notification("NUEVA CITA", {
+      body: `Cliente: ${booking.name || ''} ${booking.surname || ''}\nFecha: ${booking.date}`,
       icon: "logo.png"
     });
   }
-}
-
-function toggleAutoMarketing() {
-    const btn = document.getElementById("btnStartMarketing");
-    const statusDiv = document.getElementById("marketingStatus");
-
-    if (!isMarketingActive) {
-        isMarketingActive = true;
-        btn.textContent = "Detener Auto-Mensaje";
-        btn.style.backgroundColor = "red";
-        statusDiv.style.display = "block";
-        sendMarketingMessages();
-        marketingInterval = setInterval(sendMarketingMessages, 60000);
-    } else {
-        isMarketingActive = false;
-        btn.textContent = "Activar Auto-Mensaje";
-        btn.style.backgroundColor = "transparent";
-        statusDiv.style.display = "none";
-        clearInterval(marketingInterval);
-    }
-}
-
-function sendMarketingMessages() {
-    const uniquePhones = [...new Set(bookings.map(b => b.phone.replace(/\s+/g, '')))];
-    const message = encodeURIComponent("hola queres hacerte un tatuaje??");
-    uniquePhones.forEach((phone, index) => {
-        setTimeout(() => {
-            if (isMarketingActive) {
-                window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
-            }
-        }, index * 2000); 
-    });
 }
 
 function zoomImg(src) { const lb=document.getElementById('lightbox'); const img=document.getElementById('lightboxImg'); img.src=src; lb.style.display='flex'; }
@@ -708,7 +667,6 @@ function renderAdmin(){
   }
   bookings.sort((a,b)=> new Date(a.date) - new Date(b.date)); 
   bookings.forEach((res,idx)=>{
-    const cleanPhone = res.phone.replace(/\s+/g, '');
     const clientName = res.name ? `${res.name} ${res.surname}` : "Usuario";
     
     const div=document.createElement("div"); div.className="admin-card";
@@ -721,7 +679,6 @@ function renderAdmin(){
         </div>
       </div>
       <div style="text-align:right">
-        <a href="https://wa.me/${cleanPhone}" target="_blank" style="color:var(--gold); text-decoration:none; font-size:11px; border:1px solid var(--gold); padding:2px 5px; border-radius:3px;">WHATSAPP</a><br>
         <button onclick="deleteBooking('${res.id}')" style="padding:2px 5px; font-size:9px; margin-top:5px; border-color:rgba(255,0,0,0.5); color:red">Borrar</button>
       </div>`;
     list.appendChild(div);
@@ -738,7 +695,7 @@ function deleteBooking(id){
 }
 
 function resetUserData() {
-    if(confirm("¿Deseas obligar a que el próximo usuario ingrese sus datos de nuevo?")) {
+    if(confirm("¿Limpiar sesión de usuarios?")) {
         localStorage.removeItem("userName");
         localStorage.removeItem("userSurname");
         localStorage.removeItem("whatsapp");
@@ -748,11 +705,10 @@ function resetUserData() {
     }
 }
 
-// Carga inicial de datos
 fetch(SERVER_URL).then(r=>r.json()).then(data=> {
   bookings=data;
   lastBookingCount = data.length;
-}).catch(e => console.log("Cargando servidor..."));
+}).catch(e => console.log("Servidor cargando..."));
 </script>
 </body>
 </html>

@@ -3,11 +3,7 @@ const path = require("path");
 const fs = require("fs/promises");
 const fssync = require("fs"); 
 const { v4: uuidv4 } = require("uuid");
-
-// --- LIBRERÍAS ---
-const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrImage = require('qr-image');
-const cron = require('node-cron');
+const nodemailer = require("nodemailer"); // Nueva librería para correos
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,48 +15,41 @@ app.use(express.json({ limit: "5mb" }));
 app.use(express.static(publicDir));
 
 /* =====================
-    CONFIGURACIÓN WHATSAPP
+    CONFIGURACIÓN DE EMAIL (Reemplaza a WhatsApp)
 ===================== */
-const client = new Client({
-    authStrategy: new LocalAuth(),
-    puppeteer: { 
-        headless: true,
-        args: [
-            '--no-sandbox', 
-            '--disable-setuid-sandbox', 
-            '--disable-dev-shm-usage',
-            '--no-zygote'
-        ] 
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'richardtattoo2026@gmail.com',
+        pass: 'ktmeidxvfkfvgudi' // RECUERDA: Aquí van las 16 letras de Google sin espacios
     }
 });
 
-let isReady = false;
+async function enviarNotificacionEmail(booking) {
+    const mailOptions = {
+        from: '"Agenda Richard Tattoo" <richardtattoo2026@gmail.com>',
+        to: 'richardtattoo2026@gmail.com', 
+        subject: `🚀 NUEVO TURNO: ${booking.name} ${booking.surname}`,
+        html: `
+            <div style="font-family: sans-serif; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
+                <h2 style="color: #333;">🔥 Tienes una nueva reserva</h2>
+                <p><strong>Cliente:</strong> ${booking.name} ${booking.surname}</p>
+                <p><strong>Teléfono:</strong> ${booking.phone}</p>
+                <p><strong>Fecha:</strong> ${booking.date}</p>
+                <p><strong>Hora:</strong> ${booking.start}:00hs</p>
+                <hr>
+                <p style="font-size: 12px; color: #666;">Notificación enviada automáticamente desde tu sistema de agenda.</p>
+            </div>
+        `
+    };
 
-client.on('qr', (qr) => {
-    isReady = false;
-    const img = qrImage.image(qr, { type: 'png', margin: 2 });
-    img.pipe(fssync.createWriteStream(path.join(publicDir, 'qr.png')));
-    console.log('⚠️ QR generado. Escanéalo en /scan-qr');
-});
-
-client.on('ready', () => {
-    console.log('✅ BOT LISTO INTERNAMENTE');
-    const qrPath = path.join(publicDir, 'qr.png');
-    if (fssync.existsSync(qrPath)) fssync.unlinkSync(qrPath);
-    
-    // Esperamos 5 segundos para asegurar que la conexión de red sea estable
-    setTimeout(async () => {
-        try {
-            await client.sendMessage("59891923107@c.us", "🔥 *BOT CONECTADO*\nRichard, si lees esto, el sistema de notificaciones está funcionando.");
-            isReady = true;
-            console.log("✅ Mensaje de prueba enviado con éxito");
-        } catch (err) {
-            console.error("❌ Error al enviar mensaje inicial:", err.message);
-        }
-    }, 5000);
-});
-
-client.initialize().catch(err => console.error("Error inicial:", err));
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log("✅ Notificación de correo enviada");
+    } catch (error) {
+        console.error("❌ Error enviando email:", error);
+    }
+}
 
 /* =====================
     API Y RUTAS
@@ -77,15 +66,23 @@ async function readBookings() {
     }
 }
 
-app.get("/scan-qr", (req, res) => {
-    const qrPath = path.join(publicDir, 'qr.png');
-    if (fssync.existsSync(qrPath)) {
-        res.send(`<div style="text-align:center;padding:50px;font-family:sans-serif;"><h1>Escanea el QR</h1><img src="/qr.png?t=${Date.now()}" width="300"><script>setInterval(()=>location.reload(),5000)</script></div>`);
-    } else {
-        res.send(`<div style="text-align:center;padding:50px;font-family:sans-serif;"><h2>${isReady ? '✅ Conectado' : '⏳ Iniciando conexión...'}</h2><p>Si el cel dice "Sesión activa" pero aquí no dice "Conectado", espera 10 segundos.</p><a href="/">Ir al Inicio</a></div>`);
+// Mantengo tus rutas originales de obtener y borrar
+app.get("/api/bookings", async (req, res) => { 
+    res.json(await readBookings()); 
+});
+
+app.delete("/api/bookings/:id", async (req, res) => {
+    try {
+        let b = await readBookings();
+        b = b.filter(x => x.id !== req.params.id);
+        await fs.writeFile(BOOKINGS_FILE, JSON.stringify(b, null, 2));
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: "Error al borrar" });
     }
 });
 
+// RUTA DE CREAR CITA (Ahora usa Email)
 app.post("/api/bookings", async (req, res) => {
     try {
         const bookings = await readBookings();
@@ -93,15 +90,8 @@ app.post("/api/bookings", async (req, res) => {
         bookings.push(newBooking);
         await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookings, null, 2));
 
-        const miNumero = "59891923107@c.us";
-        const aviso = `🚀 *NUEVO TURNO*\n\n📱 Cliente: ${newBooking.name} ${newBooking.surname}\n📅 Fecha: ${newBooking.date}\n⏰ Hora: ${newBooking.start}:00hs`;
-
-        if (isReady) {
-            await client.sendMessage(miNumero, aviso);
-            console.log("✅ Notificación enviada");
-        } else {
-            console.log("⚠️ Intento de envío fallido: Bot no estaba Ready");
-        }
+        // Enviar aviso por correo al tatuador
+        enviarNotificacionEmail(newBooking);
 
         res.status(201).json(newBooking);
     } catch (err) {
@@ -110,13 +100,9 @@ app.post("/api/bookings", async (req, res) => {
     }
 });
 
-// Mantener el resto de tus rutas (get bookings, delete, etc.) abajo igual que antes...
-app.get("/api/bookings", async (req, res) => { res.json(await readBookings()); });
-app.delete("/api/bookings/:id", async (req, res) => {
-    let b = await readBookings();
-    b = b.filter(x => x.id !== req.params.id);
-    await fs.writeFile(BOOKINGS_FILE, JSON.stringify(b, null, 2));
-    res.json({ success: true });
+// Ruta vieja de QR como aviso
+app.get("/scan-qr", (req, res) => {
+    res.send(`<div style="text-align:center;padding:50px;font-family:sans-serif;"><h2>El sistema de WhatsApp se cambió por Email</h2><p>Ya no necesitas escanear nada. Recibirás avisos en richardtattoo2026@gmail.com</p><a href="/">Ir al Inicio</a></div>`);
 });
 
 app.get("*", (req, res) => {
@@ -124,4 +110,4 @@ app.get("*", (req, res) => {
     fssync.existsSync(indexPath) ? res.sendFile(indexPath) : res.status(404).send("index.html no encontrado");
 });
 
-app.listen(PORT, () => console.log(`🚀 Puerto ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Servidor en puerto ${PORT} - Notificaciones por Email listas`));

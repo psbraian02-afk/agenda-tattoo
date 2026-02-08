@@ -13,10 +13,11 @@
   --gold: #b38e44; 
   --gold-light: #d4af37;
   --bg-white: #ffffff;
-  --bg-soft: #faf9f6; 
-  --text-dark: #1a1a1a;
-  --text-muted: #888888;
-  --border: rgba(179, 142, 68, 0.2);
+  --bg-soft: #e5e5e5; /* Gris claro */
+  --text-dark: #2c2c2c; /* Gris muy oscuro */
+  --text-muted: #707070; /* Gris medio */
+  --border: rgba(179, 142, 68, 0.3); /* Dorado con transparencia */
+  --grey-border: #d1d1d1; /* Gris para bordes neutros */
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -63,9 +64,9 @@ body {
   height: 90vh; 
   min-height: 600px;
   background: var(--bg-white);
-  border: 1px solid var(--border);
+  border: 1px solid var(--grey-border);
   border-radius: 15px; 
-  box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.15);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -99,7 +100,7 @@ body {
 
 .card-selected {
   border-color: var(--gold) !important;
-  background: #fdfaf3 !important;
+  background: #f8f8f8 !important; /* Gris ultra claro */
   box-shadow: 0 5px 15px rgba(179, 142, 68, 0.2) !important;
 }
 .card-selected img {
@@ -200,15 +201,15 @@ button:hover:not(:disabled) {
 button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-  border-color: #ddd;
-  color: #aaa;
-  background: #f9f9f9;
+  border-color: #ccc;
+  color: #999;
+  background: #f0f0f0;
 }
 
 input {
   background: transparent;
   border: none;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--grey-border);
   padding: 15px;
   color: var(--text-dark);
   width: 100%;
@@ -236,7 +237,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
   -webkit-overflow-scrolling: touch;
 }
 
-#days button { padding: 10px 0; font-size: 12px; border-color: #eee; color: #666; border-radius: 5px;}
+#days button { padding: 10px 0; font-size: 12px; border-color: var(--grey-border); color: var(--text-muted); border-radius: 5px;}
 #months { grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 240px; margin: 0 auto; }
 
 #hoursGrid { 
@@ -262,7 +263,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 
 .tattoo-card, .zone-card {
   background: #fff;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--grey-border);
   border-radius: 10px;
   padding: 10px;
   transition: all 0.3s ease;
@@ -304,7 +305,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
   background: #fff;
   margin-bottom: 10px;
   padding: 12px;
-  border: 1px solid #eee;
+  border: 1px solid var(--grey-border);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -319,7 +320,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 .admin-info strong { color: var(--gold); font-family: 'Cinzel', serif; }
 
 .mass-mail-panel {
-    background: #fdfaf3;
+    background: #f4f4f4; /* Gris claro */
     border: 1px solid var(--gold);
     padding: 15px;
     margin-bottom: 20px;
@@ -400,19 +401,19 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
         <input id="emailInput" type="email" placeholder="CORREO (OPCIONAL)" autocomplete="email">
         <input id="phoneInput" type="tel" placeholder="TELÉFONO (8 NÚMEROS)" maxlength="8">
         <button onclick="login()" style="margin-top:20px; background: var(--gold); color: white;">Guardar y Continuar</button>
-        <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px">Cancelar</button></div>
+        <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px; color: var(--text-muted)">Cancelar</button></div>
       </div>
 
       <div class="screen" id="month">
         <h2>Calendario</h2>
         <div class="grid" id="months"></div>
-        <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px">Inicio</button></div>
+        <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px; color: var(--text-muted)">Inicio</button></div>
       </div>
 
       <div class="screen" id="day">
         <h2>Seleccionar Día</h2>
         <div class="grid" id="days"></div>
-        <div class="nav"><button onclick="go('month')" style="border:none; font-size:11px">Atrás</button></div>
+        <div class="nav"><button onclick="go('month')" style="border:none; font-size:11px; color: var(--text-muted)">Atrás</button></div>
       </div>
 
       <div class="screen" id="tattooDetails">
@@ -420,7 +421,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
         <div class="tattoo-options" id="tattooOptions"></div>
         <div class="nav">
           <button id="nextTattooBtn" disabled onclick="confirmTattooSelection()" style="background: var(--gold); color: white;">Siguiente</button>
-          <button onclick="go('day')" style="border:none; font-size:11px">Atrás</button>
+          <button onclick="go('day')" style="border:none; font-size:11px; color: var(--text-muted)">Atrás</button>
         </div>
       </div>
 
@@ -429,14 +430,14 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
         <div class="body-zones" id="zoneOptions"></div>
         <div class="nav">
           <button id="nextZoneBtn" disabled onclick="confirmZoneSelection()" style="background: var(--gold); color: white;">Siguiente</button>
-          <button onclick="go('tattooDetails')" style="border:none; font-size:11px">Atrás</button>
+          <button onclick="go('tattooDetails')" style="border:none; font-size:11px; color: var(--text-muted)">Atrás</button>
         </div>
       </div>
 
       <div class="screen" id="hourSelection">
         <h2>Horario Disponible</h2>
         <div id="hoursGrid"></div>
-        <div class="nav"><button onclick="goBackFromHours()" style="border:none; font-size:11px">Atrás</button></div>
+        <div class="nav"><button onclick="goBackFromHours()" style="border:none; font-size:11px; color: var(--text-muted)">Atrás</button></div>
       </div>
 
       <div class="screen" id="imageUploadScreen">
@@ -448,18 +449,18 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
           <p id="userTattooInfo" style="font-size:11px; color: var(--gold); letter-spacing:1px; margin-bottom:20px"></p>
           <button id="confirmBtn" onclick="confirmBooking()" style="background: var(--gold); color: white;">Confirmar Reserva</button>
         </div>
-        <div class="nav"><button onclick="go('hourSelection')" style="border:none; font-size:11px">Atrás</button></div>
+        <div class="nav"><button onclick="go('hourSelection')" style="border:none; font-size:11px; color: var(--text-muted)">Atrás</button></div>
       </div>
 
       <div class="screen" id="done">
         <h1 class="brand" style="font-size:30px">Confirmado</h1>
         <p style="color:var(--text-muted); text-align:center; font-size:13px;">Su cita ha sido registrada con éxito.</p>
-        <div style="text-align:center; border-top: 1px solid #eee; border-bottom: 1px solid #eee; padding: 20px; margin: 15px 0; width: 100%;">
+        <div style="text-align:center; border-top: 1px solid var(--grey-border); border-bottom: 1px solid var(--grey-border); padding: 20px; margin: 15px 0; width: 100%;">
            <p style="color:var(--gold); font-size:11px; margin-bottom:10px; letter-spacing:3px;">DIRECCIÓN</p>
            <p style="font-size:14px; margin:0; font-weight: 300;">Cerro Ejido, Calle 2 N°140<br>Artigas, Uruguay</p>
         </div>
         <button onclick="openMap()">Ver Ubicación</button>
-        <button onclick="resetBookingFlow()" style="border:none; opacity:0.5; font-size:10px">Finalizar</button>
+        <button onclick="resetBookingFlow()" style="border:none; opacity:0.5; font-size:10px; color: var(--text-muted)">Finalizar</button>
       </div>
 
       <div class="screen" id="admin">
@@ -476,11 +477,11 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
         </div>
 
         <div style="display:flex; gap:10px; margin-bottom:10px;">
-             <button onclick="resetUserData()" style="font-size:9px; padding:10px; border-color:#eee; color:#999">Reset Usuarios</button>
+             <button onclick="resetUserData()" style="font-size:9px; padding:10px; border-color:var(--grey-border); color:var(--text-muted)">Reset Usuarios</button>
              <button onclick="logoutAdminSession()" style="font-size:9px; padding:10px; border-color:#ffcccc; color:#ff4d4d">Cerrar Sesión Artista</button>
         </div>
         <div class="admin-list" id="adminList" style="width:100%; overflow-y:auto; flex:1"></div>
-        <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px">Cerrar</button></div>
+        <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px; color: var(--text-muted)">Cerrar</button></div>
       </div>
 
     </div>
@@ -595,7 +596,6 @@ function resetBookingFlow() {
 }
 
 function openMap() { 
-    // Coordenadas: 30°25'35.6"S 56°27'57.8"W
     const url = "https://www.google.com/maps/search/?api=1&query=-30.426556,-56.466056";
     window.open(url, "_blank"); 
 }
@@ -651,7 +651,6 @@ function renderDays(){
   daysEl.appendChild(frag);
 }
 
-// Precios eliminados de los datos de los tatuajes
 const TATTOO_SIZES=[ 
   { id:"mini", label:"Mini (5cm)", price:"", img:"muy-pequeño.png" }, 
   { id:"small", label:"Pequeño (15cm)", price:"", img:"pequeño.png" }, 

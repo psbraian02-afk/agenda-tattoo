@@ -641,14 +641,14 @@ function renderDays(){
   daysEl.appendChild(frag);
 }
 
-const TATTOO_SIZES = [
-  { id: "mini", label: "Mini (5cm)", img: "muy-pequeño.png" },
-  { id: "small", label: "Pequeño (15cm)", img: "pequeño.png" },
-  { id: "medium", label: "Mediano (25cm)", img: "mediano.png" },
-  { id: "large", label: "Grande (35cm)", img: "grande.png" },
-  { id: "muy-grande", label: "Media Manga", img: "muy-grande.png" },
-  { id: "manga-brazo", label: "Manga Completa", img: "manga.png" },
-  { id: "espalda-completa", label: "Espalda Completa", img: "espalda-full.png" }
+const TATTOO_SIZES=[ 
+  { id:"mini", label:"Mini (5cm)", price:"$500", img:"muy-pequeño.png" }, 
+  { id:"small", label:"Pequeño (15cm)", price:"$800", img:"pequeño.png" }, 
+  { id:"medium", label:"Mediano (25cm)", price:"$1400", img:"mediano.png" }, 
+  { id:"large", label:"Grande (35cm)", price:"$2500", img:"grande.png" }, 
+  { id:"muy-grande", label:"Media Manga", price:"$4000", img:"muy-grande.png" },
+  { id:"manga-brazo", label:"Manga Completa", price:"$4500", img:"manga.png" },
+  { id:"espalda-completa", label:"Espalda Completa", price:"$5500", img:"espalda-full.png" }
 ];
 
 const BODY_ZONES=[ 
@@ -679,7 +679,7 @@ function renderTattooOptions(){
     const card=document.createElement("div"); card.className="tattoo-card";
     if(selectedTattoo && selectedTattoo.id === t.id) card.classList.add("card-selected");
     
-    card.innerHTML=`<img src="${t.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div><strong>${t.label}</strong><p style="color:var(--gold); font-size:12px">${t.price}</p></div>`; 
+    card.innerHTML=`<img src="${t.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div><strong>${t.label}</strong></div>`; 
     card.onclick=()=>{
       document.querySelectorAll("#tattooOptions .tattoo-card").forEach(c => c.classList.remove("card-selected"));
       card.classList.add("card-selected");

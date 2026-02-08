@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Richard Tattoo</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { border-bottom: 2px solid #b38e44; color: #333; padding-bottom: 10px; }
+        .booking-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 5px; position: relative; }
+        .booking-card h3 { margin: 0 0 5px 0; color: #b38e44; }
+        .btn-delete { position: absolute; top: 15px; right: 15px; background: #ff4444; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; }
+        .info { font-size: 0.9em; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Agenda de Turnos</h1>
+        <div id="lista-reservas">Cargando citas...</div>
+    </div>
+
+    <script>
+        async function cargarReservas() {
+            const res = await fetch('/api/bookings');
+            const bookings = await res.json();
+            const contenedor = document.getElementById('lista-reservas');
+            
+            if (bookings.length === 0) {
+                contenedor.innerHTML = "<p>No hay turnos agendados.</p>";
+                return;
+            }
+
+            contenedor.innerHTML = bookings.map(b => `
+                <div class="booking-card">
+                    <h3>${b.name} ${b.surname}</h3>
+                    <p class="info">
+                        <strong>Fecha:</strong> ${b.date} | <strong>Hora:</strong> ${b.start}:00hs<br>
+                        <strong>WhatsApp:</strong> ${b.phone}<br>
+                        <strong>Tatuaje:</strong> ${b.tattoo?.size || 'N/A'} en ${b.tattoo?.place || 'N/A'}
+                    </p>
+                    <button class="btn-delete" onclick="eliminarCita('${b.id}')">Eliminar</button>
+                </div>
+            `).join('');
+        }
+
+        async function eliminarCita(id) {
+            if (confirm('¿Estás seguro de que quieres eliminar este turno?')) {
+                await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
+                cargarReservas();
+            }
+        }
+
+        cargarReservas();
+    </script>
+</body>
+</html>

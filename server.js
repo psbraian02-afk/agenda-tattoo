@@ -3,68 +3,39 @@ const path = require("path");
 const fs = require("fs/promises");
 const fssync = require("fs");
 const { v4: uuidv4 } = require("uuid");
-const compression = require("compression");
-const cors = require("cors"); // Importante para Railway
+const compression = require("compression"); // Nueva dependencia para velocidad
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// En Railway, __dirname suele ser /app.
+const BOOKINGS_FILE = path.join(__dirname, "bookings.json");
 const publicDir = path.join(__dirname, 'public');
 
-// IMPORTANTE:
-// En Railway, si reinicias el servidor, el archivo bookings.json se borrará 
-// porque el sistema de archivos es "efímero". 
-// El código funcionará, pero ten en cuenta que los datos se reinician con cada "Deploy".
-const BOOKINGS_FILE = path.join(__dirname, "bookings.json");
-
-// Variable en memoria
+// Variable en memoria para evitar lecturas constantes de disco
 let bookingsCache = [];
 
 // Middleware
-app.use(cors()); // Habilita conexiones externas seguras
-app.use(compression()); 
-app.use(express.json({ limit: "10mb" })); 
-app.use(express.static(publicDir, { maxAge: '1d' })); 
+app.use(compression()); // Comprime las respuestas (Gzip)
+app.use(express.json({ limit: "10mb" })); // Bajamos un poco el límite por seguridad
+app.use(express.static(publicDir, { maxAge: '1d' })); // Cacheamos estáticos por 1 día
 
 // Inicialización: Cargar datos al arrancar
 async function init() {
-    // Asegurar que la carpeta public existe (sin romper si ya existe)
-    if (!fssync.existsSync(publicDir)) {
-        try {
-            fssync.mkdirSync(publicDir, { recursive: true });
-        } catch (e) {
-            console.log("Nota: Carpeta public ya existía o no se pudo crear.");
-        }
-    }
-
-    // Intentar leer la base de datos local
+    if (!fssync.existsSync(publicDir)) fssync.mkdirSync(publicDir);
     try {
         const data = await fs.readFile(BOOKINGS_FILE, "utf-8");
         bookingsCache = JSON.parse(data);
-        console.log(`✅ Base de datos cargada: ${bookingsCache.length} reservas.`);
-    } catch (error) {
-        // Si no existe el archivo, creamos uno vacío en memoria y disco
-        console.log("ℹ️ No se encontró bookings.json, creando uno nuevo...");
+    } catch {
+        await fs.writeFile(BOOKINGS_FILE, "[]");
         bookingsCache = [];
-        try {
-            await fs.writeFile(BOOKINGS_FILE, "[]");
-        } catch (writeErr) {
-            console.error("⚠️ No se pudo escribir el archivo inicial (posiblemente falta de permisos de escritura en disco efímero).");
-        }
     }
 }
-
-// Ejecutamos la inicialización
 init();
 
 /* =====================
     CONFIGURACIÓN DE NOTIFICACIÓN
 ===================== */
 async function enviarNotificacionFormspree(booking) {
-    // Asegúrate de que este ID de formspree sea el correcto
     const FORMSPREE_URL = "https://formspree.io/f/xzdapoze";
-    
     const datos = {
         _subject: `🚀 NUEVO TURNO: ${booking.name} ${booking.surname}`,
         cliente: `${booking.name} ${booking.surname}`,
@@ -73,24 +44,17 @@ async function enviarNotificacionFormspree(booking) {
         hora: `${booking.start}:00hs`,
         tamaño: booking.tattoo?.size || 'N/A',
         zona: booking.tattoo?.place || 'N/A',
-        imagen_referencia: booking.tattoo?.image ? "Adjunta en base64 (muy larga)" : "Sin imagen"
     };
 
     try {
-        // Fetch nativo (Node 18+)
-        const response = await fetch(FORMSPREE_URL, {
+        // Usamos fetch nativo (Node 18+) o una sola importación
+        await fetch(FORMSPREE_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify(datos)
         });
-        
-        if (response.ok) {
-            console.log("📧 Notificación enviada a Formspree exitosamente.");
-        } else {
-            console.error("❌ Formspree devolvió error:", response.status);
-        }
     } catch (error) {
-        console.error("❌ Error enviando email:", error.message);
+        console.error("❌ Error en notificación (Background):", error.message);
     }
 }
 
@@ -98,27 +62,23 @@ async function enviarNotificacionFormspree(booking) {
     API Y RUTAS
 ===================== */
 
-// GET
+// GET: Súper rápido porque responde desde la RAM
 app.get("/api/bookings", (req, res) => {
     res.json(bookingsCache);
 });
 
-// DELETE
+// DELETE: Filtra en memoria y guarda en disco sin bloquear
 app.delete("/api/bookings/:id", async (req, res) => {
     try {
         bookingsCache = bookingsCache.filter(x => x.id !== req.params.id);
-        // Intentamos guardar en disco, si falla no detenemos la respuesta
-        try {
-            await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookingsCache, null, 2));
-        } catch (e) { console.error("Error guardando en disco (Delete)", e.message); }
-        
+        await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookingsCache, null, 2));
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: "Error al borrar" });
     }
 });
 
-// POST
+// POST: Optimizado para respuesta inmediata
 app.post("/api/bookings", async (req, res) => {
     try {
         const newBooking = { 
@@ -129,12 +89,13 @@ app.post("/api/bookings", async (req, res) => {
         
         bookingsCache.push(newBooking);
         
-        // Guardado asíncrono en disco
-        fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookingsCache, null, 2)).catch(err => console.error("Error escritura disco:", err.message));
+        // Guardado asíncrono (no esperamos a que termine para responder)
+        fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookingsCache, null, 2));
 
-        // Notificación
+        // Notificación en segundo plano (Background task)
         enviarNotificacionFormspree(newBooking);
 
+        // Respondemos de inmediato al cliente
         res.status(201).json(newBooking);
     } catch (err) {
         console.error("Error en el POST:", err);
@@ -143,21 +104,16 @@ app.post("/api/bookings", async (req, res) => {
 });
 
 app.get("/scan-qr", (req, res) => {
-    // Como eliminaste la lógica de Whatsapp en este archivo y usas Formspree, 
-    // este mensaje es correcto.
-    res.send(`<div style="text-align:center;padding:50px;font-family:sans-serif;"><h2>Sistema de Notificación (Email) Activo</h2><p>Las reservas llegan a tu correo vía Formspree.</p><a href="/">Ir al Inicio</a></div>`);
+    res.send(`<div style="text-align:center;padding:50px;font-family:sans-serif;"><h2>Sistema de Notificación Activo</h2><p>Recibirás los avisos en tu email.</p><a href="/">Ir al Inicio</a></div>`);
 });
 
-// SPA Fallback
+// Manejo de rutas SPA (Single Page Application) mejorado
 app.get("*", (req, res) => {
-    const indexPath = path.join(publicDir, "index.html");
-    if (fssync.existsSync(indexPath)) {
-        res.sendFile(indexPath);
-    } else {
-        res.status(404).send("Error: No se encuentra index.html en la carpeta public. Asegúrate de subirlo.");
-    }
+    res.sendFile(path.join(publicDir, "index.html"), (err) => {
+        if (err) res.status(404).send("Archivo no encontrado");
+    });
 });
 
 app.listen(PORT, () => {
-    console.log(`🚀 Servidor listo en puerto ${PORT}`);
+    console.log(`🚀 Servidor optimizado en puerto ${PORT}`);
 });

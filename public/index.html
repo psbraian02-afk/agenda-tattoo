@@ -13,11 +13,10 @@
   --gold: #b38e44; 
   --gold-light: #d4af37;
   --bg-white: #ffffff;
-  --bg-soft: #e5e5e5; /* Gris claro */
-  --text-dark: #2c2c2c; /* Gris muy oscuro */
-  --text-muted: #707070; /* Gris medio */
-  --border: rgba(179, 142, 68, 0.3); /* Dorado con transparencia */
-  --grey-border: #d1d1d1; /* Gris para bordes neutros */
+  --bg-soft: #faf9f6; 
+  --text-dark: #1a1a1a;
+  --text-muted: #888888;
+  --border: rgba(179, 142, 68, 0.2);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -34,7 +33,50 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Ocultar precios en el menú de selección */
+/* --- BARRA DE NAVEGACIÓN STICKY --- */
+.sticky-nav {
+  position: sticky;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  z-index: 1000;
+  display: none; 
+  justify-content: space-around;
+  padding: 10px 0;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.sticky-nav a {
+  text-decoration: none;
+  color: var(--text-dark);
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 1px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: 0.3s;
+  opacity: 0.7;
+}
+
+.sticky-nav a:hover { opacity: 1; color: var(--gold); }
+
+.nav-dot {
+    width: 4px;
+    height: 4px;
+    background: var(--gold);
+    border-radius: 50%;
+}
+
+.app:has(#home.active) .sticky-nav {
+    display: flex;
+}
+
 .tattoo-card p { 
     display: none !important; 
     visibility: hidden !important;
@@ -64,9 +106,9 @@ body {
   height: 90vh; 
   min-height: 600px;
   background: var(--bg-white);
-  border: 1px solid var(--grey-border);
+  border: 1px solid var(--border);
   border-radius: 15px; 
-  box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.1);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -98,9 +140,15 @@ body {
   z-index: 2;
 }
 
+#home.active {
+    display: block;
+    overflow-y: auto;
+    padding-top: 0px; 
+}
+
 .card-selected {
   border-color: var(--gold) !important;
-  background: #f8f8f8 !important; /* Gris ultra claro */
+  background: #fdfaf3 !important;
   box-shadow: 0 5px 15px rgba(179, 142, 68, 0.2) !important;
 }
 .card-selected img {
@@ -201,15 +249,15 @@ button:hover:not(:disabled) {
 button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-  border-color: #ccc;
-  color: #999;
-  background: #f0f0f0;
+  border-color: #ddd;
+  color: #aaa;
+  background: #f9f9f9;
 }
 
 input {
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--grey-border);
+  border-bottom: 1px solid #ddd;
   padding: 15px;
   color: var(--text-dark);
   width: 100%;
@@ -221,12 +269,57 @@ input {
 }
 input:focus { outline: none; border-bottom-color: var(--gold); }
 
+/* --- CONTENEDOR TELÉFONO ESPECIAL --- */
+.phone-input-wrapper {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+    max-width: 280px;
+    margin-bottom: 10px;
+    transition: 0.4s;
+}
+.phone-input-wrapper:focus-within {
+    border-bottom-color: var(--gold);
+}
+.phone-prefix {
+    padding: 15px 0 15px 15px;
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+#phoneInput {
+    border: none;
+    margin-bottom: 0;
+    text-align: left;
+    padding-left: 5px;
+    width: 100%;
+}
+
 .grid { 
   display: grid; 
   grid-template-columns: repeat(4, 1fr); 
   gap: 8px; 
   width: 100%; 
   max-width: 260px;
+}
+
+#months { 
+  display: flex; 
+  gap: 15px; 
+  width: 100%; 
+  max-width: 100%;
+  overflow-x: auto; 
+  padding: 20px 10px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+#months::-webkit-scrollbar { display: none; }
+#months button { 
+  flex: 0 0 140px; 
+  scroll-snap-align: center;
+  border-radius: 50px;
+  white-space: nowrap;
 }
 
 #days {
@@ -237,8 +330,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
   -webkit-overflow-scrolling: touch;
 }
 
-#days button { padding: 10px 0; font-size: 12px; border-color: var(--grey-border); color: var(--text-muted); border-radius: 5px;}
-#months { grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 240px; margin: 0 auto; }
+#days button { padding: 10px 0; font-size: 12px; border-color: #eee; color: #666; border-radius: 5px;}
 
 #hoursGrid { 
   display: grid;
@@ -263,7 +355,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 
 .tattoo-card, .zone-card {
   background: #fff;
-  border: 1px solid var(--grey-border);
+  border: 1px solid #f0f0f0;
   border-radius: 10px;
   padding: 10px;
   transition: all 0.3s ease;
@@ -305,7 +397,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
   background: #fff;
   margin-bottom: 10px;
   padding: 12px;
-  border: 1px solid var(--grey-border);
+  border: 1px solid #eee;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -320,7 +412,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 .admin-info strong { color: var(--gold); font-family: 'Cinzel', serif; }
 
 .mass-mail-panel {
-    background: #f4f4f4; /* Gris claro */
+    background: #fdfaf3;
     border: 1px solid var(--gold);
     padding: 15px;
     margin-bottom: 20px;
@@ -340,7 +432,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
   gap: 8px;
 }
 
-.social { display: flex; gap: 20px; margin-top: 10px; }
+.social { display: flex; gap: 20px; margin-top: 10px; justify-content: center; }
 .social-btn img { width: 22px; filter: grayscale(1) opacity(0.5); transition: 0.3s; }
 .social-btn:hover img { filter: grayscale(0) opacity(1); }
 
@@ -349,6 +441,123 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
   display: none; align-items: center; justify-content: center; z-index: 10000;
 }
 #lightbox img { max-width: 90%; border: 5px solid white; }
+
+#mapButton { display: none !important; }
+.map-preview-container {
+    width: 100%;
+    max-width: 320px;
+    height: 120px;
+    margin: 20px auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+.map-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(179, 142, 68, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+.map-overlay span {
+    background: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    font-weight: bold;
+}
+
+.about-card-main {
+    width: 100%;
+    max-width: 320px;
+    margin: 30px auto 10px auto;
+    padding: 20px;
+    background: #fdfaf3;
+    border-left: 3px solid var(--gold);
+    text-align: left;
+}
+.about-card-main h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    margin: 0 0 10px 0;
+    color: var(--gold);
+    letter-spacing: 2px;
+}
+.about-card-main p {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-dark);
+    margin: 0;
+    font-weight: 300;
+}
+
+.featured-gallery {
+    width: 100%;
+    margin: 20px 0;
+}
+.gallery-scroll {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    padding: 10px 20px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+}
+.gallery-scroll::-webkit-scrollbar { display: none; }
+.gallery-item {
+    flex: 0 0 160px;
+    height: 160px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    scroll-snap-align: center;
+}
+.gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+.gallery-item img:hover {
+    transform: scale(1.1);
+}
+
+.schedule-card {
+    width: 100%;
+    max-width: 320px;
+    margin: 20px auto;
+    padding: 15px 20px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+.schedule-card h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    color: var(--gold);
+    text-align: center;
+    letter-spacing: 3px;
+    margin-bottom: 15px;
+}
+.schedule-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.03);
+    letter-spacing: 1px;
+}
+.schedule-row:last-child { border-bottom: none; }
+.schedule-day { font-weight: 600; text-transform: uppercase; }
+.schedule-time { color: var(--text-muted); }
+.schedule-row.closed .schedule-time { color: #ff4d4d; font-weight: bold; }
 
 </style>
 </head>
@@ -362,8 +571,15 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
   <section class="hero-section">
     <div class="app">
 
+      <nav class="sticky-nav">
+          <a href="javascript:void(0)" onclick="document.getElementById('gallery-anchor').scrollIntoView({behavior:'smooth'})">TRABAJOS<div class="nav-dot"></div></a>
+          <a href="javascript:void(0)" onclick="document.getElementById('about-anchor').scrollIntoView({behavior:'smooth'})">RICHARD<div class="nav-dot"></div></a>
+          <a href="javascript:void(0)" onclick="document.getElementById('schedule-anchor').scrollIntoView({behavior:'smooth'})">HORARIOS<div class="nav-dot"></div></a>
+          <a href="javascript:void(0)" onclick="document.getElementById('location-anchor').scrollIntoView({behavior:'smooth'})">ESTUDIO<div class="nav-dot"></div></a>
+      </nav>
+
       <div class="screen active" id="home">
-        <div class="logo-container">
+        <div class="logo-container" style="margin-top: 20px;">
           <div class="logo-circle">
             <img src="logo.png" alt="Logo" class="logo-symbol" loading="eager">
           </div>
@@ -374,10 +590,18 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
             <div class="line"></div>
           </div>
         </div>
+
+        <div class="featured-gallery" id="gallery-anchor">
+            <div class="gallery-scroll">
+                <div class="gallery-item"><img src="foto1.png" alt="Trabajo 1" onerror="this.src='https://via.placeholder.com/200?text=Trabajo+1'" onclick="expandImage(this.src)"></div>
+                <div class="gallery-item"><img src="foto2.png" alt="Trabajo 2" onerror="this.src='https://via.placeholder.com/200?text=Trabajo+2'" onclick="expandImage(this.src)"></div>
+                <div class="gallery-item"><img src="foto3.png" alt="Trabajo 3" onerror="this.src='https://via.placeholder.com/200?text=Trabajo+3'" onclick="expandImage(this.src)"></div>
+            </div>
+        </div>
         
-        <p style="letter-spacing: 5px; color: var(--gold); font-size: 11px; font-weight: 400; text-transform: uppercase; margin-top: -10px;">Estudio de Arte Privado</p>
+        <p style="letter-spacing: 5px; color: var(--gold); font-size: 11px; font-weight: 400; text-transform: uppercase; text-align: center;">Estudio de Arte Privado</p>
         
-        <div style="display:flex; flex-direction:column; gap:10px; width: 260px; margin-top: 20px;">
+        <div style="display:flex; flex-direction:column; gap:10px; width: 260px; margin: 20px auto;">
           <button onclick="tryGoAgenda()" style="background: var(--gold); color: white;">Agendar Cita</button>
           <button id="btnProfile" style="display:none; font-size:9px;" onclick="go('login')">Mi Perfil / Editar Datos</button>
           <button style="border:none; font-size:10px; opacity:0.5; letter-spacing:2px; cursor:pointer;" onclick="promptAdmin()">Acceso Artista</button>
@@ -388,10 +612,32 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
           <a class="social-btn" href="https://www.instagram.com/richardtattooartigas/" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/1384/1384063.png" alt="IG" loading="lazy"></a>
           <a class="social-btn" href="https://wa.me/59892528388" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" alt="WA" loading="lazy"></a>
         </div>
-        
-        <div id="mapButton" onclick="openMap()" style="cursor:pointer; font-size: 10px; letter-spacing: 3px; color: var(--gold); margin-top:30px; border-bottom: 1px solid var(--gold); padding-bottom: 3px; font-weight: 600;">
-          UBICACIÓN
+
+        <div class="about-card-main" id="about-anchor">
+            <h3>Sobre el Artista</h3>
+            <p id="artistBio">Richard Pereira es un tatuador profesional con más de 15 años de experiencia. Especialista en realismo y diseños personalizados, enfocado en transformar ideas en arte duradero.</p>
         </div>
+
+        <div class="schedule-card" id="schedule-anchor">
+            <h3>Horarios de Atención</h3>
+            <div class="schedule-row"><span class="schedule-day">Lunes</span><span class="schedule-time">09:00 - 21:00</span></div>
+            <div class="schedule-row"><span class="schedule-day">Martes</span><span class="schedule-time">09:00 - 21:00</span></div>
+            <div class="schedule-row"><span class="schedule-day">Miércoles</span><span class="schedule-time">09:00 - 21:00</span></div>
+            <div class="schedule-row"><span class="schedule-day">Jueves</span><span class="schedule-time">09:00 - 21:00</span></div>
+            <div class="schedule-row"><span class="schedule-day">Viernes</span><span class="schedule-time">09:00 - 21:00</span></div>
+            <div class="schedule-row"><span class="schedule-day">Sábado</span><span class="schedule-time">09:00 - 21:00</span></div>
+            <div class="schedule-row closed"><span class="schedule-day">Domingo</span><span class="schedule-time">CERRADO</span></div>
+        </div>
+        
+        <div class="map-preview-container" id="location-anchor" onclick="openMap()">
+            <div class="map-overlay"><span>VER EN MAPAS</span></div>
+            <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3420.324393665516!2d-56.46864112521577!3d-30.426555574734567!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95addd9703f8205b%3A0xc49d01f8d4e41755!2sCalle%202%20140%2C%20Artigas%2C%20Departamento%20de%20Artigas!5e0!3m2!1ses-419!2suy!4v1707400000000!5m2!1ses-419!2suy" 
+                width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy">
+            </iframe>
+        </div>
+
+        <div style="height: 40px; width: 100%;"></div> 
       </div>
 
       <div class="screen" id="login">
@@ -399,21 +645,26 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
         <input id="nameInput" type="text" placeholder="NOMBRE" autocomplete="name">
         <input id="surnameInput" type="text" placeholder="APELLIDO" autocomplete="family-name">
         <input id="emailInput" type="email" placeholder="CORREO (OPCIONAL)" autocomplete="email">
-        <input id="phoneInput" type="tel" placeholder="TELÉFONO (8 NÚMEROS)" maxlength="8">
+        
+        <div class="phone-input-wrapper">
+            <span class="phone-prefix">+598 0</span>
+            <input id="phoneInput" type="tel" placeholder="9X XXX XXX" maxlength="8">
+        </div>
+
         <button onclick="login()" style="margin-top:20px; background: var(--gold); color: white;">Guardar y Continuar</button>
-        <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px; color: var(--text-muted)">Cancelar</button></div>
+        <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px">Cancelar</button></div>
       </div>
 
       <div class="screen" id="month">
-        <h2>Calendario</h2>
-        <div class="grid" id="months"></div>
-        <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px; color: var(--text-muted)">Inicio</button></div>
+        <h2>Seleccionar Mes</h2>
+        <div id="months"></div>
+        <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px">Inicio</button></div>
       </div>
 
       <div class="screen" id="day">
         <h2>Seleccionar Día</h2>
         <div class="grid" id="days"></div>
-        <div class="nav"><button onclick="go('month')" style="border:none; font-size:11px; color: var(--text-muted)">Atrás</button></div>
+        <div class="nav"><button onclick="go('month')" style="border:none; font-size:11px">Atrás</button></div>
       </div>
 
       <div class="screen" id="tattooDetails">
@@ -421,7 +672,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
         <div class="tattoo-options" id="tattooOptions"></div>
         <div class="nav">
           <button id="nextTattooBtn" disabled onclick="confirmTattooSelection()" style="background: var(--gold); color: white;">Siguiente</button>
-          <button onclick="go('day')" style="border:none; font-size:11px; color: var(--text-muted)">Atrás</button>
+          <button onclick="go('day')" style="border:none; font-size:11px">Atrás</button>
         </div>
       </div>
 
@@ -430,14 +681,14 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
         <div class="body-zones" id="zoneOptions"></div>
         <div class="nav">
           <button id="nextZoneBtn" disabled onclick="confirmZoneSelection()" style="background: var(--gold); color: white;">Siguiente</button>
-          <button onclick="go('tattooDetails')" style="border:none; font-size:11px; color: var(--text-muted)">Atrás</button>
+          <button onclick="go('tattooDetails')" style="border:none; font-size:11px">Atrás</button>
         </div>
       </div>
 
       <div class="screen" id="hourSelection">
         <h2>Horario Disponible</h2>
         <div id="hoursGrid"></div>
-        <div class="nav"><button onclick="goBackFromHours()" style="border:none; font-size:11px; color: var(--text-muted)">Atrás</button></div>
+        <div class="nav"><button onclick="goBackFromHours()" style="border:none; font-size:11px">Atrás</button></div>
       </div>
 
       <div class="screen" id="imageUploadScreen">
@@ -449,18 +700,18 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
           <p id="userTattooInfo" style="font-size:11px; color: var(--gold); letter-spacing:1px; margin-bottom:20px"></p>
           <button id="confirmBtn" onclick="confirmBooking()" style="background: var(--gold); color: white;">Confirmar Reserva</button>
         </div>
-        <div class="nav"><button onclick="go('hourSelection')" style="border:none; font-size:11px; color: var(--text-muted)">Atrás</button></div>
+        <div class="nav"><button onclick="go('hourSelection')" style="border:none; font-size:11px">Atrás</button></div>
       </div>
 
       <div class="screen" id="done">
         <h1 class="brand" style="font-size:30px">Confirmado</h1>
         <p style="color:var(--text-muted); text-align:center; font-size:13px;">Su cita ha sido registrada con éxito.</p>
-        <div style="text-align:center; border-top: 1px solid var(--grey-border); border-bottom: 1px solid var(--grey-border); padding: 20px; margin: 15px 0; width: 100%;">
+        <div style="text-align:center; border-top: 1px solid #eee; border-bottom: 1px solid #eee; padding: 20px; margin: 15px 0; width: 100%;">
            <p style="color:var(--gold); font-size:11px; margin-bottom:10px; letter-spacing:3px;">DIRECCIÓN</p>
            <p style="font-size:14px; margin:0; font-weight: 300;">Cerro Ejido, Calle 2 N°140<br>Artigas, Uruguay</p>
         </div>
         <button onclick="openMap()">Ver Ubicación</button>
-        <button onclick="resetBookingFlow()" style="border:none; opacity:0.5; font-size:10px; color: var(--text-muted)">Finalizar</button>
+        <button onclick="resetBookingFlow()" style="border:none; opacity:0.5; font-size:10px">Finalizar</button>
       </div>
 
       <div class="screen" id="admin">
@@ -477,11 +728,11 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
         </div>
 
         <div style="display:flex; gap:10px; margin-bottom:10px;">
-             <button onclick="resetUserData()" style="font-size:9px; padding:10px; border-color:var(--grey-border); color:var(--text-muted)">Reset Usuarios</button>
+             <button onclick="resetUserData()" style="font-size:9px; padding:10px; border-color:#eee; color:#999">Reset Usuarios</button>
              <button onclick="logoutAdminSession()" style="font-size:9px; padding:10px; border-color:#ffcccc; color:#ff4d4d">Cerrar Sesión Artista</button>
         </div>
         <div class="admin-list" id="adminList" style="width:100%; overflow-y:auto; flex:1"></div>
-        <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px; color: var(--text-muted)">Cerrar</button></div>
+        <div class="nav"><button onclick="go('home')" style="border:none; font-size:11px">Cerrar</button></div>
       </div>
 
     </div>
@@ -494,8 +745,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
     <div class="about-content">
       <p style="color:var(--gold); letter-spacing:4px; font-size:12px; margin-bottom:10px">RichardTattoo</p>
       <h2>SOBRE MI</h2>
-      <p>Richard Pereira es un tatuador profesional con más de 15 años de experiencia en el arte del tatuaje.
-          “Tem espacio, faz tatuagem.”</p>
+      <p>Richard Pereira es un tatuador profesional con más de 15 años de experiencia en el arte del tatuaje.</p>
     </div>
   </section>
 </div>
@@ -575,6 +825,7 @@ window.addEventListener('load', () => {
   history.replaceState({ screenId: 'home' }, "", "");
   updateProfileButton();
   refreshBookings();
+  renderMonths();
 });
 
 async function refreshBookings() {
@@ -596,7 +847,7 @@ function resetBookingFlow() {
 }
 
 function openMap() { 
-    const url = "https://www.google.com/maps/search/?api=1&query=-30.426556,-56.466056";
+    const url = "https://www.google.com/maps/search/?api=1&query=-30.4265556,-56.4660556";
     window.open(url, "_blank"); 
 }
 
@@ -610,10 +861,14 @@ function login(){
     const s = document.getElementById("surnameInput").value.trim();
     const e = document.getElementById("emailInput").value.trim();
     const p = document.getElementById("phoneInput").value.trim();
+    
     if(!n || !s) return alert("Nombre y Apellido son obligatorios.");
     if(e && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.toLowerCase())) return alert("El correo no es válido.");
-    if(p.length !== 8) return alert("Teléfono debe tener 8 dígitos.");
     
+    // Limpieza de número: Solo permitimos los 8 dígitos del usuario
+    if(p.length !== 8) return alert("Por favor ingresa los 8 dígitos restantes de tu celular.");
+    if(p.startsWith('0')) return alert("No incluyas el 0 inicial, solo los 8 números siguientes.");
+
     localStorage.setItem("userName", n);
     localStorage.setItem("userSurname", s);
     localStorage.setItem("whatsapp", p);
@@ -627,13 +882,16 @@ const MONTHS=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto",
 const monthsEl=document.getElementById("months");
 const daysEl=document.getElementById("days");
 
-MONTHS.forEach((m,i)=>{ 
-  const b=document.createElement("button"); 
-  b.textContent=m; 
-  if(i < nowUY().getMonth()) b.disabled=true; 
-  b.onclick=()=>{ selectedMonth=i; renderDays(); go('day'); }; 
-  monthsEl.appendChild(b); 
-});
+function renderMonths(){
+  monthsEl.innerHTML = "";
+  MONTHS.forEach((m,i)=>{ 
+    const b=document.createElement("button"); 
+    b.textContent=m; 
+    if(i < nowUY().getMonth()) b.disabled=true; 
+    b.onclick=()=>{ selectedMonth=i; renderDays(); go('day'); }; 
+    monthsEl.appendChild(b); 
+  });
+}
 
 function renderDays(){ 
   daysEl.innerHTML=""; 
@@ -808,6 +1066,7 @@ async function confirmBooking(){
   
   const zoneLabel = selectedZone ? selectedZone.label : "Zona General";
 
+  // Se envía el teléfono tal cual (los 8 dígitos) para que sea compatible con los enlaces wa.me/5980...
   const booking={ 
     date:`${nowUY().getFullYear()}-${selectedMonth+1}-${selectedDay}`, 
     start:selectedHour, end:selectedHour+DURATIONS[selectedTattoo.id], 
@@ -874,7 +1133,7 @@ function renderAdmin(){
             ${res.name} ${res.surname}
         </div>
         <div class="admin-actions" style="display:flex; flex-direction:column; gap:5px">
-            <button class="btn-whatsapp" onclick="window.open('https://wa.me/${res.phone}', '_blank')">WA</button>
+            <button class="btn-whatsapp" onclick="window.open('https://wa.me/5980${res.phone}', '_blank')">WA</button>
             <button onclick="deleteBooking('${res.id}')" style="border-color:#ff4d4d; color:#ff4d4d; padding:8px; font-size:10px">X</button>
         </div>
     `;

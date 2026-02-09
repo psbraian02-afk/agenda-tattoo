@@ -31,22 +31,8 @@ async function init() {
       await fs.writeFile(BOOKINGS_FILE, "[]");
     }
 
-    let raw = await fs.readFile(BOOKINGS_FILE, "utf-8");
-
-    if (!raw || raw.trim() === "") {
-      console.log("⚠️ bookings.json vacío, reiniciando archivo...");
-      raw = "[]";
-      await fs.writeFile(BOOKINGS_FILE, raw);
-    }
-
-    try {
-      bookingsCache = JSON.parse(raw);
-    } catch (parseErr) {
-      console.log("⚠️ bookings.json corrupto, regenerando archivo...");
-      bookingsCache = [];
-      await fs.writeFile(BOOKINGS_FILE, "[]");
-    }
-
+    const data = await fs.readFile(BOOKINGS_FILE, "utf-8");
+    bookingsCache = JSON.parse(data);
     console.log(`✅ Base de datos cargada: ${bookingsCache.length} reservas.`);
   } catch (error) {
     console.error("❌ Error inicializando bookings.json:", error.message);
@@ -60,11 +46,6 @@ init();
     NOTIFICACIÓN
 ===================== */
 async function enviarNotificacionFormspree(booking) {
-  // ⚠️ DESACTIVADO para evitar mails duplicados (Formspark ya envía desde el frontend)
-  console.log("ℹ️ Notificación Formspree desactivada para evitar duplicados.");
-  return;
-
-  /*
   const FORMSPREE_URL = "https://formspree.io/f/xzdapoze";
   const datos = {
     _subject: `🚀 NUEVO TURNO: ${booking.name} ${booking.surname}`,
@@ -87,7 +68,6 @@ async function enviarNotificacionFormspree(booking) {
   } catch (error) {
     console.error("❌ Error enviando email:", error.message);
   }
-  */
 }
 
 /* =====================
@@ -117,7 +97,7 @@ app.post("/api/bookings", async (req, res) => {
     };
     bookingsCache.push(newBooking);
     await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookingsCache, null, 2));
-    enviarNotificacionFormspree(newBooking); // se sigue llamando, pero no manda mail
+    enviarNotificacionFormspree(newBooking);
     res.status(201).json(newBooking);
   } catch (err) {
     console.error("❌ Error guardando reserva:", err.message);

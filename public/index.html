@@ -959,43 +959,45 @@ function renderTattooOptions(){
 
 function confirmTattooSelection(){ go("zoneSelection"); renderZoneOptions(); }
 
+// Continuación de la función renderZoneOptions que se cortó:
 function renderZoneOptions(){
-  const container=document.getElementById("zoneOptions"); container.innerHTML="";
+  const container = document.getElementById("zoneOptions"); 
+  container.innerHTML = ""; 
   const btnNext = document.getElementById("nextZoneBtn");
-  if(!selectedZone) btnNext.disabled = true;
-  else btnNext.disabled = false;
+  
+  btnNext.disabled = !selectedZone;
 
-  BODY_ZONES.forEach(z=>{
-      const card=document.createElement("div"); card.className="zone-card";
-      if(selectedZone && selectedZone.id === z.id) card.classList.add("card-selected");
-      card.innerHTML=`<img src="${z.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div><strong>${z.label}</strong></div>`;
-      card.onclick=()=>{ selectedZone = z; renderZoneOptions(); };
-      container.appendChild(card);
+  BODY_ZONES.forEach(z => { 
+    const card = document.createElement("div"); 
+    card.className = "zone-card" + (selectedZone?.id === z.id ? " card-selected" : "");
+    card.innerHTML = `<img src="${z.img}" onerror="this.src='https://via.placeholder.com/150'"><div><strong>${z.label}</strong></div>`;
+    card.onclick = () => {
+        selectedZone = z;
+        renderZoneOptions(); 
+    };
+    container.appendChild(card);
   });
 }
 
-function confirmZoneSelection(){ go("hourSelection"); renderHours(); }
+function confirmZoneSelection(){ 
+    go("hourSelection"); 
+    renderHours(); 
+}
 
-function renderHours(){
-  const container = document.getElementById("hoursGrid"); 
-  container.innerHTML = "";
-  
-  // Ciclo de 9 (9 AM) hasta 21 (9 PM)
-  for(let h = 9; h <= 21; h += 1){
-      
-      // Si la hora es 12, saltamos este ciclo para que no aparezca el botón
-      if(h === 12) continue;
-
-      const b = document.createElement("button"); 
-      b.textContent = `${h.toString().padStart(2, '0')}:00`; 
-      
-      b.onclick = () => { 
-          selectedHour = h; 
-          go("imageUploadScreen"); 
-      };
-      
-      container.appendChild(b);
-  }
+// También necesitarás una función básica para renderizar horas si no la tienes
+function renderHours() {
+    const grid = document.getElementById("hoursGrid");
+    grid.innerHTML = "";
+    const horas = ["09:00", "11:00", "14:00", "16:00", "18:00"]; // Ejemplo
+    horas.forEach(h => {
+        const btn = document.createElement("button");
+        btn.textContent = h;
+        btn.onclick = () => {
+            selectedHour = h;
+            go("imageUploadScreen");
+        };
+        grid.appendChild(btn);
+    });
 }
 
 function isOverlapping(h1, d1, h2, d2){ return h1 < h2+d2 && h2 < h1+d1; }

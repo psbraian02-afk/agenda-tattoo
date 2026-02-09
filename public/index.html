@@ -7,562 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@200;300;400;600&display=swap" rel="stylesheet">
-
-<style>
-:root {
-  --gold: #b38e44; 
-  --gold-light: #d4af37;
-  --bg-white: #ffffff;
-  --bg-soft: #faf9f6; 
-  --text-dark: #1a1a1a;
-  --text-muted: #888888;
-  --border: rgba(179, 142, 68, 0.2);
-}
-
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html { scroll-behavior: smooth; }
-
-body {
-  margin: 0;
-  padding: 0;
-  background-color: var(--bg-soft);
-  color: var(--text-dark);
-  font-family: 'Inter', sans-serif;
-  overflow-x: hidden;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* --- BARRA DE NAVEGACIÓN STICKY --- */
-.sticky-nav {
-  position: sticky;
-  top: 0;
-  left: 0;
-  width: 100%;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
-  z-index: 1000;
-  display: none; 
-  justify-content: space-around;
-  padding: 10px 0;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-}
-
-.sticky-nav a {
-  text-decoration: none;
-  color: var(--text-dark);
-  font-family: 'Cinzel', serif;
-  font-size: 9px;
-  letter-spacing: 1px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  transition: 0.3s;
-  opacity: 0.7;
-}
-
-.sticky-nav a:hover { opacity: 1; color: var(--gold); }
-
-.nav-dot {
-    width: 4px;
-    height: 4px;
-    background: var(--gold);
-    border-radius: 50%;
-}
-
-.app:has(#home.active) .sticky-nav {
-    display: flex;
-}
-
-.tattoo-card p { 
-    display: none !important; 
-    visibility: hidden !important;
-    height: 0;
-    margin: 0;
-}
-
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-thumb { background: var(--gold); }
-
-.main-wrapper {
-  width: 100%;
-  min-height: 100vh;
-}
-
-.hero-section {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-}
-
-.app {
-  width: 100%;
-  max-width: 500px;
-  height: 90vh; 
-  min-height: 600px;
-  background: var(--bg-white);
-  border: 1px solid var(--border);
-  border-radius: 15px; 
-  box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.screen {
-  position: absolute;
-  inset: 0;
-  padding: 30px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  opacity: 0;
-  transform: translateY(20px);
-  pointer-events: none;
-  transition: opacity 0.4s ease, transform 0.4s ease;
-  background: var(--bg-white); 
-  z-index: 1;
-}
-
-.screen.active {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-  position: relative; 
-  z-index: 2;
-}
-
-#home.active {
-    display: block;
-    overflow-y: auto;
-    padding-top: 0px; 
-}
-
-.card-selected {
-  border-color: var(--gold) !important;
-  background: #fdfaf3 !important;
-  box-shadow: 0 5px 15px rgba(179, 142, 68, 0.2) !important;
-}
-.card-selected img {
-  filter: grayscale(0%) !important;
-}
-
-.logo-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.logo-circle {
-  width: 80px;
-  height: 80px;
-  border: 2px solid var(--gold);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 20px;
-  position: relative;
-}
-
-.logo-circle::after {
-  content: '';
-  position: absolute;
-  inset: -5px;
-  border: 1px solid var(--gold);
-  border-radius: 50%;
-  opacity: 0.3;
-}
-
-.logo-symbol {
-  width: 70%; 
-  height: 70%;
-  object-fit: contain;
-}
-
-h1.brand {
-  font-family: 'Cinzel', serif;
-  font-size: 26px;
-  font-weight: 400;
-  color: var(--text-dark);
-  margin: 0;
-  letter-spacing: 6px;
-  text-transform: uppercase;
-  text-align: center;
-}
-
-.brand-divider {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  width: 100%;
-  max-width: 300px;
-  margin-top: 5px;
-}
-
-.line {
-  height: 1px;
-  background: linear-gradient(to right, transparent, var(--gold), transparent);
-  flex: 1;
-}
-
-h2 { 
-  font-family: 'Cinzel', serif;
-  font-weight: 400; 
-  letter-spacing: 4px; 
-  text-transform: uppercase; 
-  font-size: 18px; 
-  color: var(--gold);
-  margin-bottom: 10px;
-}
-
-button {
-  padding: 15px 30px;
-  border-radius: 8px;
-  border: 1px solid var(--gold);
-  background: transparent;
-  color: var(--gold);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  width: 100%;
-  max-width: 280px;
-}
-
-button:hover:not(:disabled) {
-  background: var(--gold);
-  color: white;
-}
-
-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  border-color: #ddd;
-  color: #aaa;
-  background: #f9f9f9;
-}
-
-input {
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid #ddd;
-  padding: 15px;
-  color: var(--text-dark);
-  width: 100%;
-  max-width: 280px;
-  text-align: center;
-  font-size: 14px;
-  transition: 0.4s;
-  margin-bottom: 10px;
-}
-input:focus { outline: none; border-bottom-color: var(--gold); }
-
-/* --- CONTENEDOR TELÉFONO ESPECIAL --- */
-.phone-input-wrapper {
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid #ddd;
-    width: 100%;
-    max-width: 280px;
-    margin-bottom: 10px;
-    transition: 0.4s;
-}
-.phone-input-wrapper:focus-within {
-    border-bottom-color: var(--gold);
-}
-.phone-prefix {
-    padding: 15px 0 15px 15px;
-    font-size: 14px;
-    color: var(--text-muted);
-    font-weight: 600;
-}
-#phoneInput {
-    border: none !important;
-    margin-bottom: 0 !important;
-    text-align: left !important;
-    padding-left: 5px !important;
-    width: 100%;
-}
-
-.grid { 
-  display: grid; 
-  grid-template-columns: repeat(4, 1fr); 
-  gap: 8px; 
-  width: 100%; 
-  max-width: 260px;
-}
-
-/* --- ESTILO DESPLAZAMIENTO MESES --- */
-#months { 
-  display: flex !important; 
-  flex-direction: row !important;
-  gap: 15px; 
-  width: 100%; 
-  max-width: 100%;
-  overflow-x: auto; 
-  padding: 20px 10px;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-}
-#months::-webkit-scrollbar { display: none; }
-#months button { 
-  flex: 0 0 140px !important; 
-  scroll-snap-align: center;
-  border-radius: 50px;
-  white-space: nowrap;
-}
-
-#days {
-  max-height: 300px; 
-  overflow-y: auto;
-  padding: 5px;
-  grid-template-columns: repeat(5, 1fr);
-  -webkit-overflow-scrolling: touch;
-}
-
-#days button { padding: 10px 0; font-size: 12px; border-color: #eee; color: #666; border-radius: 5px;}
-
-#hoursGrid { 
-  display: grid;
-  grid-template-columns: repeat(2, 1fr); 
-  gap: 10px; 
-  width: 100%;
-  max-width: 220px; 
-  padding: 10px 0;
-}
-
-.tattoo-options, .body-zones {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  width: 100%;
-  max-width: 480px; 
-  max-height: 350px;
-  overflow-y: auto;
-  padding: 10px;
-  -webkit-overflow-scrolling: touch;
-}
-
-.tattoo-card, .zone-card {
-  background: #fff;
-  border: 1px solid #f0f0f0;
-  border-radius: 10px;
-  padding: 10px;
-  transition: all 0.3s ease;
-  text-align: center;
-  cursor: pointer;
-}
-
-.tattoo-card img, .zone-card img {
-  width: 100%; 
-  height: 90px; 
-  object-fit: contain; 
-  margin-bottom: 8px;
-  filter: grayscale(100%); 
-  transition: 0.3s;
-}
-
-.about-section {
-  display: none; 
-  padding: 60px 20px;
-  max-width: 1100px;
-  margin: 0 auto;
-  flex-direction: column;
-  align-items: center;
-  gap: 40px;
-}
-
-.about-img img {
-  width: 100%;
-  max-width: 350px;
-  border: 1px solid var(--gold);
-  padding: 15px;
-  background: white;
-}
-
-.about-content h2 { font-size: 28px; margin-bottom: 20px; color: var(--text-dark); text-align: center; }
-.about-content p { line-height: 1.6; color: var(--text-muted); font-size: 14px; text-align: center; }
-
-.admin-card {
-  background: #fff;
-  margin-bottom: 10px;
-  padding: 12px;
-  border: 1px solid #eee;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.admin-img-preview {
-    width: 50px; height: 50px;
-    object-fit: cover; border: 1px solid var(--gold);
-    cursor: zoom-in;
-}
-
-.admin-info { flex: 1; font-size: 11px; color: var(--text-dark); }
-.admin-info strong { color: var(--gold); font-family: 'Cinzel', serif; }
-
-.mass-mail-panel {
-    background: #fdfaf3;
-    border: 1px solid var(--gold);
-    padding: 15px;
-    margin-bottom: 20px;
-    width: 100%;
-    text-align: center;
-}
-
-.btn-whatsapp { border-color: #25D366 !important; color: #25D366 !important; }
-.btn-whatsapp:hover { background: #25D366 !important; color: white !important; }
-
-.nav { 
-  margin-top: 15px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.social { display: flex; gap: 20px; margin-top: 10px; justify-content: center; }
-.social-btn img { width: 22px; filter: grayscale(1) opacity(0.5); transition: 0.3s; }
-.social-btn:hover img { filter: grayscale(0) opacity(1); }
-
-#lightbox {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.9);
-  display: none; align-items: center; justify-content: center; z-index: 10000;
-}
-#lightbox img { max-width: 90%; border: 5px solid white; }
-
-#mapButton { display: none !important; }
-.map-preview-container {
-    width: 100%;
-    max-width: 320px;
-    height: 120px;
-    margin: 20px auto;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    position: relative;
-    cursor: pointer;
-    transition: transform 0.3s;
-}
-.map-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(179, 142, 68, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 5;
-}
-.map-overlay span {
-    background: white;
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 9px;
-    letter-spacing: 2px;
-    color: var(--gold);
-    font-weight: bold;
-}
-
-.about-card-main {
-    width: 100%;
-    max-width: 320px;
-    margin: 30px auto 10px auto;
-    padding: 20px;
-    background: #fdfaf3;
-    border-left: 3px solid var(--gold);
-    text-align: left;
-}
-.about-card-main h3 {
-    font-family: 'Cinzel', serif;
-    font-size: 14px;
-    margin: 0 0 10px 0;
-    color: var(--gold);
-    letter-spacing: 2px;
-}
-.about-card-main p {
-    font-size: 12px;
-    line-height: 1.5;
-    color: var(--text-dark);
-    margin: 0;
-    font-weight: 300;
-}
-
-.featured-gallery {
-    width: 100%;
-    margin: 20px 0;
-}
-.gallery-scroll {
-    display: flex;
-    gap: 15px;
-    overflow-x: auto;
-    padding: 10px 20px;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-}
-.gallery-scroll::-webkit-scrollbar { display: none; }
-.gallery-item {
-    flex: 0 0 160px;
-    height: 160px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: hidden;
-    scroll-snap-align: center;
-}
-.gallery-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.5s ease;
-}
-.gallery-item img:hover {
-    transform: scale(1.1);
-}
-
-.schedule-card {
-    width: 100%;
-    max-width: 320px;
-    margin: 20px auto;
-    padding: 15px 20px;
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-}
-.schedule-card h3 {
-    font-family: 'Cinzel', serif;
-    font-size: 12px;
-    color: var(--gold);
-    text-align: center;
-    letter-spacing: 3px;
-    margin-bottom: 15px;
-}
-.schedule-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    padding: 6px 0;
-    border-bottom: 1px solid rgba(0,0,0,0.03);
-    letter-spacing: 1px;
-}
-.schedule-row:last-child { border-bottom: none; }
-.schedule-day { font-weight: 600; text-transform: uppercase; }
-.schedule-time { color: var(--text-muted); }
-.schedule-row.closed .schedule-time { color: #ff4d4d; font-weight: bold; }
-
-</style>
 </head>
 <body>
 
@@ -829,20 +273,6 @@ window.addEventListener('load', () => {
   updateProfileButton();
   refreshBookings();
   renderMonths();
-  
-  // Listener para previsualizar imagen en la pantalla de carga del cliente
-  document.getElementById("userTattooImage").addEventListener("change", function(e){
-      const file = e.target.files[0];
-      if(file){
-          const reader = new FileReader();
-          reader.onload = function(ev){
-              const img = document.getElementById("userTattooPreview");
-              img.src = ev.target.result;
-              img.style.display = "block";
-          }
-          reader.readAsDataURL(file);
-      }
-  });
 });
 
 async function refreshBookings() {
@@ -963,221 +393,248 @@ function renderTattooOptions(){
     const card=document.createElement("div"); card.className="tattoo-card";
     if(selectedTattoo && selectedTattoo.id === t.id) card.classList.add("card-selected");
     
-    card.innerHTML=`<img src="${t.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div><strong>${t.label}</strong><p style="color:var(--gold); font-size:9px;">${t.price}</p></div>`;
-    
-    card.onclick=()=>{ 
-        selectedTattoo=t; 
-        renderTattooOptions(); 
+    card.innerHTML=`<img src="${t.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div><strong>${t.label}</strong><p style="color:var(--gold); font-size:12px">${t.price}</p></div>`; 
+    card.onclick=()=>{
+      document.querySelectorAll("#tattooOptions .tattoo-card").forEach(c => c.classList.remove("card-selected"));
+      card.classList.add("card-selected");
+      selectedTattoo=t;
+      btnNext.disabled = false;
     };
-    frag.appendChild(card);
-  });
+    frag.appendChild(card); 
+  }); 
   container.appendChild(frag);
 }
 
 function confirmTattooSelection() {
-    renderZoneOptions();
-    go("zoneSelection");
+    if(!selectedTattoo) return;
+    if(selectedTattoo.id === "manga-brazo" || selectedTattoo.id === "espalda-completa"){
+        selectedZone = { id: "full", label: "Cuerpo Completo" };
+        renderHours(); go("hourSelection");
+    } else {
+        renderZones(); go("zoneSelection"); 
+    }
 }
 
-function renderZoneOptions() {
-  const container = document.getElementById("zoneOptions"); container.innerHTML="";
+function renderZones(){ 
+  const container=document.getElementById("zoneOptions"); container.innerHTML=""; 
   const frag = document.createDocumentFragment();
   const btnNext = document.getElementById("nextZoneBtn");
-  
+
   if(!selectedZone) btnNext.disabled = true;
   else btnNext.disabled = false;
 
-  BODY_ZONES.forEach(z => {
-      const card = document.createElement("div"); card.className = "zone-card";
-      if(selectedZone && selectedZone.id === z.id) card.classList.add("card-selected");
-      card.innerHTML = `<img src="${z.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div><strong>${z.label}</strong></div>`;
-      card.onclick = () => { 
-          selectedZone = z; 
-          renderZoneOptions(); 
-      };
-      frag.appendChild(card);
-  });
+  BODY_ZONES.forEach(z=>{ 
+    const card=document.createElement("div"); card.className="zone-card"; 
+    if(selectedZone && selectedZone.id === z.id) card.classList.add("card-selected");
+
+    card.innerHTML=`<img src="${z.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div>${z.label}</div>`; 
+    card.onclick=()=>{
+      document.querySelectorAll("#zoneOptions .zone-card").forEach(c => c.classList.remove("card-selected"));
+      card.classList.add("card-selected");
+      selectedZone=z;
+      btnNext.disabled = false;
+    };
+    frag.appendChild(card); 
+  }); 
   container.appendChild(frag);
 }
 
 function confirmZoneSelection() {
-    renderHours();
-    go("hourSelection");
+    if(!selectedZone) return;
+    renderHours(); go("hourSelection");
+}
+
+function goBackFromHours(){ 
+    if(selectedTattoo && (selectedTattoo.id === "manga-brazo" || selectedTattoo.id === "espalda-completa")) {
+        go("tattooDetails");
+    } else {
+        go("zoneSelection");
+    }
 }
 
 function renderHours(){
-  const hGrid=document.getElementById("hoursGrid"); hGrid.innerHTML="";
-  const start=9; const end=20; 
+  const grid=document.getElementById("hoursGrid"); grid.innerHTML=""; 
+  const timeUY = nowUY();
+  const isToday = (selectedDay === timeUY.getDate() && selectedMonth === timeUY.getMonth());
   const frag = document.createDocumentFragment();
-  
-  for(let h=start; h<=end; h++){
-      const timeStr = `${h.toString().padStart(2,'0')}:00`;
-      const isTaken = bookings.some(b => 
-          b.month === selectedMonth && b.day === selectedDay && b.hour === timeStr
-      );
-
-      const b=document.createElement("button");
-      b.textContent = timeStr;
-      
-      if(isTaken) {
-          b.disabled = true;
-          b.style.textDecoration = "line-through";
-          b.style.opacity = "0.5";
-      } else {
-          b.onclick = () => { selectedHour = timeStr; go("imageUploadScreen"); };
-      }
-      frag.appendChild(b);
-  }
-  hGrid.appendChild(frag);
-}
-
-function goBackFromHours() {
-    selectedHour = null;
-    go("zoneSelection");
-}
-
-function updateSummary(){
-    const info = document.getElementById("userTattooInfo");
-    if(selectedTattoo && selectedZone && selectedDay && selectedMonth !== null && selectedHour) {
-        info.innerHTML = `
-            ${selectedDay} de ${MONTHS[selectedMonth]} a las ${selectedHour}<br>
-            Estilo: ${selectedTattoo.label}<br>
-            Zona: ${selectedZone.label}
-        `;
-    }
-}
-
-function confirmBooking() {
-    if(!selectedTattoo || !selectedZone || !selectedHour) return;
-
-    const btn = document.getElementById("confirmBtn");
-    btn.disabled = true;
-    btn.textContent = "Procesando...";
-
-    // AQUÍ ESTÁ LA MAGIA: Leer la imagen
-    const fileInput = document.getElementById('userTattooImage');
-    const file = fileInput.files[0];
-    
-    // Función auxiliar para guardar la cita
-    const saveBooking = (imageBase64) => {
-        const newBooking = {
-            id: Date.now(),
-            client: user.name + " " + user.surname,
-            phone: user.phone,
-            email: user.email,
-            month: selectedMonth,
-            day: selectedDay,
-            hour: selectedHour,
-            tattoo: selectedTattoo.label,
-            zone: selectedZone.label,
-            image: imageBase64 // Guardamos la imagen
-        };
-
-        // Simular guardado local (en producción esto iría al servidor)
-        bookings.push(newBooking);
-        
-        // Simular POST
-        /* fetch(SERVER_URL, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(newBooking)
-        });
-        */
-
-        setTimeout(() => {
-            btn.textContent = "Confirmar Reserva";
-            go("done");
-        }, 1000);
-    };
-
-    if (file) {
-        const reader = new FileReader();
-        reader.onloadend = function() {
-            saveBooking(reader.result); // Pasar la data de la imagen
+  for(let h=9; h<=21; h++){
+    if(h===12) continue; 
+    let btn=document.createElement("button"); btn.textContent=h+":00";
+    let disabled = (isToday && h <= timeUY.getHours());
+    if(!disabled){
+      bookings.forEach(b=>{
+        const bd=b.date.split("-");
+        if(parseInt(bd[2])===selectedDay && parseInt(bd[1])===(selectedMonth+1)){
+          if (h >= b.start && h < b.end) disabled = true;
         }
-        reader.readAsDataURL(file);
+      });
+    }
+    btn.disabled=disabled; 
+    btn.onclick=()=>selectHour(h); 
+    frag.appendChild(btn);
+  }
+  grid.appendChild(frag);
+}
+
+function selectHour(hour){ selectedHour=hour; go('imageUploadScreen'); }
+
+function updateSummary() {
+  const info = document.getElementById("userTattooInfo");
+  if(selectedTattoo && selectedHour) {
+    let zoneLabel = selectedZone ? selectedZone.label : "Cuerpo Completo";
+    info.innerHTML = `${selectedTattoo.label} | ${zoneLabel} | ${selectedHour}:00hs`;
+  }
+}
+
+const fileInput = document.getElementById("userTattooImage");
+if(fileInput){
+    fileInput.addEventListener("change",e=>{
+      const file=e.target.files[0], preview=document.getElementById("userTattooPreview");
+      if(file){ 
+        const reader=new FileReader(); 
+        reader.onload=e2=>{ 
+          preview.src=e2.target.result; 
+          preview.style.display="block"; 
+          updateSummary();
+        }; 
+        reader.readAsDataURL(file); 
+      }
+    });
+}
+
+async function confirmBooking() {
+  const preview = document.getElementById("userTattooPreview");
+  const btn = document.getElementById("confirmBtn");
+  
+  if (!preview.src || preview.style.display === "none") {
+    return alert("Por favor, sube una imagen de referencia.");
+  }
+
+  btn.disabled = true;
+  btn.textContent = "PROCESANDO...";
+  
+  const zoneLabel = selectedZone ? selectedZone.label : "Zona General";
+  const FORMSPARK_ACTION_URL = "https://submit-form.com/fVTf7pFYx";
+
+  // Estructura de datos para tu server.js (bookings.json)
+  const bookingData = {
+    name: user.name,
+    surname: user.surname,
+    phone: user.phone,
+    email: user.email || "No proporcionado",
+    date: `${selectedDay}/${selectedMonth + 1}/${nowUY().getFullYear()}`,
+    start: selectedHour,
+    tattoo: {
+      size: selectedTattoo.label,
+      place: zoneLabel
+      // No enviamos la imagen al JSON para que no explote el servidor
+    }
+  };
+
+  // Datos completos para Formspark (Aquí sí incluimos la imagen para que te llegue al mail)
+  const emailData = {
+    ...bookingData,
+    _subject: `🚀 NUEVO TURNO: ${user.name} ${user.surname}`,
+    imagen_referencia: preview.src 
+  };
+
+  try {
+    // --- PASO A: Guardar en tu Agenda Privada (server.js) ---
+    const resAgenda = await fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(bookingData)
+    });
+
+    if (!resAgenda.ok) throw new Error("Error en agenda privada");
+
+    // --- PASO B: Envío a Formspark (Email) ---
+    const resMail = await fetch(FORMSPARK_ACTION_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify(emailData),
+    });
+
+    if (resMail.ok) {
+      go("done");
     } else {
-        saveBooking(null); // Guardar sin imagen si no subió ninguna
+      throw new Error("Error en Formspark");
     }
+
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Hubo un problema. Verifica tu conexión.");
+    btn.disabled = false;
+    btn.textContent = "Confirmar Reserva";
+  }
+}
+function promptAdmin(){ 
+  if(localStorage.getItem("isAdminAuthenticated") === "true") return openAdmin();
+  const pass=prompt("Contraseña:"); 
+  if(pass==="richard123") {
+    localStorage.setItem("isAdminAuthenticated", "true");
+    openAdmin(); 
+  }
 }
 
-function expandImage(src){
+function logoutAdminSession() {
+  if(confirm("¿Cerrar sesión?")) {
+    localStorage.removeItem("isAdminAuthenticated");
+    go('home');
+  }
+}
+
+async function openAdmin(){ 
+  await refreshBookings();
+  renderAdmin(); 
+  go("admin");
+}
+
+function expandImage(src) {
     const lb = document.getElementById("lightbox");
-    const img = document.getElementById("lightboxImg");
-    img.src = src;
-    lb.style.display = "flex";
+    const lbImg = document.getElementById("lightboxImg");
+    lbImg.src = src;
+    lb.style.display = 'flex';
 }
 
-function promptAdmin(){
-    const p = prompt("Contraseña de Artista:");
-    if(p === "richard123") { // Contraseña simple de ejemplo
-        renderAdminList();
-        go("admin");
-    } else if(p !== null) {
-        alert("Acceso denegado");
-    }
-}
-
-function renderAdminList() {
-    const list = document.getElementById("adminList");
-    list.innerHTML = "";
-    
-    if(bookings.length === 0) {
-        list.innerHTML = "<p style='text-align:center; padding:20px; color:#999; font-size:12px'>No hay citas agendadas.</p>";
-        return;
-    }
-
-    // Ordenar cronológicamente
-    const sorted = [...bookings].sort((a,b) => {
-        if(a.month !== b.month) return a.month - b.month;
-        if(a.day !== b.day) return a.day - b.day;
-        return parseInt(a.hour) - parseInt(b.hour);
-    });
-
-    sorted.forEach(b => {
-        const div = document.createElement("div");
-        div.className = "admin-card";
-        
-        // Lógica para mostrar imagen o placeholder en la agenda privada
-        const imgHtml = b.image 
-            ? `<img src="${b.image}" class="admin-img-preview" onclick="expandImage('${b.image}')" title="Ver referencia">`
-            : `<div class="admin-img-preview" style="background:#f0f0f0; display:flex; align-items:center; justify-content:center; color:#ccc; font-size:9px;">Sin Foto</div>`;
-
-        div.innerHTML = `
-            ${imgHtml}
-            <div class="admin-info">
-                <strong>${b.day} ${MONTHS[b.month]} - ${b.hour}</strong><br>
-                ${b.client} (${b.phone})<br>
-                <span style="color:var(--text-muted)">${b.tattoo} en ${b.zone}</span>
-                ${b.email ? `<br><span style="color:#aaa; font-size:9px;">${b.email}</span>` : ''}
-            </div>
-            <a href="https://wa.me/598${b.phone}?text=Hola ${b.client}, te escribo por tu turno..." target="_blank" class="button" style="border:1px solid #25D366; color:#25D366; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; text-decoration:none;">
-                <img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" style="width:14px; filter: invert(56%) sepia(93%) saturate(385%) hue-rotate(87deg) brightness(91%) contrast(91%);">
-            </a>
-            <button onclick="deleteBooking(${b.id})" style="border:none; color:red; font-size:16px; padding:0 10px;">&times;</button>
-        `;
-        list.appendChild(div);
-    });
+function renderAdmin(){
+  const list=document.getElementById("adminList"); list.innerHTML="";
+  const frag = document.createDocumentFragment();
+  const sorted = [...bookings].sort((a,b) => new Date(a.date) - new Date(b.date));
+  
+  sorted.forEach(res=>{
+    const div=document.createElement("div"); 
+    div.className="admin-card";
+    const imgUrl = res.tattoo?.image || 'https://via.placeholder.com/150';
+    div.innerHTML = `
+        <img src="${imgUrl}" class="admin-img-preview" onclick="expandImage('${imgUrl}')" loading="lazy">
+        <div class="admin-info">
+            <strong>${res.date} @ ${res.start}:00hs</strong><br>
+            ${res.name} ${res.surname}
+        </div>
+        <div class="admin-actions" style="display:flex; flex-direction:column; gap:5px">
+            <button class="btn-whatsapp" onclick="window.open('https://wa.me/5980${res.phone}', '_blank')">WA</button>
+            <button onclick="deleteBooking('${res.id}')" style="border-color:#ff4d4d; color:#ff4d4d; padding:8px; font-size:10px">X</button>
+        </div>
+    `;
+    frag.appendChild(div);
+  });
+  list.appendChild(frag);
 }
 
 function deleteBooking(id){
-    if(confirm("¿Cancelar esta cita?")){
-        bookings = bookings.filter(b => b.id !== id);
-        renderAdminList();
-    }
+    if(confirm("¿Borrar?")) fetch(`${SERVER_URL}/${id}`, {method:'DELETE'}).then(()=>openAdmin());
 }
 
-function resetUserData(){
-    if(confirm("¿Borrar datos locales de usuario?")){
-        localStorage.clear();
-        location.reload();
-    }
+function resetUserData() { 
+  if(confirm("¿Borrar tus datos?")) {
+    localStorage.clear(); 
+    location.reload(); 
+  }
 }
-
-function logoutAdminSession(){
-    go("home");
-}
-
 </script>
 </body>
 </html>

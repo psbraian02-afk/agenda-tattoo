@@ -31,8 +31,22 @@ async function init() {
       await fs.writeFile(BOOKINGS_FILE, "[]");
     }
 
-    const data = await fs.readFile(BOOKINGS_FILE, "utf-8");
-    bookingsCache = JSON.parse(data);
+    let raw = await fs.readFile(BOOKINGS_FILE, "utf-8");
+
+    if (!raw || raw.trim() === "") {
+      console.log("⚠️ bookings.json vacío, reiniciando archivo...");
+      raw = "[]";
+      await fs.writeFile(BOOKINGS_FILE, raw);
+    }
+
+    try {
+      bookingsCache = JSON.parse(raw);
+    } catch (parseErr) {
+      console.log("⚠️ bookings.json corrupto, regenerando archivo...");
+      bookingsCache = [];
+      await fs.writeFile(BOOKINGS_FILE, "[]");
+    }
+
     console.log(`✅ Base de datos cargada: ${bookingsCache.length} reservas.`);
   } catch (error) {
     console.error("❌ Error inicializando bookings.json:", error.message);
@@ -40,13 +54,12 @@ async function init() {
   }
 }
 
+
 init();
 
 /* =====================
-    NOTIFICACIÓN (desactivada)
+    NOTIFICACIÓN
 ===================== */
-// Dejamos la función por si la querés usar en el futuro,
-// pero NO se ejecuta más para evitar mails duplicados.
 async function enviarNotificacionFormspree(booking) {
   const FORMSPREE_URL = "https://formspree.io/f/xzdapoze";
   const datos = {
@@ -97,13 +110,9 @@ app.post("/api/bookings", async (req, res) => {
       ...req.body,
       createdAt: new Date().toISOString(),
     };
-
     bookingsCache.push(newBooking);
     await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookingsCache, null, 2));
-
-    // ❌ DESACTIVADO para que NO envíe mails por Formspree
-    // enviarNotificacionFormspree(newBooking);
-
+    enviarNotificacionFormspree(newBooking);
     res.status(201).json(newBooking);
   } catch (err) {
     console.error("❌ Error guardando reserva:", err.message);

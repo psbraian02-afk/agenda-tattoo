@@ -17,9 +17,9 @@ let bookingsCache = [];
 // --- MIDDLEWARE ---
 app.use(cors());
 app.use(compression()); 
-app.use(express.json({ limit: "20mb" })); // Límite aumentado para fotos de tatuajes
+app.use(express.json({ limit: "10mb" })); 
 
-// 1. Servir archivos estáticos (CSS, JS, etc.)
+// Servir archivos estáticos (JS, CSS, Imágenes)
 app.use(express.static(publicDir)); 
 
 // --- INICIALIZACIÓN ---
@@ -28,22 +28,22 @@ async function init() {
         try {
             fssync.mkdirSync(publicDir, { recursive: true });
         } catch (e) {
-            console.log("Nota: Carpeta public ya existía.");
+            console.log("Nota: Carpeta public ya existía o no se pudo crear.");
         }
     }
 
     try {
-        if (fssync.existsSync(BOOKINGS_FILE)) {
-            const data = await fs.readFile(BOOKINGS_FILE, "utf-8");
-            bookingsCache = JSON.parse(data || "[]");
-            console.log(`✅ Base de datos cargada: ${bookingsCache.length} reservas.`);
-        } else {
-            await fs.writeFile(BOOKINGS_FILE, "[]");
-            bookingsCache = [];
-        }
+        const data = await fs.readFile(BOOKINGS_FILE, "utf-8");
+        bookingsCache = JSON.parse(data);
+        console.log(`✅ Base de datos cargada: ${bookingsCache.length} reservas.`);
     } catch (error) {
-        console.error("❌ Error cargando bookings.json:", error);
+        console.log("ℹ️ No se encontró bookings.json, creando uno nuevo...");
         bookingsCache = [];
+        try {
+            await fs.writeFile(BOOKINGS_FILE, "[]");
+        } catch (writeErr) {
+            console.error("⚠️ No se pudo escribir el archivo inicial.");
+        }
     }
 }
 
@@ -66,28 +66,26 @@ async function enviarNotificacionFormspree(booking) {
     };
 
     try {
-        await fetch(FORMSPREE_URL, {
+        const response = await fetch(FORMSPREE_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify(datos)
         });
-        console.log("📧 Notificación enviada.");
+        if (response.ok) console.log("📧 Notificación enviada.");
     } catch (error) {
         console.error("❌ Error enviando email:", error.message);
     }
 }
 
 /* =====================
-    API Y RUTAS (Orden Importante)
+    API Y RUTAS
 ===================== */
 
-// API: Obtener reservas (Lo que usa admin.html para mostrar la lista)
+// API para obtener todas las reservas (La usará admin.html)
 app.get("/api/bookings", (req, res) => {
-    res.set('Cache-Control', 'no-store'); // Evita que el navegador guarde datos viejos
     res.json(bookingsCache);
 });
 
-// API: Borrar reserva
 app.delete("/api/bookings/:id", async (req, res) => {
     try {
         bookingsCache = bookingsCache.filter(x => x.id !== req.params.id);
@@ -98,7 +96,6 @@ app.delete("/api/bookings/:id", async (req, res) => {
     }
 });
 
-// API: Guardar reserva
 app.post("/api/bookings", async (req, res) => {
     try {
         const newBooking = { 
@@ -108,32 +105,39 @@ app.post("/api/bookings", async (req, res) => {
         };
         bookingsCache.push(newBooking);
         await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookingsCache, null, 2));
-        
-        enviarNotificacionFormspree(newBooking).catch(console.error);
-        
+        enviarNotificacionFormspree(newBooking);
         res.status(201).json(newBooking);
     } catch (err) {
-        res.status(500).json({ error: "Error al guardar la cita" });
+        res.status(500).json({ error: "Error interno" });
     }
 });
 
-// RUTA ADMIN: Forzamos que cargue el archivo físico
+// NUEVA RUTA: Panel de Administración para Richard
 app.get("/admin", (req, res) => {
-    res.sendFile(path.join(publicDir, "admin.html"));
+    const adminPath = path.join(publicDir, "admin.html");
+    if (fssync.existsSync(adminPath)) {
+        res.sendFile(adminPath);
+    } else {
+        res.status(404).send("Error: Crea el archivo admin.html en la carpeta public.");
+    }
 });
 
 app.get("/scan-qr", (req, res) => {
-    res.send(`<div style="text-align:center;padding:50px;font-family:sans-serif;"><h2>Sistema Activo</h2><a href="/">Ir al Inicio</a></div>`);
+    res.send(`<div style="text-align:center;padding:50px;font-family:sans-serif;"><h2>Sistema de Notificación (Email) Activo</h2><p>Las reservas llegan a tu correo vía Formspree.</p><a href="/">Ir al Inicio</a></div>`);
 });
 
-// RUTA PRINCIPAL
 app.get("/", (req, res) => {
     res.sendFile(path.join(publicDir, "index.html"));
 });
 
-// CUALQUIER OTRA RUTA (Debe ir al final)
+// SPA Fallback (Mantenemos el orden para que /admin funcione)
 app.get("*", (req, res) => {
-    res.sendFile(path.join(publicDir, "index.html"));
+    const indexPath = path.join(publicDir, "index.html");
+    if (fssync.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).send("Error: No se encuentra index.html en public.");
+    }
 });
 
 app.listen(PORT, () => {

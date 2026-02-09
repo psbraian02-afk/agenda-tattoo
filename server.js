@@ -31,14 +31,29 @@ async function init() {
       await fs.writeFile(BOOKINGS_FILE, "[]");
     }
 
-    const data = await fs.readFile(BOOKINGS_FILE, "utf-8");
-    bookingsCache = JSON.parse(data);
+    let raw = await fs.readFile(BOOKINGS_FILE, "utf-8");
+
+    if (!raw || raw.trim() === "") {
+      console.log("⚠️ bookings.json vacío, reiniciando archivo...");
+      raw = "[]";
+      await fs.writeFile(BOOKINGS_FILE, raw);
+    }
+
+    try {
+      bookingsCache = JSON.parse(raw);
+    } catch (parseErr) {
+      console.log("⚠️ bookings.json corrupto, regenerando archivo...");
+      bookingsCache = [];
+      await fs.writeFile(BOOKINGS_FILE, "[]");
+    }
+
     console.log(`✅ Base de datos cargada: ${bookingsCache.length} reservas.`);
   } catch (error) {
     console.error("❌ Error inicializando bookings.json:", error.message);
     bookingsCache = [];
   }
 }
+
 
 init();
 

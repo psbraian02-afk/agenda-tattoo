@@ -148,6 +148,6 @@ app.use((err, req, res, next) => {
     next(err);
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 RichardTattoo Server unificado en: http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 Servidor listo en el puerto ${PORT}`);
 });

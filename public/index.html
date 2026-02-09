@@ -408,6 +408,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 .admin-img-preview {
     width: 50px; height: 50px;
     object-fit: cover; border: 1px solid var(--gold);
+    cursor: zoom-in;
 }
 
 .admin-info { flex: 1; font-size: 11px; color: var(--text-dark); }
@@ -828,6 +829,20 @@ window.addEventListener('load', () => {
   updateProfileButton();
   refreshBookings();
   renderMonths();
+  
+  // Listener para previsualizar imagen en la pantalla de carga del cliente
+  document.getElementById("userTattooImage").addEventListener("change", function(e){
+      const file = e.target.files[0];
+      if(file){
+          const reader = new FileReader();
+          reader.onload = function(ev){
+              const img = document.getElementById("userTattooPreview");
+              img.src = ev.target.result;
+              img.style.display = "block";
+          }
+          reader.readAsDataURL(file);
+      }
+  });
 });
 
 async function refreshBookings() {
@@ -941,88 +956,79 @@ function renderTattooOptions(){
   const frag = document.createDocumentFragment();
   const btnNext = document.getElementById("nextTattooBtn");
   
-  btnNext.disabled = !selectedTattoo;
+  if(!selectedTattoo) btnNext.disabled = true;
+  else btnNext.disabled = false;
 
   TATTOO_SIZES.forEach(t=>{ 
     const card=document.createElement("div"); card.className="tattoo-card";
     if(selectedTattoo && selectedTattoo.id === t.id) card.classList.add("card-selected");
     
-    card.innerHTML=`<img src="${t.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div><strong>${t.label}</strong></div>`; 
-    card.onclick=()=>{
-      document.querySelectorAll("#tattooOptions .tattoo-card").forEach(c => c.classList.remove("card-selected"));
-      card.classList.add("card-selected");
-      selectedTattoo = t;
-      btnNext.disabled = false;
+    card.innerHTML=`<img src="${t.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div><strong>${t.label}</strong><p style="color:var(--gold); font-size:9px;">${t.price}</p></div>`;
+    
+    card.onclick=()=>{ 
+        selectedTattoo=t; 
+        renderTattooOptions(); 
     };
     frag.appendChild(card);
-  }); 
+  });
   container.appendChild(frag);
 }
 
 function confirmTattooSelection() {
-    if(selectedTattoo) {
-        renderZoneOptions();
-        go("zoneSelection");
-    }
+    renderZoneOptions();
+    go("zoneSelection");
 }
 
-function renderZoneOptions(){
-    const container = document.getElementById("zoneOptions");
-    container.innerHTML = "";
-    const btnNext = document.getElementById("nextZoneBtn");
-    
-    btnNext.disabled = !selectedZone;
+function renderZoneOptions() {
+  const container = document.getElementById("zoneOptions"); container.innerHTML="";
+  const frag = document.createDocumentFragment();
+  const btnNext = document.getElementById("nextZoneBtn");
+  
+  if(!selectedZone) btnNext.disabled = true;
+  else btnNext.disabled = false;
 
-    BODY_ZONES.forEach(z => {
-        const card = document.createElement("div");
-        card.className = "zone-card";
-        if(selectedZone && selectedZone.id === z.id) card.classList.add("card-selected");
-        
-        card.innerHTML = `<img src="${z.img}" onerror="this.src='https://via.placeholder.com/100'" loading="lazy"><div><strong>${z.label}</strong></div>`;
-        card.onclick = () => {
-            document.querySelectorAll("#zoneOptions .zone-card").forEach(c => c.classList.remove("card-selected"));
-            card.classList.add("card-selected");
-            selectedZone = z;
-            btnNext.disabled = false;
-        };
-        container.appendChild(card);
-    });
+  BODY_ZONES.forEach(z => {
+      const card = document.createElement("div"); card.className = "zone-card";
+      if(selectedZone && selectedZone.id === z.id) card.classList.add("card-selected");
+      card.innerHTML = `<img src="${z.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div><strong>${z.label}</strong></div>`;
+      card.onclick = () => { 
+          selectedZone = z; 
+          renderZoneOptions(); 
+      };
+      frag.appendChild(card);
+  });
+  container.appendChild(frag);
 }
 
 function confirmZoneSelection() {
-    if(selectedZone) {
-        renderHours();
-        go("hourSelection");
-    }
+    renderHours();
+    go("hourSelection");
 }
 
 function renderHours(){
-  const container=document.getElementById("hoursGrid"); container.innerHTML="";
-  const duration = DURATIONS[selectedTattoo.id] || 1;
-  const booked = bookings.filter(b => b.month == selectedMonth && b.day == selectedDay);
+  const hGrid=document.getElementById("hoursGrid"); hGrid.innerHTML="";
+  const start=9; const end=20; 
+  const frag = document.createDocumentFragment();
   
-  for(let h=9; h<=20; h+=0.5){
-    const end = h + duration;
-    if(end > 21) break;
-    
-    const isOccupied = booked.some(b => {
-        const bStart = b.hour;
-        const bEnd = bStart + (DURATIONS[b.tattooId] || 1);
-        return (h < bEnd && end > bStart);
-    });
+  for(let h=start; h<=end; h++){
+      const timeStr = `${h.toString().padStart(2,'0')}:00`;
+      const isTaken = bookings.some(b => 
+          b.month === selectedMonth && b.day === selectedDay && b.hour === timeStr
+      );
 
-    if(!isOccupied){
       const b=document.createElement("button");
-      const hh=Math.floor(h), mm=h%1?":30":":00";
-      b.textContent=`${hh}${mm}`;
-      b.onclick=()=>{ 
-          selectedHour=h; 
-          go("imageUploadScreen"); 
-      };
-      container.appendChild(b);
-    }
+      b.textContent = timeStr;
+      
+      if(isTaken) {
+          b.disabled = true;
+          b.style.textDecoration = "line-through";
+          b.style.opacity = "0.5";
+      } else {
+          b.onclick = () => { selectedHour = timeStr; go("imageUploadScreen"); };
+      }
+      frag.appendChild(b);
   }
-  if(container.innerHTML === "") container.innerHTML = "<p style='grid-column:1/-1; font-size:11px; opacity:0.5'>No hay turnos disponibles.</p>";
+  hGrid.appendChild(frag);
 }
 
 function goBackFromHours() {
@@ -1030,131 +1036,148 @@ function goBackFromHours() {
     go("zoneSelection");
 }
 
-document.getElementById('userTattooImage').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if(file){
-    const reader = new FileReader();
-    reader.onload = function(event){
-      const img = document.getElementById("userTattooPreview");
-      img.src = event.target.result;
-      img.style.display = "block";
-    };
-    reader.readAsDataURL(file);
-  }
-});
-
 function updateSummary(){
-    const hh=Math.floor(selectedHour), mm=selectedHour%1?":30":":00";
-    document.getElementById("userTattooInfo").innerHTML = `
-        ${selectedDay} ${MONTHS[selectedMonth].toUpperCase()}<br>
-        HORA: ${hh}${mm}<br>
-        TAMAÑO: ${selectedTattoo.label.toUpperCase()}<br>
-        ZONA: ${selectedZone.label.toUpperCase()}
-    `;
-}
-
-async function confirmBooking(){
-  const btn = document.getElementById("confirmBtn");
-  btn.disabled = true;
-  btn.textContent = "PROCESANDO...";
-
-  const bookingData = {
-    id: Date.now(),
-    name: user.name,
-    surname: user.surname,
-    phone: user.phone,
-    email: user.email || "",
-    month: selectedMonth,
-    day: selectedDay,
-    hour: selectedHour,
-    tattooId: selectedTattoo.id,
-    tattooLabel: selectedTattoo.label,
-    zone: selectedZone.label,
-    image: document.getElementById("userTattooPreview").src || ""
-  };
-
-  try {
-    const r = await fetch(SERVER_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(bookingData)
-    });
-    if(r.ok) {
-        bookings.push(bookingData);
-        go("done");
-    } else {
-        alert("Error al guardar. Se guardará localmente.");
-        bookings.push(bookingData);
-        go("done");
+    const info = document.getElementById("userTattooInfo");
+    if(selectedTattoo && selectedZone && selectedDay && selectedMonth !== null && selectedHour) {
+        info.innerHTML = `
+            ${selectedDay} de ${MONTHS[selectedMonth]} a las ${selectedHour}<br>
+            Estilo: ${selectedTattoo.label}<br>
+            Zona: ${selectedZone.label}
+        `;
     }
-  } catch(e) {
-    bookings.push(bookingData);
-    go("done");
-  }
 }
 
-function expandImage(src) {
+function confirmBooking() {
+    if(!selectedTattoo || !selectedZone || !selectedHour) return;
+
+    const btn = document.getElementById("confirmBtn");
+    btn.disabled = true;
+    btn.textContent = "Procesando...";
+
+    // AQUÍ ESTÁ LA MAGIA: Leer la imagen
+    const fileInput = document.getElementById('userTattooImage');
+    const file = fileInput.files[0];
+    
+    // Función auxiliar para guardar la cita
+    const saveBooking = (imageBase64) => {
+        const newBooking = {
+            id: Date.now(),
+            client: user.name + " " + user.surname,
+            phone: user.phone,
+            email: user.email,
+            month: selectedMonth,
+            day: selectedDay,
+            hour: selectedHour,
+            tattoo: selectedTattoo.label,
+            zone: selectedZone.label,
+            image: imageBase64 // Guardamos la imagen
+        };
+
+        // Simular guardado local (en producción esto iría al servidor)
+        bookings.push(newBooking);
+        
+        // Simular POST
+        /* fetch(SERVER_URL, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(newBooking)
+        });
+        */
+
+        setTimeout(() => {
+            btn.textContent = "Confirmar Reserva";
+            go("done");
+        }, 1000);
+    };
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onloadend = function() {
+            saveBooking(reader.result); // Pasar la data de la imagen
+        }
+        reader.readAsDataURL(file);
+    } else {
+        saveBooking(null); // Guardar sin imagen si no subió ninguna
+    }
+}
+
+function expandImage(src){
     const lb = document.getElementById("lightbox");
     const img = document.getElementById("lightboxImg");
     img.src = src;
     lb.style.display = "flex";
 }
 
-function promptAdmin() {
-    const pass = prompt("Contraseña de Artista:");
-    if(pass === "richard2024") {
-        renderAdmin();
+function promptAdmin(){
+    const p = prompt("Contraseña de Artista:");
+    if(p === "richard123") { // Contraseña simple de ejemplo
+        renderAdminList();
         go("admin");
-    } else if(pass !== null) {
+    } else if(p !== null) {
         alert("Acceso denegado");
     }
 }
 
-function renderAdmin(){
-  const list = document.getElementById("adminList");
-  list.innerHTML = "";
-  const sorted = [...bookings].sort((a,b) => (a.month - b.month) || (a.day - b.day) || (a.hour - b.hour));
-  
-  sorted.forEach(b => {
-    const hh=Math.floor(b.hour), mm=b.hour%1?":30":":00";
-    const card = document.createElement("div");
-    card.className = "admin-card";
-    card.innerHTML = `
-      <img src="${b.image || 'https://via.placeholder.com/50'}" class="admin-img-preview" onclick="expandImage(this.src)">
-      <div class="admin-info">
-        <strong>${b.day} ${MONTHS[b.month].substring(0,3)} - ${hh}${mm}</strong><br>
-        ${b.name} ${b.surname}<br>
-        ${b.tattooLabel} / ${b.zone}
-      </div>
-      <button onclick="deleteBooking(${b.id})" style="width:auto; padding:5px 10px; border-color:#ffcccc; color:red; font-size:10px">X</button>
-      <button onclick="window.open('https://wa.me/598${b.phone}')" class="btn-whatsapp" style="width:auto; padding:5px 10px; font-size:10px">WA</button>
-    `;
-    list.appendChild(card);
-  });
+function renderAdminList() {
+    const list = document.getElementById("adminList");
+    list.innerHTML = "";
+    
+    if(bookings.length === 0) {
+        list.innerHTML = "<p style='text-align:center; padding:20px; color:#999; font-size:12px'>No hay citas agendadas.</p>";
+        return;
+    }
+
+    // Ordenar cronológicamente
+    const sorted = [...bookings].sort((a,b) => {
+        if(a.month !== b.month) return a.month - b.month;
+        if(a.day !== b.day) return a.day - b.day;
+        return parseInt(a.hour) - parseInt(b.hour);
+    });
+
+    sorted.forEach(b => {
+        const div = document.createElement("div");
+        div.className = "admin-card";
+        
+        // Lógica para mostrar imagen o placeholder en la agenda privada
+        const imgHtml = b.image 
+            ? `<img src="${b.image}" class="admin-img-preview" onclick="expandImage('${b.image}')" title="Ver referencia">`
+            : `<div class="admin-img-preview" style="background:#f0f0f0; display:flex; align-items:center; justify-content:center; color:#ccc; font-size:9px;">Sin Foto</div>`;
+
+        div.innerHTML = `
+            ${imgHtml}
+            <div class="admin-info">
+                <strong>${b.day} ${MONTHS[b.month]} - ${b.hour}</strong><br>
+                ${b.client} (${b.phone})<br>
+                <span style="color:var(--text-muted)">${b.tattoo} en ${b.zone}</span>
+                ${b.email ? `<br><span style="color:#aaa; font-size:9px;">${b.email}</span>` : ''}
+            </div>
+            <a href="https://wa.me/598${b.phone}?text=Hola ${b.client}, te escribo por tu turno..." target="_blank" class="button" style="border:1px solid #25D366; color:#25D366; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; text-decoration:none;">
+                <img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" style="width:14px; filter: invert(56%) sepia(93%) saturate(385%) hue-rotate(87deg) brightness(91%) contrast(91%);">
+            </a>
+            <button onclick="deleteBooking(${b.id})" style="border:none; color:red; font-size:16px; padding:0 10px;">&times;</button>
+        `;
+        list.appendChild(div);
+    });
 }
 
-async function deleteBooking(id){
-  if(!confirm("¿Eliminar cita?")) return;
-  try {
-    await fetch(`${SERVER_URL}/${id}`, { method: 'DELETE' });
-    bookings = bookings.filter(b => b.id !== id);
-    renderAdmin();
-  } catch(e) {
-    bookings = bookings.filter(b => b.id !== id);
-    renderAdmin();
-  }
+function deleteBooking(id){
+    if(confirm("¿Cancelar esta cita?")){
+        bookings = bookings.filter(b => b.id !== id);
+        renderAdminList();
+    }
 }
 
-function resetUserData() {
-    if(confirm("¿Borrar todos tus datos y cerrar sesión?")) {
+function resetUserData(){
+    if(confirm("¿Borrar datos locales de usuario?")){
         localStorage.clear();
         location.reload();
     }
 }
 
-function logoutAdminSession() {
-    go('home');
+function logoutAdminSession(){
+    go("home");
 }
+
 </script>
 </body>
 </html>

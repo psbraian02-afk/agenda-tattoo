@@ -15,6 +15,16 @@ let bookingsCache = [];
 
 // Middleware
 app.use(compression()); // Comprime las respuestas (Gzip)
+
+/* CORRECCIÓN PARA INSTAGRAM: Headers de Keep-Alive y CORS */
+app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Connection", "keep-alive"); // Mantiene la conexión abierta para evitar el error de "Sin conexión"
+    next();
+});
+
 app.use(express.json({ limit: "10mb" })); // Bajamos un poco el límite por seguridad
 app.use(express.static(publicDir, { maxAge: '1d' })); // Cacheamos estáticos por 1 día
 
@@ -92,14 +102,20 @@ app.post("/api/bookings", async (req, res) => {
         // Guardado asíncrono (no esperamos a que termine para responder)
         fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookingsCache, null, 2));
 
-        // Notificación en segundo plano (Background task)
-        enviarNotificacionFormspree(newBooking);
-
-        // Respondemos de inmediato al cliente
+        // Respondemos de inmediato al cliente ANTES de llamar a Formspree
+        // Esto evita que Instagram crea que la petición falló por tiempo de espera
         res.status(201).json(newBooking);
+
+        // Notificación en segundo plano DESPUÉS de enviar la respuesta al cliente
+        setImmediate(() => {
+            enviarNotificacionFormspree(newBooking);
+        });
+
     } catch (err) {
         console.error("Error en el POST:", err);
-        res.status(500).json({ error: "Error interno" });
+        if (!res.headersSent) {
+            res.status(500).json({ error: "Error interno" });
+        }
     }
 });
 
@@ -110,7 +126,9 @@ app.get("/scan-qr", (req, res) => {
 // Manejo de rutas SPA (Single Page Application) mejorado
 app.get("*", (req, res) => {
     res.sendFile(path.join(publicDir, "index.html"), (err) => {
-        if (err) res.status(404).send("Archivo no encontrado");
+        if (err) {
+            if (!res.headersSent) res.status(404).send("Archivo no encontrado");
+        }
     });
 });
 

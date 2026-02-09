@@ -1071,7 +1071,7 @@ async function confirmBooking() {
   const zoneLabel = selectedZone ? selectedZone.label : "Zona General";
   const FORMSPARK_ACTION_URL = "https://submit-form.com/fVTf7pFYx";
 
-  // Estructura de datos para tu server.js (bookings.json)
+  // --------- DATOS BASE ----------
   const bookingData = {
     name: user.name,
     surname: user.surname,
@@ -1082,11 +1082,25 @@ async function confirmBooking() {
     tattoo: {
       size: selectedTattoo.label,
       place: zoneLabel
-      // No enviamos la imagen al JSON para que no explote el servidor
     }
   };
 
-  // Datos completos para Formspark (Aquí sí incluimos la imagen para que te llegue al mail)
+  // --------- FORM DATA PARA TU SERVER (INCLUYE IMAGEN) ----------
+  const formData = new FormData();
+  formData.append("name", bookingData.name);
+  formData.append("surname", bookingData.surname);
+  formData.append("phone", bookingData.phone);
+  formData.append("email", bookingData.email);
+  formData.append("date", bookingData.date);
+  formData.append("start", bookingData.start);
+  formData.append("tattooSize", bookingData.tattoo.size);
+  formData.append("tattooZone", bookingData.tattoo.place);
+
+  // Convertimos la imagen base64 a archivo real
+  const blob = await fetch(preview.src).then(res => res.blob());
+  formData.append("image", blob, "referencia.png");
+
+  // --------- DATOS PARA FORMSPARK (MAIL CON IMAGEN) ----------
   const emailData = {
     ...bookingData,
     _subject: `🚀 NUEVO TURNO: ${user.name} ${user.surname}`,
@@ -1094,11 +1108,10 @@ async function confirmBooking() {
   };
 
   try {
-    // --- PASO A: Guardar en tu Agenda Privada (server.js) ---
+    // --- PASO A: Guardar en tu Agenda Privada (server.js con imagen) ---
     const resAgenda = await fetch("/api/bookings", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(bookingData)
+      body: formData
     });
 
     if (!resAgenda.ok) throw new Error("Error en agenda privada");
@@ -1126,6 +1139,7 @@ async function confirmBooking() {
     btn.textContent = "Confirmar Reserva";
   }
 }
+
 function promptAdmin(){ 
   if(localStorage.getItem("isAdminAuthenticated") === "true") return openAdmin();
   const pass=prompt("Contraseña:"); 

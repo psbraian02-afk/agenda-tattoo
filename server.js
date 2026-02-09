@@ -1,130 +1,119 @@
 const express = require("express");
 const path = require("path");
 const fs = require("fs/promises");
-const { existsSync, mkdirSync, writeFileSync, readFileSync } = require("fs");
+const fssync = require("fs");
 const { v4: uuidv4 } = require("uuid");
-const compression = require("compression");
-const cors = require("cors");
+const compression = require("compression"); // Nueva dependencia para velocidad
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-const publicDir = path.join(__dirname, "public");
 const BOOKINGS_FILE = path.join(__dirname, "bookings.json");
+const publicDir = path.join(__dirname, 'public');
 
+// Variable en memoria para evitar lecturas constantes de disco
 let bookingsCache = [];
 
-// --- MIDDLEWARES ---
-app.use(cors());
-app.use(compression());
-app.use(express.json({ limit: "50mb" })); 
-app.use(express.urlencoded({ limit: "50mb", extended: true }));
-app.use(express.static(publicDir));
+// Middleware
+app.use(compression()); // Comprime las respuestas (Gzip)
+app.use(express.json({ limit: "10mb" })); // Bajamos un poco el límite por seguridad
+app.use(express.static(publicDir, { maxAge: '1d' })); // Cacheamos estáticos por 1 día
 
-// --- INICIALIZACIÓN ---
-function initSync() {
+// Inicialización: Cargar datos al arrancar
+async function init() {
+    if (!fssync.existsSync(publicDir)) fssync.mkdirSync(publicDir);
     try {
-        if (!existsSync(publicDir)) mkdirSync(publicDir, { recursive: true });
-        if (!existsSync(BOOKINGS_FILE)) writeFileSync(BOOKINGS_FILE, "[]");
-
-        const rawData = readFileSync(BOOKINGS_FILE, 'utf-8').trim();
-        bookingsCache = rawData ? JSON.parse(rawData) : [];
-        
-        console.log(`✅ DB Unificada: ${bookingsCache.length} reservas (Sin imágenes en disco).`);
-    } catch (err) {
-        console.error("⚠️ Error inicializando:", err.message);
+        const data = await fs.readFile(BOOKINGS_FILE, "utf-8");
+        bookingsCache = JSON.parse(data);
+    } catch {
+        await fs.writeFile(BOOKINGS_FILE, "[]");
         bookingsCache = [];
-        writeFileSync(BOOKINGS_FILE, "[]");
     }
 }
-initSync();
+init();
 
-// --- ENVÍO A FORMSPARK (Imagen por correo) ---
-async function enviarAFormspark(booking, base64Image) {
-    // Reemplaza con tu ID de Formspark
-    const FORMSPARK_URL = "https://submit-form.com/xzdapoze"; 
+/* =====================
+    CONFIGURACIÓN DE NOTIFICACIÓN
+===================== */
+async function enviarNotificacionFormspree(booking) {
+    const FORMSPREE_URL = "https://formspree.io/f/xzdapoze";
+    const datos = {
+        _subject: `🚀 NUEVO TURNO: ${booking.name} ${booking.surname}`,
+        cliente: `${booking.name} ${booking.surname}`,
+        whatsapp: booking.phone,
+        fecha: booking.date,
+        hora: `${booking.start}:00hs`,
+        tamaño: booking.tattoo?.size || 'N/A',
+        zona: booking.tattoo?.place || 'N/A',
+    };
 
     try {
-        await fetch(FORMSPARK_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Accept": "application/json" },
-            body: JSON.stringify({
-                _email_subject: `Nueva Cita: ${booking.name} ${booking.surname}`,
-                cliente: `${booking.name} ${booking.surname}`,
-                whatsapp: `https://wa.me/598${booking.phone}`,
-                fecha: booking.date,
-                hora: `${booking.start}:00hs`,
-                tatuaje: `${booking.tattoo.size} en ${booking.tattoo.place}`,
-                // La imagen se envía directamente aquí
-                referencia_foto: base64Image, 
-            }),
+        // Usamos fetch nativo (Node 18+) o una sola importación
+        await fetch(FORMSPREE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(datos)
         });
-        console.log("📧 Imagen enviada a Formspark correctamente.");
     } catch (error) {
-        console.error("❌ Error en Formspark:", error.message);
+        console.error("❌ Error en notificación (Background):", error.message);
     }
 }
 
-// --- API ---
+/* =====================
+    API Y RUTAS
+===================== */
 
+// GET: Súper rápido porque responde desde la RAM
 app.get("/api/bookings", (req, res) => {
     res.json(bookingsCache);
 });
 
+// DELETE: Filtra en memoria y guarda en disco sin bloquear
+app.delete("/api/bookings/:id", async (req, res) => {
+    try {
+        bookingsCache = bookingsCache.filter(x => x.id !== req.params.id);
+        await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookingsCache, null, 2));
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: "Error al borrar" });
+    }
+});
+
+// POST: Optimizado para respuesta inmediata
 app.post("/api/bookings", async (req, res) => {
     try {
-        const { name, surname, phone, email, date, start, tattoo } = req.body;
-        
-        // Extraemos la imagen para el correo
-        const imagenParaEmail = tattoo?.image;
-
-        const newBooking = {
-            id: uuidv4(),
-            name, surname, phone, email: email || "",
-            date, start,
-            tattoo: {
-                size: tattoo?.size || "",
-                place: tattoo?.place || "",
-                image: null // ⚠️ NO guardamos la imagen para evitar el CRASH (SIGTERM)
-            },
-            createdAt: new Date().toISOString(),
+        const newBooking = { 
+            id: uuidv4(), 
+            ...req.body, 
+            createdAt: new Date().toISOString() 
         };
-
+        
         bookingsCache.push(newBooking);
         
-        // Guardamos el JSON (ahora es muy liviano)
-        await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookingsCache, null, 2));
+        // Guardado asíncrono (no esperamos a que termine para responder)
+        fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookingsCache, null, 2));
 
-        // Enviamos a Formspark sin bloquear al usuario
-        if (imagenParaEmail) {
-            enviarAFormspark(newBooking, imagenParaEmail).catch(err => console.error("Error Formspark:", err));
-        }
+        // Notificación en segundo plano (Background task)
+        enviarNotificacionFormspree(newBooking);
 
+        // Respondemos de inmediato al cliente
         res.status(201).json(newBooking);
     } catch (err) {
-        console.error("❌ Error en reserva:", err);
+        console.error("Error en el POST:", err);
         res.status(500).json({ error: "Error interno" });
     }
 });
 
-app.delete("/api/bookings/:id", async (req, res) => {
-    const originalCount = bookingsCache.length;
-    bookingsCache = bookingsCache.filter((x) => x.id !== req.params.id);
-    if (bookingsCache.length !== originalCount) {
-        await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookingsCache, null, 2));
-    }
-    res.json({ success: true });
+app.get("/scan-qr", (req, res) => {
+    res.send(`<div style="text-align:center;padding:50px;font-family:sans-serif;"><h2>Sistema de Notificación Activo</h2><p>Recibirás los avisos en tu email.</p><a href="/">Ir al Inicio</a></div>`);
 });
 
-// --- NAVEGACIÓN ---
-app.get(["/admin", "/admin.html"], (req, res) => {
-    res.sendFile(path.join(publicDir, "admin.html"));
-});
-
+// Manejo de rutas SPA (Single Page Application) mejorado
 app.get("*", (req, res) => {
-    res.sendFile(path.join(publicDir, "index.html"));
+    res.sendFile(path.join(publicDir, "index.html"), (err) => {
+        if (err) res.status(404).send("Archivo no encontrado");
+    });
 });
 
-app.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 RichardTattoo ONLINE en puerto ${PORT}`);
+app.listen(PORT, () => {
+    console.log(`🚀 Servidor optimizado en puerto ${PORT}`);
 });

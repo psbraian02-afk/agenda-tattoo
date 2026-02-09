@@ -977,17 +977,23 @@ function renderZoneOptions(){
 function confirmZoneSelection(){ go("hourSelection"); renderHours(); }
 
 function renderHours(){
-  const container=document.getElementById("hoursGrid"); container.innerHTML="";
-  const duration = DURATIONS[selectedTattoo.id];
-  const start=9, end=21;
+  const container = document.getElementById("hoursGrid"); 
+  container.innerHTML = "";
   
-  for(let h=start; h<=end - duration; h += 0.5){
-      const timeStr = formatTime(h);
-      const isTaken = bookings.some(b => b.month==selectedMonth && b.day==selectedDay && isOverlapping(h, duration, b.hour, DURATIONS[b.tattooId]));
-      const b=document.createElement("button");
-      b.textContent = timeStr;
-      if(isTaken) b.disabled = true;
-      else b.onclick=()=>{ selectedHour=h; go("imageUploadScreen"); };
+  // Ciclo de 9 (9 AM) hasta 21 (9 PM)
+  for(let h = 9; h <= 21; h += 1){
+      
+      // Si la hora es 12, saltamos este ciclo para que no aparezca el botón
+      if(h === 12) continue;
+
+      const b = document.createElement("button"); 
+      b.textContent = `${h.toString().padStart(2, '0')}:00`; 
+      
+      b.onclick = () => { 
+          selectedHour = h; 
+          go("imageUploadScreen"); 
+      };
+      
       container.appendChild(b);
   }
 }

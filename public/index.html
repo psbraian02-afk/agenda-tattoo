@@ -1077,18 +1077,19 @@ async function confirmBooking() {
 
   // Estructura de datos para tu server.js (bookings.json)
   const bookingData = {
-    name: user.name,
-    surname: user.surname,
-    phone: user.phone,
-    email: user.email || "No proporcionado",
-    date: `${selectedDay}/${selectedMonth + 1}/${nowUY().getFullYear()}`,
-    start: selectedHour,
-    tattoo: {
-      size: selectedTattoo.label,
-      place: zoneLabel
-      // No enviamos la imagen al JSON para que no explote el servidor
-    }
-  };
+  name: user.name,
+  surname: user.surname,
+  phone: user.phone,
+  email: user.email || "No proporcionado",
+  date: `${selectedDay}/${selectedMonth + 1}/${nowUY().getFullYear()}`,
+  start: selectedHour,
+  tattoo: {
+    size: selectedTattoo.label,
+    place: zoneLabel,
+    image: document.getElementById("userTattooPreview").src // 👈 AHORA SÍ SE GUARDA
+  }
+};
+
 
   // Datos completos para Formspark (Aquí sí incluimos la imagen para que te llegue al mail)
   const emailData = {

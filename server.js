@@ -10,7 +10,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const publicDir = path.join(__dirname, 'public');
-const BOOKINGS_FILE = path.join(__dirname, "bookings.json");
+const BOOKINGS_FILE = "/app/data/bookings.json";
 
 let bookingsCache = [];
 

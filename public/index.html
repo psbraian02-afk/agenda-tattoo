@@ -1067,10 +1067,9 @@ async function confirmBooking() {
   btn.textContent = "PROCESANDO...";
   
   const zoneLabel = selectedZone ? selectedZone.label : "Zona General";
-  
-  // AQUÍ ESTÁ TU ID DE FORMSPARK
-  const FORMSPARK_ACTION_URL = "https://submit-form.com/fVTf7pFYx"; 
+  const FORMSPARK_ACTION_URL = "https://submit-form.com/fVTf7pFYx"; // REEMPLAZA ESTO
 
+  // 2. Estructura de la reserva
   const booking = {
     nombre: `${user.name} ${user.surname}`,
     email: user.email || "No proporcionado",
@@ -1080,35 +1079,28 @@ async function confirmBooking() {
     hora_fin: selectedHour + DURATIONS[selectedTattoo.id],
     tamaño: selectedTattoo.label,
     zona: zoneLabel,
-    imagen_referencia: preview.src,
-    // Formspark usará este campo como asunto del correo que recibas:
-    _subject: `Nueva cita: ${user.name} - ${selectedDay}/${selectedMonth + 1}`
+    _subject: `Nueva Reserva: ${user.name} - ${selectedDay}/${selectedMonth + 1}`, // Asunto personalizado para Formspark
+    imagen_referencia: preview.src 
   };
 
-  try {
-    // 1. MANTENER OTRAS FUNCIONES (Ejemplo: Guardar en tu agenda privada/Base de datos)
-    // Si tienes una función como saveToAgenda(booking), llámala aquí.
-    // await saveToAgenda(booking); 
-
-    // 2. ENVÍO EXCLUSIVO A FORMSPARK
+   try {
     const res = await fetch(FORMSPARK_ACTION_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Accept": "application/json",
+        Accept: "application/json",
       },
       body: JSON.stringify(booking),
     });
 
     if (res.ok) {
-      // Si Formspark lo recibe correctamente, pasamos a la pantalla final
       go("done");
     } else {
       throw new Error("Error en Formspark");
     }
   } catch (e) {
     console.error(e);
-    alert("Error al procesar la reserva. Intenta nuevamente.");
+    alert("Error al enviar la reserva. Intenta nuevamente.");
     btn.disabled = false;
     btn.textContent = "Confirmar Reserva";
   }

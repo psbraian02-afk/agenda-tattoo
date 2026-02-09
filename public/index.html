@@ -1061,46 +1061,62 @@ async function confirmBooking() {
   const preview = document.getElementById("userTattooPreview");
   const btn = document.getElementById("confirmBtn");
   
-  if (!preview.src || preview.style.display === "none") return alert("Sube una referencia.");
+  if (!preview.src || preview.style.display === "none") {
+    return alert("Por favor, sube una imagen de referencia.");
+  }
 
   btn.disabled = true;
   btn.textContent = "PROCESANDO...";
   
   const zoneLabel = selectedZone ? selectedZone.label : "Zona General";
-  const FORMSPARK_ACTION_URL = "https://submit-form.com/fVTf7pFYx"; // REEMPLAZA ESTO
+  const FORMSPARK_ACTION_URL = "https://submit-form.com/fVTf7pFYx";
 
-  // 2. Estructura de la reserva
   const booking = {
-    nombre: `${user.name} ${user.surname}`,
+    name: user.name, // Usamos los nombres que espera tu server.js
+    surname: user.surname,
+    phone: user.phone,
     email: user.email || "No proporcionado",
-    telefono: user.phone,
-    fecha: `${nowUY().getFullYear()}-${selectedMonth + 1}-${selectedDay}`,
-    hora_inicio: selectedHour,
-    hora_fin: selectedHour + DURATIONS[selectedTattoo.id],
-    tamaño: selectedTattoo.label,
-    zona: zoneLabel,
-    _subject: `Nueva Reserva: ${user.name} - ${selectedDay}/${selectedMonth + 1}`, // Asunto personalizado para Formspark
-    imagen_referencia: preview.src 
+    date: `${selectedDay}/${selectedMonth + 1}/${nowUY().getFullYear()}`,
+    start: selectedHour,
+    tattoo: {
+        size: selectedTattoo.label,
+        place: zoneLabel,
+        image: preview.src // Esto guarda la imagen en el JSON (ojo que ocupa mucho espacio)
+    },
+    // Datos extra para Formspark
+    _subject: `Nueva Reserva: ${user.name} - ${selectedDay}/${selectedMonth + 1}`
   };
 
-   try {
-    const res = await fetch(FORMSPARK_ACTION_URL, {
+  try {
+    // --- PASO 1: Guardar en tu Agenda Privada (server.js) ---
+    // Esta es la parte que te faltaba
+    const resAgenda = await fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(booking)
+    });
+
+    if (!resAgenda.ok) throw new Error("Error guardando en la agenda privada");
+
+    // --- PASO 2: Envío a Formspark (Email) ---
+    const resMail = await fetch(FORMSPARK_ACTION_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
+        "Accept": "application/json",
       },
       body: JSON.stringify(booking),
     });
 
-    if (res.ok) {
+    if (resMail.ok) {
       go("done");
     } else {
       throw new Error("Error en Formspark");
     }
-  } catch (e) {
-    console.error(e);
-    alert("Error al enviar la reserva. Intenta nuevamente.");
+
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Error al procesar. La agenda no se registró.");
     btn.disabled = false;
     btn.textContent = "Confirmar Reserva";
   }

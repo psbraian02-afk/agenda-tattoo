@@ -833,8 +833,12 @@ window.addEventListener('load', () => {
 async function refreshBookings() {
     try {
         const r = await fetch(SERVER_URL);
-        if(r.ok) bookings = await r.json();
-    } catch(e) { console.warn("Modo offline o error de red."); }
+        if(r.ok) {
+            bookings = await r.json();
+        }
+    } catch(e) { 
+        console.warn("Modo offline o error de red al cargar bookings."); 
+    }
 }
 
 function resetBookingFlow() {
@@ -952,7 +956,7 @@ function renderTattooOptions(){
     card.onclick=()=>{
       document.querySelectorAll("#tattooOptions .tattoo-card").forEach(c => c.classList.remove("card-selected"));
       card.classList.add("card-selected");
-      selectedTattoo=t;
+      selectedTattoo = {...t}; // Clonamos para no afectar el original
       btnNext.disabled = false;
     };
     frag.appendChild(card); 
@@ -1016,11 +1020,12 @@ function renderHours(){
     if(h===12) continue; 
     let btn=document.createElement("button"); btn.textContent=h+":00";
     let disabled = (isToday && h <= timeUY.getHours());
+    
     if(!disabled){
       bookings.forEach(b=>{
-        const bd=b.date.split("-");
-        if(parseInt(bd[2])===selectedDay && parseInt(bd[1])===(selectedMonth+1)){
-          if (h >= b.start && h < b.end) disabled = true;
+        const bd=b.date.split("/"); // Ajustado a / según el nuevo guardado
+        if(parseInt(bd[0])===selectedDay && parseInt(bd[1])===(selectedMonth+1)){
+          if (h >= b.start && h < (b.end || b.start + 1)) disabled = true;
         }
       });
     }
@@ -1041,7 +1046,6 @@ function updateSummary() {
   }
 }
 
-// Busca donde manejas el input de imagen del cliente
 document.getElementById('userTattooImage').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) {
@@ -1051,10 +1055,8 @@ document.getElementById('userTattooImage').addEventListener('change', function(e
             document.getElementById('userTattooPreview').src = base64;
             document.getElementById('userTattooPreview').style.display = "block";
             
-            // IMPORTANTE: Guardamos el string base64 en nuestra variable global de selección
             if(!selectedTattoo) selectedTattoo = {};
             selectedTattoo.image = base64; 
-            
             document.getElementById('userTattooInfo').textContent = "Imagen cargada correctamente";
         };
         reader.readAsDataURL(file);
@@ -1072,65 +1074,53 @@ async function confirmBooking() {
   btn.disabled = true;
   btn.textContent = "PROCESANDO...";
   
-  const zoneLabel = selectedZone ? selectedZone.label : "Zona General";
+  const zoneLabel = selectedZone ? selectedZone.label : "Cuerpo Completo";
   const FORMSPARK_ACTION_URL = "https://submit-form.com/fVTf7pFYx";
 
-  // Estructura de datos para tu server.js (bookings.json)
+  // Estructura de datos para server.js
   const bookingData = {
-  name: user.name,
-  surname: user.surname,
-  phone: user.phone,
-  email: user.email || "No proporcionado",
-  date: `${selectedDay}/${selectedMonth + 1}/${nowUY().getFullYear()}`,
-  start: selectedHour,
-  tattoo: {
-    size: selectedTattoo.label,
-    place: zoneLabel,
-    image: document.getElementById("userTattooPreview").src // 👈 AHORA SÍ SE GUARDA
-  }
-};
-
-
-  // Datos completos para Formspark (Aquí sí incluimos la imagen para que te llegue al mail)
-  const emailData = {
-    ...bookingData,
-    _subject: `🚀 NUEVO TURNO: ${user.name} ${user.surname}`,
-    imagen_referencia: preview.src 
+    name: user.name,
+    surname: user.surname,
+    phone: user.phone,
+    email: user.email || "No proporcionado",
+    date: `${selectedDay}/${selectedMonth + 1}/${nowUY().getFullYear()}`,
+    start: selectedHour,
+    end: selectedHour + (DURATIONS[selectedTattoo.id] || 1),
+    tattoo: {
+      size: selectedTattoo.label,
+      place: zoneLabel,
+      image: preview.src 
+    }
   };
 
   try {
-    // --- PASO A: Guardar en tu Agenda Privada (server.js) ---
-    const resAgenda = await fetch("/api/bookings", {
+    // 1. Intentar guardar en la agenda local (tu server.js)
+    const resAgenda = await fetch(SERVER_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(bookingData)
     });
 
-    if (!resAgenda.ok) throw new Error("Error en agenda privada");
-
-    // --- PASO B: Envío a Formspark (Email) ---
-    const resMail = await fetch(FORMSPARK_ACTION_URL, {
+    // 2. Enviar a Formspark para respaldo por email
+    await fetch(FORMSPARK_ACTION_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
-      body: JSON.stringify(emailData),
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({
+          ...bookingData,
+          _subject: `NUEVO TURNO: ${user.name} ${user.surname}`
+      }),
     });
 
-    if (resMail.ok) {
-      go("done");
-    } else {
-      throw new Error("Error en Formspark");
-    }
+    go("done");
 
   } catch (error) {
-    console.error("Error:", error);
-    alert("Hubo un problema. Verifica tu conexión.");
+    console.error("Error detallado:", error);
+    alert("Hubo un problema al guardar. Si el error persiste, contáctanos por WhatsApp.");
     btn.disabled = false;
     btn.textContent = "Confirmar Reserva";
   }
 }
+
 function promptAdmin(){ 
   if(localStorage.getItem("isAdminAuthenticated") === "true") return openAdmin();
   const pass=prompt("Contraseña:"); 
@@ -1162,42 +1152,43 @@ function expandImage(src) {
     }
 }
 
-/* === REEMPLAZA TU FUNCIÓN DE RENDERIZADO ADMIN POR ESTA === */
 function renderAdmin() {
     const list = document.getElementById("adminList");
     if (!list) return;
-    
     list.innerHTML = "";
     
-    // Ordenamos por fecha más reciente
-    const sortedBookings = [...bookings].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // Invertimos para ver los últimos primero
+    const reversedBookings = [...bookings].reverse();
 
-    sortedBookings.forEach(b => {
+    reversedBookings.forEach(b => {
         const div = document.createElement("div");
         div.className = "admin-card";
         
-        // Verificamos si existe la imagen en la reserva
         const tieneImagen = b.tattoo && b.tattoo.image;
         const imgHtml = tieneImagen 
             ? `<img src="${b.tattoo.image}" class="admin-img-preview" onclick="expandImage('${b.tattoo.image}')" title="Click para ampliar">`
-            : `<div class="admin-img-preview" style="display:flex; align-items:center; justify-content:center; background:#f0f0f0; font-size:9px; color:#ccc;">SIN FOTO</div>`;
+            : `<div class="admin-img-preview" style="display:flex; align-items:center; justify-content:center; background:#333; font-size:9px; color:#ccc;">SIN FOTO</div>`;
 
         div.innerHTML = `
             ${imgHtml}
             <div class="admin-info">
                 <strong>${b.name} ${b.surname}</strong><br>
                 📅 ${b.date} - 🕒 ${b.start}:00hs<br>
-                💉 ${b.tattoo?.size || 'N/A'} en ${b.tattoo?.place || 'N/A'}<br>
+                💉 ${b.tattoo?.size || 'N/A'} - ${b.tattoo?.place || 'N/A'}<br>
                 📱 <a href="https://wa.me/598${b.phone}" target="_blank" style="color:#25D366; text-decoration:none;">WhatsApp: 0${b.phone}</a>
             </div>
-            <button onclick="deleteBooking('${b.id}')" style="width:40px; padding:5px; border-color:#ffcccc; color:red;">X</button>
+            <button onclick="deleteBooking('${b.id}')" style="width:40px; padding:5px; border-color:#ffcccc; color:red; background:none; cursor:pointer;">X</button>
         `;
         list.appendChild(div);
     });
 }
 
 function deleteBooking(id){
-    if(confirm("¿Borrar?")) fetch(`${SERVER_URL}/${id}`, {method:'DELETE'}).then(()=>openAdmin());
+    if(confirm("¿Borrar definitivamente esta cita?")) {
+        fetch(`${SERVER_URL}/${id}`, {method:'DELETE'})
+        .then(() => refreshBookings())
+        .then(() => renderAdmin());
+    }
 }
 
 function resetUserData() { 

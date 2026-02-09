@@ -1057,33 +1057,54 @@ if(fileInput){
     });
 }
 
-async function confirmBooking(){
+async function confirmBooking() {
   const preview = document.getElementById("userTattooPreview");
   const btn = document.getElementById("confirmBtn");
-  if(!preview.src || preview.style.display === "none") return alert("Sube una referencia.");
   
+  if (!preview.src || preview.style.display === "none") return alert("Sube una referencia.");
+
   btn.disabled = true;
   btn.textContent = "PROCESANDO...";
-  const zoneLabel = selectedZone ? selectedZone.label : "Zona General";
-
-  const booking={ 
-    date:`${nowUY().getFullYear()}-${selectedMonth+1}-${selectedDay}`, 
-    start:selectedHour, end:selectedHour+DURATIONS[selectedTattoo.id], 
-    phone:user.phone, name: user.name, surname: user.surname, email: user.email || "",
-    tattoo:{ image: preview.src, size:selectedTattoo.label, place:zoneLabel } 
-  };
   
+  const zoneLabel = selectedZone ? selectedZone.label : "Zona General";
+  
+  // URL configurada con tu ID: fVTf7pFYx
+  const FORMSPARK_ACTION_URL = "https://submit-form.com/fVTf7pFYx"; 
+
+  const booking = {
+    Cliente: `${user.name} ${user.surname}`,
+    Email: user.email || "No proporcionado",
+    Telefono: user.phone,
+    Fecha: `${nowUY().getFullYear()}-${selectedMonth + 1}-${selectedDay}`,
+    Hora_Inicio: selectedHour,
+    Hora_Fin: selectedHour + (DURATIONS[selectedTattoo.id] || 1),
+    Tamaño: selectedTattoo.label,
+    Zona: zoneLabel,
+    Imagen_Referencia: preview.src 
+  };
+
   try {
-    const res=await fetch(SERVER_URL,{ 
-        method:'POST', 
-        headers:{'Content-Type':'application/json'}, 
-        body:JSON.stringify(booking) 
+    const res = await fetch(FORMSPARK_ACTION_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify(booking),
     });
-    if(res.ok) go("done"); 
-    else throw new Error("Error en servidor");
-  } catch(e) { 
-    alert("Error de conexión. Intenta nuevamente."); 
-    btn.disabled = false; btn.textContent = "Confirmar Reserva";
+
+    if (res.ok) {
+      go("done");
+    } else {
+      const errorData = await res.json();
+      console.error("Detalle del error:", errorData);
+      throw new Error("Error en Formspark");
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Hubo un problema al enviar la reserva. Verifica que la imagen no sea demasiado pesada e intenta de nuevo.");
+    btn.disabled = false;
+    btn.textContent = "Confirmar Reserva";
   }
 }
 

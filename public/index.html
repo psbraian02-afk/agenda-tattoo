@@ -1041,21 +1041,25 @@ function updateSummary() {
   }
 }
 
-const fileInput = document.getElementById("userTattooImage");
-if(fileInput){
-    fileInput.addEventListener("change",e=>{
-      const file=e.target.files[0], preview=document.getElementById("userTattooPreview");
-      if(file){ 
-        const reader=new FileReader(); 
-        reader.onload=e2=>{ 
-          preview.src=e2.target.result; 
-          preview.style.display="block"; 
-          updateSummary();
-        }; 
-        reader.readAsDataURL(file); 
-      }
-    });
-}
+// Busca donde manejas el input de imagen del cliente
+document.getElementById('userTattooImage').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const base64 = evt.target.result;
+            document.getElementById('userTattooPreview').src = base64;
+            document.getElementById('userTattooPreview').style.display = "block";
+            
+            // IMPORTANTE: Guardamos el string base64 en nuestra variable global de selección
+            if(!selectedTattoo) selectedTattoo = {};
+            selectedTattoo.image = base64; 
+            
+            document.getElementById('userTattooInfo').textContent = "Imagen cargada correctamente";
+        };
+        reader.readAsDataURL(file);
+    }
+});
 
 async function confirmBooking() {
   const preview = document.getElementById("userTattooPreview");
@@ -1151,33 +1155,44 @@ async function openAdmin(){
 function expandImage(src) {
     const lb = document.getElementById("lightbox");
     const lbImg = document.getElementById("lightboxImg");
-    lbImg.src = src;
-    lb.style.display = 'flex';
+    if(lb && lbImg) {
+        lbImg.src = src;
+        lb.style.display = "flex";
+    }
 }
 
-function renderAdmin(){
-  const list=document.getElementById("adminList"); list.innerHTML="";
-  const frag = document.createDocumentFragment();
-  const sorted = [...bookings].sort((a,b) => new Date(a.date) - new Date(b.date));
-  
-  sorted.forEach(res=>{
-    const div=document.createElement("div"); 
-    div.className="admin-card";
-    const imgUrl = res.tattoo?.image || 'https://via.placeholder.com/150';
-    div.innerHTML = `
-        <img src="${imgUrl}" class="admin-img-preview" onclick="expandImage('${imgUrl}')" loading="lazy">
-        <div class="admin-info">
-            <strong>${res.date} @ ${res.start}:00hs</strong><br>
-            ${res.name} ${res.surname}
-        </div>
-        <div class="admin-actions" style="display:flex; flex-direction:column; gap:5px">
-            <button class="btn-whatsapp" onclick="window.open('https://wa.me/5980${res.phone}', '_blank')">WA</button>
-            <button onclick="deleteBooking('${res.id}')" style="border-color:#ff4d4d; color:#ff4d4d; padding:8px; font-size:10px">X</button>
-        </div>
-    `;
-    frag.appendChild(div);
-  });
-  list.appendChild(frag);
+/* === REEMPLAZA TU FUNCIÓN DE RENDERIZADO ADMIN POR ESTA === */
+function renderAdmin() {
+    const list = document.getElementById("adminList");
+    if (!list) return;
+    
+    list.innerHTML = "";
+    
+    // Ordenamos por fecha más reciente
+    const sortedBookings = [...bookings].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    sortedBookings.forEach(b => {
+        const div = document.createElement("div");
+        div.className = "admin-card";
+        
+        // Verificamos si existe la imagen en la reserva
+        const tieneImagen = b.tattoo && b.tattoo.image;
+        const imgHtml = tieneImagen 
+            ? `<img src="${b.tattoo.image}" class="admin-img-preview" onclick="expandImage('${b.tattoo.image}')" title="Click para ampliar">`
+            : `<div class="admin-img-preview" style="display:flex; align-items:center; justify-content:center; background:#f0f0f0; font-size:9px; color:#ccc;">SIN FOTO</div>`;
+
+        div.innerHTML = `
+            ${imgHtml}
+            <div class="admin-info">
+                <strong>${b.name} ${b.surname}</strong><br>
+                📅 ${b.date} - 🕒 ${b.start}:00hs<br>
+                💉 ${b.tattoo?.size || 'N/A'} en ${b.tattoo?.place || 'N/A'}<br>
+                📱 <a href="https://wa.me/598${b.phone}" target="_blank" style="color:#25D366; text-decoration:none;">WhatsApp: 0${b.phone}</a>
+            </div>
+            <button onclick="deleteBooking('${b.id}')" style="width:40px; padding:5px; border-color:#ffcccc; color:red;">X</button>
+        `;
+        list.appendChild(div);
+    });
 }
 
 function deleteBooking(id){

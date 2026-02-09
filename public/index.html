@@ -754,9 +754,15 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
 
 <script>
 const SERVER_URL="/api/bookings";
-const DURATIONS={ 
-    "mini": 1, "small": 1, "medium": 1.5, "large": 2.25, 
-    "muy-grande": 3.66, "manga-brazo": 4.5, "espalda-completa": 5 
+// CAMBIO 1: Definimos la duración en MINUTOS para calcular mejor los choques
+const DURATIONS = { 
+    "mini": 60,            // 1 hora
+    "small": 90,           // 1 hora y media
+    "medium": 120,         // 2 horas
+    "large": 180,          // 3 horas
+    "muy-grande": 240,     // 4 horas
+    "manga-brazo": 300,    // 5 horas
+    "espalda-completa": 360 // 6 horas
 };
 
 let selectedMonth = null, selectedDay = null, selectedTattoo = null, selectedHour = null, selectedZone = null;

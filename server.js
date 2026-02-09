@@ -5,13 +5,11 @@ const fssync = require("fs");
 const { v4: uuidv4 } = require("uuid");
 const compression = require("compression");
 const cors = require("cors");
-const multer = require("multer");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const publicDir = path.join(__dirname, "public");
-const uploadsDir = path.join(publicDir, "uploads");
 const BOOKINGS_FILE = path.join(__dirname, "bookings.json"); // ✅ ruta segura
 
 let bookingsCache = [];
@@ -21,21 +19,6 @@ app.use(cors());
 app.use(compression());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static(publicDir));
-
-// --- MULTER (IMÁGENES) ---
-if (!fssync.existsSync(uploadsDir)) {
-  fssync.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => {
-    const safeName = file.originalname.replace(/\s+/g, "_");
-    cb(null, Date.now() + "-" + safeName);
-  }
-});
-
-const upload = multer({ storage });
 
 // --- INICIALIZACIÓN ---
 async function init() {
@@ -71,6 +54,7 @@ async function init() {
   }
 }
 
+
 init();
 
 /* =====================
@@ -86,7 +70,7 @@ async function enviarNotificacionFormspree(booking) {
     hora: `${booking.start}:00hs`,
     tamaño: booking.tattoo?.size || "N/A",
     zona: booking.tattoo?.place || "N/A",
-    imagen_referencia: booking.tattoo?.image || "Sin imagen",
+    imagen_referencia: booking.tattoo?.image ? "Adjunta en base64" : "Sin imagen",
   };
 
   try {
@@ -119,30 +103,16 @@ app.delete("/api/bookings/:id", async (req, res) => {
   }
 });
 
-// ✅ AHORA ACEPTA IMAGEN
-app.post("/api/bookings", upload.single("image"), async (req, res) => {
+app.post("/api/bookings", async (req, res) => {
   try {
     const newBooking = {
       id: uuidv4(),
-      name: req.body.name,
-      surname: req.body.surname,
-      phone: req.body.phone,
-      email: req.body.email,
-      date: req.body.date,
-      start: req.body.start,
-      tattoo: {
-        size: req.body.tattooSize,
-        place: req.body.tattooZone,
-        image: req.file ? `/uploads/${req.file.filename}` : null
-      },
+      ...req.body,
       createdAt: new Date().toISOString(),
     };
-
     bookingsCache.push(newBooking);
     await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookingsCache, null, 2));
-
     enviarNotificacionFormspree(newBooking);
-
     res.status(201).json(newBooking);
   } catch (err) {
     console.error("❌ Error guardando reserva:", err.message);

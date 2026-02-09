@@ -1024,31 +1024,46 @@ async function confirmBooking(){
   }
 }
 
-async function saveBooking(img){
+async function saveBooking(img) {
+  const btn = document.getElementById("confirmBtn");
+  
+  // Tu ID de Formspark (Cámbialo por el tuyo real)
+  const FORMSPARK_ACTION_URL = "https://submit-form.com/fVTf7pFYx";
+
   const data = {
-    ...user,
-    month: selectedMonth,
-    day: selectedDay,
-    hour: selectedHour,
-    tattooId: selectedTattoo.id,
-    zoneId: selectedZone.id,
-    image: img,
-    timestamp: new Date().toISOString()
+    Cliente: `${user.name} ${user.surname}`,
+    Telefono: `+598 0${user.phone}`,
+    Email: user.email || "No proporcionado",
+    Fecha: `${selectedDay}/${selectedMonth + 1}`,
+    Hora: formatTime(selectedHour),
+    Tamano: selectedTattoo.label,
+    Zona: selectedZone.label,
+    Imagen_Referencia: img, // Se enviará como base64
+    _subject: `Nueva Reserva: ${user.name} - ${selectedDay}/${selectedMonth + 1}`
   };
   
   try {
-    const r = await fetch(SERVER_URL, {
+    const r = await fetch(FORMSPARK_ACTION_URL, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: JSON.stringify(data)
     });
+
     if(r.ok) {
-        bookings.push(data);
+        // Opcional: Guardar en local para la vista de admin si lo usas
+        bookings.push(data); 
         go('done');
-    } else { alert("Error al guardar la reserva."); }
+    } else { 
+        alert("Error al enviar la reserva a Formspark."); 
+    }
   } catch(e) {
     console.error(e);
-    alert("No se pudo conectar con el servidor.");
+    alert("Error de conexión.");
+  } finally {
+    btn.disabled = false;
   }
 }
 

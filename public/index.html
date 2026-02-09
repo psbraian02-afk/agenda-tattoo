@@ -1071,41 +1071,46 @@ async function confirmBooking() {
   const zoneLabel = selectedZone ? selectedZone.label : "Zona General";
   const FORMSPARK_ACTION_URL = "https://submit-form.com/fVTf7pFYx";
 
-  const booking = {
-    name: user.name, // Usamos los nombres que espera tu server.js
+  // Estructura de datos para tu server.js (bookings.json)
+  const bookingData = {
+    name: user.name,
     surname: user.surname,
     phone: user.phone,
     email: user.email || "No proporcionado",
     date: `${selectedDay}/${selectedMonth + 1}/${nowUY().getFullYear()}`,
     start: selectedHour,
     tattoo: {
-        size: selectedTattoo.label,
-        place: zoneLabel,
-        image: preview.src // Esto guarda la imagen en el JSON (ojo que ocupa mucho espacio)
-    },
-    // Datos extra para Formspark
-    _subject: `Nueva Reserva: ${user.name} - ${selectedDay}/${selectedMonth + 1}`
+      size: selectedTattoo.label,
+      place: zoneLabel
+      // No enviamos la imagen al JSON para que no explote el servidor
+    }
+  };
+
+  // Datos completos para Formspark (Aquí sí incluimos la imagen para que te llegue al mail)
+  const emailData = {
+    ...bookingData,
+    _subject: `🚀 NUEVO TURNO: ${user.name} ${user.surname}`,
+    imagen_referencia: preview.src 
   };
 
   try {
-    // --- PASO 1: Guardar en tu Agenda Privada (server.js) ---
-    // Esta es la parte que te faltaba
+    // --- PASO A: Guardar en tu Agenda Privada (server.js) ---
     const resAgenda = await fetch("/api/bookings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(booking)
+      body: JSON.stringify(bookingData)
     });
 
-    if (!resAgenda.ok) throw new Error("Error guardando en la agenda privada");
+    if (!resAgenda.ok) throw new Error("Error en agenda privada");
 
-    // --- PASO 2: Envío a Formspark (Email) ---
+    // --- PASO B: Envío a Formspark (Email) ---
     const resMail = await fetch(FORMSPARK_ACTION_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
       },
-      body: JSON.stringify(booking),
+      body: JSON.stringify(emailData),
     });
 
     if (resMail.ok) {
@@ -1116,12 +1121,11 @@ async function confirmBooking() {
 
   } catch (error) {
     console.error("Error:", error);
-    alert("Error al procesar. La agenda no se registró.");
+    alert("Hubo un problema. Verifica tu conexión.");
     btn.disabled = false;
     btn.textContent = "Confirmar Reserva";
   }
 }
-
 function promptAdmin(){ 
   if(localStorage.getItem("isAdminAuthenticated") === "true") return openAdmin();
   const pass=prompt("Contraseña:"); 

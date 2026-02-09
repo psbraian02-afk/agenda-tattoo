@@ -5,47 +5,106 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Richard Tattoo</title>
     <style>
-        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { border-bottom: 2px solid #b38e44; color: #333; padding-bottom: 10px; }
-        .booking-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 5px; position: relative; }
-        .booking-card h3 { margin: 0 0 5px 0; color: #b38e44; }
-        .btn-delete { position: absolute; top: 15px; right: 15px; background: #ff4444; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; }
-        .info { font-size: 0.9em; color: #555; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: #eee; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: #222; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        h1 { border-bottom: 2px solid #b38e44; color: #b38e44; padding-bottom: 10px; text-align: center; }
+        
+        .booking-card { 
+            background: #2d2d2d; 
+            border-left: 5px solid #b38e44; 
+            padding: 20px; 
+            margin-bottom: 15px; 
+            border-radius: 8px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .booking-info { flex: 1; }
+        .booking-info h3 { margin: 0 0 10px 0; color: #fff; font-size: 1.4em; }
+        .info { font-size: 0.95em; line-height: 1.6; color: #ccc; }
+        .info strong { color: #b38e44; }
+
+        .tattoo-preview { 
+            width: 150px; 
+            height: 150px; 
+            object-fit: cover; 
+            border-radius: 6px; 
+            border: 2px solid #444;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .tattoo-preview:hover { transform: scale(1.05); }
+
+        .btn-delete { 
+            background: #e74c3c; 
+            color: white; 
+            border: none; 
+            padding: 8px 12px; 
+            cursor: pointer; 
+            border-radius: 4px; 
+            font-weight: bold;
+            align-self: flex-start;
+        }
+        .btn-delete:hover { background: #c0392b; }
+
+        .no-image { 
+            width: 150px; height: 150px; 
+            background: #3d3d3d; 
+            display: flex; align-items: center; justify-content: center; 
+            color: #777; font-size: 0.8em; border-radius: 6px; 
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Agenda de Turnos</h1>
+        <h1>💀 Agenda Richard Tattoo</h1>
         <div id="lista-reservas">Cargando citas...</div>
     </div>
 
     <script>
         async function cargarReservas() {
-            const res = await fetch('/api/bookings');
-            const bookings = await res.json();
-            const contenedor = document.getElementById('lista-reservas');
-            
-            if (bookings.length === 0) {
-                contenedor.innerHTML = "<p>No hay turnos agendados.</p>";
-                return;
-            }
+            try {
+                const res = await fetch('/api/bookings');
+                const bookings = await res.json();
+                const contenedor = document.getElementById('lista-reservas');
+                
+                if (bookings.length === 0) {
+                    contenedor.innerHTML = "<p style='text-align:center;'>No hay turnos agendados aún.</p>";
+                    return;
+                }
 
-            contenedor.innerHTML = bookings.map(b => `
-                <div class="booking-card">
-                    <h3>${b.name} ${b.surname}</h3>
-                    <p class="info">
-                        <strong>Fecha:</strong> ${b.date} | <strong>Hora:</strong> ${b.start}:00hs<br>
-                        <strong>WhatsApp:</strong> ${b.phone}<br>
-                        <strong>Tatuaje:</strong> ${b.tattoo?.size || 'N/A'} en ${b.tattoo?.place || 'N/A'}
-                    </p>
-                    <button class="btn-delete" onclick="eliminarCita('${b.id}')">Eliminar</button>
-                </div>
-            `).join('');
+                // Ordenar por fecha (las más recientes arriba)
+                bookings.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                contenedor.innerHTML = bookings.map(b => `
+                    <div class="booking-card">
+                        <div class="booking-info">
+                            <h3>${b.name} ${b.surname}</h3>
+                            <div class="info">
+                                <strong>📅 Fecha:</strong> ${b.date}<br>
+                                <strong>⏰ Hora:</strong> ${b.start}:00hs<br>
+                                <strong>📱 WhatsApp:</strong> <a href="https://wa.me/${b.phone}" target="_blank" style="color: #25d366; text-decoration: none;">${b.phone}</a><br>
+                                <strong>📍 Zona:</strong> ${b.tattoo?.place || 'No especificada'}<br>
+                                <strong>📏 Tamaño:</strong> ${b.tattoo?.size || 'No especificado'}
+                            </div>
+                        </div>
+                        
+                        ${b.tattoo?.image 
+                            ? `<img src="${b.tattoo.image}" class="tattoo-preview" onclick="window.open(this.src)" title="Click para ampliar">` 
+                            : `<div class="no-image">Sin imagen</div>`}
+                        
+                        <button class="btn-delete" onclick="eliminarCita('${b.id}')">Eliminar</button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                document.getElementById('lista-reservas').innerHTML = "Error cargando los datos.";
+            }
         }
 
         async function eliminarCita(id) {
-            if (confirm('¿Estás seguro de que quieres eliminar este turno?')) {
+            if (confirm('¿Vas a borrar este turno permanentemente?')) {
                 await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
                 cargarReservas();
             }

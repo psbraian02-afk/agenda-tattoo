@@ -941,254 +941,219 @@ function renderTattooOptions(){
   const frag = document.createDocumentFragment();
   const btnNext = document.getElementById("nextTattooBtn");
   
-  if(!selectedTattoo) btnNext.disabled = true;
-  else btnNext.disabled = false;
+  btnNext.disabled = !selectedTattoo;
 
   TATTOO_SIZES.forEach(t=>{ 
     const card=document.createElement("div"); card.className="tattoo-card";
     if(selectedTattoo && selectedTattoo.id === t.id) card.classList.add("card-selected");
     
-    card.innerHTML=`<img src="${t.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div><strong>${t.label}</strong><p style="color:var(--gold); font-size:12px">${t.price}</p></div>`; 
+    card.innerHTML=`<img src="${t.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div><strong>${t.label}</strong></div>`; 
     card.onclick=()=>{
       document.querySelectorAll("#tattooOptions .tattoo-card").forEach(c => c.classList.remove("card-selected"));
       card.classList.add("card-selected");
-      selectedTattoo=t;
+      selectedTattoo = t;
       btnNext.disabled = false;
     };
-    frag.appendChild(card); 
+    frag.appendChild(card);
   }); 
   container.appendChild(frag);
 }
 
 function confirmTattooSelection() {
-    if(!selectedTattoo) return;
-    if(selectedTattoo.id === "manga-brazo" || selectedTattoo.id === "espalda-completa"){
-        selectedZone = { id: "full", label: "Cuerpo Completo" };
-        renderHours(); go("hourSelection");
-    } else {
-        renderZones(); go("zoneSelection"); 
-    }
-}
-
-function renderZones(){ 
-  const container=document.getElementById("zoneOptions"); container.innerHTML=""; 
-  const frag = document.createDocumentFragment();
-  const btnNext = document.getElementById("nextZoneBtn");
-
-  if(!selectedZone) btnNext.disabled = true;
-  else btnNext.disabled = false;
-
-  BODY_ZONES.forEach(z=>{ 
-    const card=document.createElement("div"); card.className="zone-card"; 
-    if(selectedZone && selectedZone.id === z.id) card.classList.add("card-selected");
-
-    card.innerHTML=`<img src="${z.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div>${z.label}</div>`; 
-    card.onclick=()=>{
-      document.querySelectorAll("#zoneOptions .zone-card").forEach(c => c.classList.remove("card-selected"));
-      card.classList.add("card-selected");
-      selectedZone=z;
-      btnNext.disabled = false;
-    };
-    frag.appendChild(card); 
-  }); 
-  container.appendChild(frag);
-}
-
-function confirmZoneSelection() {
-    if(!selectedZone) return;
-    renderHours(); go("hourSelection");
-}
-
-function goBackFromHours(){ 
-    if(selectedTattoo && (selectedTattoo.id === "manga-brazo" || selectedTattoo.id === "espalda-completa")) {
-        go("tattooDetails");
-    } else {
+    if(selectedTattoo) {
+        renderZoneOptions();
         go("zoneSelection");
     }
 }
 
-function renderHours(){
-  const grid=document.getElementById("hoursGrid"); grid.innerHTML=""; 
-  const timeUY = nowUY();
-  const isToday = (selectedDay === timeUY.getDate() && selectedMonth === timeUY.getMonth());
-  const frag = document.createDocumentFragment();
-  for(let h=9; h<=21; h++){
-    if(h===12) continue; 
-    let btn=document.createElement("button"); btn.textContent=h+":00";
-    let disabled = (isToday && h <= timeUY.getHours());
-    if(!disabled){
-      bookings.forEach(b=>{
-        const bd=b.date.split("-");
-        if(parseInt(bd[2])===selectedDay && parseInt(bd[1])===(selectedMonth+1)){
-          if (h >= b.start && h < b.end) disabled = true;
-        }
-      });
-    }
-    btn.disabled=disabled; 
-    btn.onclick=()=>selectHour(h); 
-    frag.appendChild(btn);
-  }
-  grid.appendChild(frag);
-}
+function renderZoneOptions(){
+    const container = document.getElementById("zoneOptions");
+    container.innerHTML = "";
+    const btnNext = document.getElementById("nextZoneBtn");
+    
+    btnNext.disabled = !selectedZone;
 
-function selectHour(hour){ selectedHour=hour; go('imageUploadScreen'); }
-
-function updateSummary() {
-  const info = document.getElementById("userTattooInfo");
-  if(selectedTattoo && selectedHour) {
-    let zoneLabel = selectedZone ? selectedZone.label : "Cuerpo Completo";
-    info.innerHTML = `${selectedTattoo.label} | ${zoneLabel} | ${selectedHour}:00hs`;
-  }
-}
-
-const fileInput = document.getElementById("userTattooImage");
-if(fileInput){
-    fileInput.addEventListener("change",e=>{
-      const file=e.target.files[0], preview=document.getElementById("userTattooPreview");
-      if(file){ 
-        const reader=new FileReader(); 
-        reader.onload=e2=>{ 
-          preview.src=e2.target.result; 
-          preview.style.display="block"; 
-          updateSummary();
-        }; 
-        reader.readAsDataURL(file); 
-      }
+    BODY_ZONES.forEach(z => {
+        const card = document.createElement("div");
+        card.className = "zone-card";
+        if(selectedZone && selectedZone.id === z.id) card.classList.add("card-selected");
+        
+        card.innerHTML = `<img src="${z.img}" onerror="this.src='https://via.placeholder.com/100'" loading="lazy"><div><strong>${z.label}</strong></div>`;
+        card.onclick = () => {
+            document.querySelectorAll("#zoneOptions .zone-card").forEach(c => c.classList.remove("card-selected"));
+            card.classList.add("card-selected");
+            selectedZone = z;
+            btnNext.disabled = false;
+        };
+        container.appendChild(card);
     });
 }
 
-async function confirmBooking() {
-  const preview = document.getElementById("userTattooPreview");
-  const btn = document.getElementById("confirmBtn");
-  
-  if (!preview.src || preview.style.display === "none") {
-    return alert("Por favor, sube una imagen de referencia.");
-  }
+function confirmZoneSelection() {
+    if(selectedZone) {
+        renderHours();
+        go("hourSelection");
+    }
+}
 
+function renderHours(){
+  const container=document.getElementById("hoursGrid"); container.innerHTML="";
+  const duration = DURATIONS[selectedTattoo.id] || 1;
+  const booked = bookings.filter(b => b.month == selectedMonth && b.day == selectedDay);
+  
+  for(let h=9; h<=20; h+=0.5){
+    const end = h + duration;
+    if(end > 21) break;
+    
+    const isOccupied = booked.some(b => {
+        const bStart = b.hour;
+        const bEnd = bStart + (DURATIONS[b.tattooId] || 1);
+        return (h < bEnd && end > bStart);
+    });
+
+    if(!isOccupied){
+      const b=document.createElement("button");
+      const hh=Math.floor(h), mm=h%1?":30":":00";
+      b.textContent=`${hh}${mm}`;
+      b.onclick=()=>{ 
+          selectedHour=h; 
+          go("imageUploadScreen"); 
+      };
+      container.appendChild(b);
+    }
+  }
+  if(container.innerHTML === "") container.innerHTML = "<p style='grid-column:1/-1; font-size:11px; opacity:0.5'>No hay turnos disponibles.</p>";
+}
+
+function goBackFromHours() {
+    selectedHour = null;
+    go("zoneSelection");
+}
+
+document.getElementById('userTattooImage').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if(file){
+    const reader = new FileReader();
+    reader.onload = function(event){
+      const img = document.getElementById("userTattooPreview");
+      img.src = event.target.result;
+      img.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+function updateSummary(){
+    const hh=Math.floor(selectedHour), mm=selectedHour%1?":30":":00";
+    document.getElementById("userTattooInfo").innerHTML = `
+        ${selectedDay} ${MONTHS[selectedMonth].toUpperCase()}<br>
+        HORA: ${hh}${mm}<br>
+        TAMAÑO: ${selectedTattoo.label.toUpperCase()}<br>
+        ZONA: ${selectedZone.label.toUpperCase()}
+    `;
+}
+
+async function confirmBooking(){
+  const btn = document.getElementById("confirmBtn");
   btn.disabled = true;
   btn.textContent = "PROCESANDO...";
-  
-  const zoneLabel = selectedZone ? selectedZone.label : "Zona General";
-  const FORMSPARK_ACTION_URL = "https://submit-form.com/fVTf7pFYx";
 
-  // Estructura de datos para tu server.js (bookings.json)
   const bookingData = {
+    id: Date.now(),
     name: user.name,
     surname: user.surname,
     phone: user.phone,
-    email: user.email || "No proporcionado",
-    date: `${selectedDay}/${selectedMonth + 1}/${nowUY().getFullYear()}`,
-    start: selectedHour,
-    tattoo: {
-      size: selectedTattoo.label,
-      place: zoneLabel
-      // No enviamos la imagen al JSON para que no explote el servidor
-    }
-  };
-
-  // Datos completos para Formspark (Aquí sí incluimos la imagen para que te llegue al mail)
-  const emailData = {
-    ...bookingData,
-    _subject: `🚀 NUEVO TURNO: ${user.name} ${user.surname}`,
-    imagen_referencia: preview.src 
+    email: user.email || "",
+    month: selectedMonth,
+    day: selectedDay,
+    hour: selectedHour,
+    tattooId: selectedTattoo.id,
+    tattooLabel: selectedTattoo.label,
+    zone: selectedZone.label,
+    image: document.getElementById("userTattooPreview").src || ""
   };
 
   try {
-    // --- PASO A: Guardar en tu Agenda Privada (server.js) ---
-    const resAgenda = await fetch("/api/bookings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const r = await fetch(SERVER_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(bookingData)
     });
-
-    if (!resAgenda.ok) throw new Error("Error en agenda privada");
-
-    // --- PASO B: Envío a Formspark (Email) ---
-    const resMail = await fetch(FORMSPARK_ACTION_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
-      body: JSON.stringify(emailData),
-    });
-
-    if (resMail.ok) {
-      go("done");
+    if(r.ok) {
+        bookings.push(bookingData);
+        go("done");
     } else {
-      throw new Error("Error en Formspark");
+        alert("Error al guardar. Se guardará localmente.");
+        bookings.push(bookingData);
+        go("done");
     }
-
-  } catch (error) {
-    console.error("Error:", error);
-    alert("Hubo un problema. Verifica tu conexión.");
-    btn.disabled = false;
-    btn.textContent = "Confirmar Reserva";
+  } catch(e) {
+    bookings.push(bookingData);
+    go("done");
   }
-}
-function promptAdmin(){ 
-  if(localStorage.getItem("isAdminAuthenticated") === "true") return openAdmin();
-  const pass=prompt("Contraseña:"); 
-  if(pass==="richard123") {
-    localStorage.setItem("isAdminAuthenticated", "true");
-    openAdmin(); 
-  }
-}
-
-function logoutAdminSession() {
-  if(confirm("¿Cerrar sesión?")) {
-    localStorage.removeItem("isAdminAuthenticated");
-    go('home');
-  }
-}
-
-async function openAdmin(){ 
-  await refreshBookings();
-  renderAdmin(); 
-  go("admin");
 }
 
 function expandImage(src) {
     const lb = document.getElementById("lightbox");
-    const lbImg = document.getElementById("lightboxImg");
-    lbImg.src = src;
-    lb.style.display = 'flex';
+    const img = document.getElementById("lightboxImg");
+    img.src = src;
+    lb.style.display = "flex";
+}
+
+function promptAdmin() {
+    const pass = prompt("Contraseña de Artista:");
+    if(pass === "richard2024") {
+        renderAdmin();
+        go("admin");
+    } else if(pass !== null) {
+        alert("Acceso denegado");
+    }
 }
 
 function renderAdmin(){
-  const list=document.getElementById("adminList"); list.innerHTML="";
-  const frag = document.createDocumentFragment();
-  const sorted = [...bookings].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const list = document.getElementById("adminList");
+  list.innerHTML = "";
+  const sorted = [...bookings].sort((a,b) => (a.month - b.month) || (a.day - b.day) || (a.hour - b.hour));
   
-  sorted.forEach(res=>{
-    const div=document.createElement("div"); 
-    div.className="admin-card";
-    const imgUrl = res.tattoo?.image || 'https://via.placeholder.com/150';
-    div.innerHTML = `
-        <img src="${imgUrl}" class="admin-img-preview" onclick="expandImage('${imgUrl}')" loading="lazy">
-        <div class="admin-info">
-            <strong>${res.date} @ ${res.start}:00hs</strong><br>
-            ${res.name} ${res.surname}
-        </div>
-        <div class="admin-actions" style="display:flex; flex-direction:column; gap:5px">
-            <button class="btn-whatsapp" onclick="window.open('https://wa.me/5980${res.phone}', '_blank')">WA</button>
-            <button onclick="deleteBooking('${res.id}')" style="border-color:#ff4d4d; color:#ff4d4d; padding:8px; font-size:10px">X</button>
-        </div>
+  sorted.forEach(b => {
+    const hh=Math.floor(b.hour), mm=b.hour%1?":30":":00";
+    const card = document.createElement("div");
+    card.className = "admin-card";
+    card.innerHTML = `
+      <img src="${b.image || 'https://via.placeholder.com/50'}" class="admin-img-preview" onclick="expandImage(this.src)">
+      <div class="admin-info">
+        <strong>${b.day} ${MONTHS[b.month].substring(0,3)} - ${hh}${mm}</strong><br>
+        ${b.name} ${b.surname}<br>
+        ${b.tattooLabel} / ${b.zone}
+      </div>
+      <button onclick="deleteBooking(${b.id})" style="width:auto; padding:5px 10px; border-color:#ffcccc; color:red; font-size:10px">X</button>
+      <button onclick="window.open('https://wa.me/598${b.phone}')" class="btn-whatsapp" style="width:auto; padding:5px 10px; font-size:10px">WA</button>
     `;
-    frag.appendChild(div);
+    list.appendChild(card);
   });
-  list.appendChild(frag);
 }
 
-function deleteBooking(id){
-    if(confirm("¿Borrar?")) fetch(`${SERVER_URL}/${id}`, {method:'DELETE'}).then(()=>openAdmin());
-}
-
-function resetUserData() { 
-  if(confirm("¿Borrar tus datos?")) {
-    localStorage.clear(); 
-    location.reload(); 
+async function deleteBooking(id){
+  if(!confirm("¿Eliminar cita?")) return;
+  try {
+    await fetch(`${SERVER_URL}/${id}`, { method: 'DELETE' });
+    bookings = bookings.filter(b => b.id !== id);
+    renderAdmin();
+  } catch(e) {
+    bookings = bookings.filter(b => b.id !== id);
+    renderAdmin();
   }
+}
+
+function resetUserData() {
+    if(confirm("¿Borrar todos tus datos y cerrar sesión?")) {
+        localStorage.clear();
+        location.reload();
+    }
+}
+
+function logoutAdminSession() {
+    go('home');
 }
 </script>
 </body>

@@ -43,8 +43,10 @@ async function init() {
 init();
 
 /* =====================
-    NOTIFICACIÓN
+    NOTIFICACIÓN (desactivada)
 ===================== */
+// Dejamos la función por si la querés usar en el futuro,
+// pero NO se ejecuta más para evitar mails duplicados.
 async function enviarNotificacionFormspree(booking) {
   const FORMSPREE_URL = "https://formspree.io/f/xzdapoze";
   const datos = {
@@ -95,9 +97,13 @@ app.post("/api/bookings", async (req, res) => {
       ...req.body,
       createdAt: new Date().toISOString(),
     };
+
     bookingsCache.push(newBooking);
     await fs.writeFile(BOOKINGS_FILE, JSON.stringify(bookingsCache, null, 2));
-    enviarNotificacionFormspree(newBooking);
+
+    // ❌ DESACTIVADO para que NO envíe mails por Formspree
+    // enviarNotificacionFormspree(newBooking);
+
     res.status(201).json(newBooking);
   } catch (err) {
     console.error("❌ Error guardando reserva:", err.message);

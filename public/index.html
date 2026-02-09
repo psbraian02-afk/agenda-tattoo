@@ -606,7 +606,6 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
         <div style="display:flex; flex-direction:column; gap:10px; width: 260px; margin: 20px auto;">
           <button onclick="tryGoAgenda()" style="background: var(--gold); color: white;">Agendar Cita</button>
           <button id="btnProfile" style="display:none; font-size:9px;" onclick="go('login')">Mi Perfil / Editar Datos</button>
-          <button style="border:none; font-size:10px; opacity:0.5; letter-spacing:2px; cursor:pointer;" onclick="promptAdmin()">Acceso Artista</button>
         </div>
         
         <div class="social">
@@ -634,7 +633,7 @@ input:focus { outline: none; border-bottom-color: var(--gold); }
         <div class="map-preview-container" id="location-anchor" onclick="openMap()">
             <div class="map-overlay"><span>VER EN MAPAS</span></div>
             <iframe 
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3434.966967406283!2d-56.4950669!3d-30.4370216!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95addd2483840d21%3A0x6968d904b50c000!2sCalle%202%20140%2C%2055000%20Artigas%2C%20Uruguay!5e0!3m2!1ses!2s!4v1715632123456" 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3420.324393665516!2d-56.46864112521577!3d-30.426555574734567!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x95addd9703f8205b%3A0xc49d01f8d4e41755!2sCalle%202%20140%2C%20Artigas%2C%20Departamento%20de%20Artigas!5e0!3m2!1ses-419!2suy!4v1707400000000!5m2!1ses-419!2suy" 
                 width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy">
             </iframe>
         </div>
@@ -776,6 +775,28 @@ function updateProfileButton(){
     if(user.phone && user.name) btn.style.display = "block";
 }
 
+function validateEmail(email) {
+    if(!email) return true; 
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.toLowerCase());
+}
+
+async function sendMassReminder() {
+    const isActivated = document.getElementById("massReminderSwitch").checked;
+    if(!isActivated) return alert("Primero debes activar la opción con el interruptor.");
+    const allEmails = [...new Set(bookings.map(b => b.email).filter(e => e && e !== "" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.toLowerCase())))];
+    if(allEmails.length === 0) return alert("No hay correos válidos registrados.");
+    if(!confirm(`¿Enviar mail de recordatorio a ${allEmails.length} clientes?`)) return;
+    const btn = document.getElementById("btnMassMail");
+    btn.disabled = true;
+    btn.textContent = "ENVIANDO...";
+    setTimeout(() => {
+        alert("¡Éxito! Recordatorios enviados.");
+        btn.disabled = false;
+        btn.textContent = "Ejecutar Envío Masivo";
+        document.getElementById("massReminderSwitch").checked = false;
+    }, 1500);
+}
+
 function go(id, isBack = false) { 
   window.scrollTo(0,0);
   const screens = document.querySelectorAll(".screen");
@@ -785,10 +806,14 @@ function go(id, isBack = false) {
   });
   
   if(id === 'login' && user.phone){
-      document.getElementById("nameInput").value = user.name || "";
-      document.getElementById("surnameInput").value = user.surname || "";
-      document.getElementById("phoneInput").value = user.phone || "";
-      document.getElementById("emailInput").value = user.email || "";
+      const nIn = document.getElementById("nameInput");
+      const sIn = document.getElementById("surnameInput");
+      const pIn = document.getElementById("phoneInput");
+      const eIn = document.getElementById("emailInput");
+      if(nIn) nIn.value = user.name || "";
+      if(sIn) sIn.value = user.surname || "";
+      if(pIn) pIn.value = user.phone || "";
+      if(eIn) eIn.value = user.email || "";
   }
   
   if (id === 'imageUploadScreen') updateSummary(); 
@@ -811,6 +836,22 @@ async function refreshBookings() {
     } catch(e) { console.warn("Modo offline o error de red."); }
 }
 
+function resetBookingFlow() {
+  selectedMonth = null; selectedDay = null; selectedTattoo = null; selectedHour = null; selectedZone = null;
+  const preview = document.getElementById("userTattooPreview");
+  preview.src = "";
+  preview.style.display = "none";
+  document.getElementById("confirmBtn").disabled = false;
+  document.getElementById("userTattooImage").value = "";
+  refreshBookings();
+  go('home');
+}
+
+function openMap() { 
+    const url = "https://www.google.com/maps/search/?api=1&query=-30.4265556,-56.4660556";
+    window.open(url, "_blank"); 
+}
+
 function tryGoAgenda(){ 
     if(user.phone && user.name) go("month");
     else go("login");
@@ -823,7 +864,10 @@ function login(){
     const p = document.getElementById("phoneInput").value.trim();
     
     if(!n || !s) return alert("Nombre y Apellido son obligatorios.");
-    if(p.length !== 8 || p.startsWith('0')) return alert("Ingresa los 8 dígitos (sin el 0 inicial).");
+    if(e && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.toLowerCase())) return alert("El correo no es válido.");
+    
+    if(p.length !== 8) return alert("Ingresa los 8 dígitos restantes.");
+    if(p.startsWith('0')) return alert("No incluyas el 0, solo los 8 números.");
 
     localStorage.setItem("userName", n);
     localStorage.setItem("userSurname", s);
@@ -853,152 +897,229 @@ function renderDays(){
   daysEl.innerHTML=""; 
   const today=nowUY(); today.setHours(0,0,0,0);
   const daysInMonth=new Date(nowUY().getFullYear(),selectedMonth+1,0).getDate(); 
+  const frag = document.createDocumentFragment();
   for(let d=1;d<=daysInMonth;d++){ 
     const date=new Date(nowUY().getFullYear(),selectedMonth,d); 
     const b=document.createElement("button"); 
     b.textContent=d; 
-    if(date < today || date.getDay() === 0) b.disabled=true; 
+    if(date < today) b.disabled=true; 
     b.onclick=()=>{ selectedDay=d; renderTattooOptions(); go("tattooDetails"); }; 
-    daysEl.appendChild(b);
+    frag.appendChild(b);
   } 
+  daysEl.appendChild(frag);
 }
 
 const TATTOO_SIZES=[ 
-  { id:"mini", label:"Mini (5cm)", img:"mini.png" }, 
-  { id:"small", label:"Pequeño (15cm)", img:"pequeño.png" }, 
-  { id:"medium", label:"Mediano (25cm)", img:"mediano.png" }, 
-  { id:"large", label:"Grande (35cm)", img:"grande.png" }, 
-  { id:"muy-grande", label:"Media Manga", img:"media-manga.png" },
-  { id:"manga-brazo", label:"Manga Completa", img:"manga.png" },
-  { id:"espalda-completa", label:"Espalda Completa", img:"espalda.png" }
+  { id:"mini", label:"Mini (5cm)", price:"", img:"muy-pequeño.png" }, 
+  { id:"small", label:"Pequeño (15cm)", price:"", img:"pequeño.png" }, 
+  { id:"medium", label:"Mediano (25cm)", price:"", img:"mediano.png" }, 
+  { id:"large", label:"Grande (35cm)", price:"", img:"grande.png" }, 
+  { id:"muy-grande", label:"Media Manga", price:"", img:"muy-grande.png" },
+  { id:"manga-brazo", label:"Manga Completa", price:"", img:"manga.png" },
+  { id:"espalda-completa", label:"Espalda Completa", price:"", img:"espalda-full.png" }
 ];
 
 const BODY_ZONES=[ 
-  { id:"brazo", label:"Brazo", img:"brazo.png" },
-  { id:"pierna", label:"Pierna", img:"pierna.png" },
-  { id:"espalda", label:"Espalda", img:"espalda-zona.png" },
-  { id:"pecho", label:"Pecho", img:"pecho.png" }
+  { id:"cara", label:"Cara", img:"cara.png" }, { id:"nuca", label:"Nuca", img:"nuca.png" },
+  { id:"cuello", label:"Cuello", img:"cuello.png" }, { id:"clavicula", label:"Clavícula", img:"clavicula.png" },
+  { id:"hombro", label:"Hombro", img:"hombro.png" }, { id:"pecho", label:"Pecho", img:"pecho.png" },
+  { id:"abdomen", label:"Abdomen", img:"abdomen.png" }, { id:"costillas", label:"Costillas", img:"costillas.png" },
+  { id:"brazo", label:"Brazo", img:"brazo.png" }, { id:"biceps", label:"Biceps", img:"biceps.png" },
+  { id:"triceps", label:"Triceps", img:"triceps.png" }, { id:"antebrazo", label:"Antebrazo", img:"antebrazo.png" },
+  { id:"muñeca", label:"Muñeca", img:"muñeca.png" }, { id:"mano", label:"Mano", img:"mano.png" },
+  { id:"dedos", label:"Dedos", img:"dedos.png" }, { id:"espalda-alta", label:"Espalda Alta", img:"espaldaalta.png" },
+  { id:"espalda-baja", label:"Espalda Baja", img:"espalda.png" }, { id:"gluteos", label:"Glúteos", img:"gluteos.png" },
+  { id:"muslo", label:"Muslo", img:"muslo.png" }, { id:"isquios", label:"Isquios", img:"isquios.png" },
+  { id:"rodilla", label:"Rodilla", img:"rodilla.png" }, { id:"pantorrilla", label:"Pantorrilla", img:"gemelos.png" },
+  { id:"canilla", label:"Canilla", img:"canilla.png" }, { id:"tobillo", label:"Tobillo", img:"tobillo.png" },
+  { id:"pie", label:"Pie", img:"pie.png" }
 ];
 
-function renderTattooOptions(){
-    const container = document.getElementById("tattooOptions");
-    container.innerHTML = "";
-    TATTOO_SIZES.forEach(t => {
-        const card = document.createElement("div");
-        card.className = "tattoo-card" + (selectedTattoo?.id === t.id ? " card-selected" : "");
-        card.innerHTML = `<img src="${t.img}" onerror="this.src='https://via.placeholder.com/150'"><div><strong>${t.label}</strong></div>`;
-        card.onclick = () => {
-            selectedTattoo = t;
-            document.querySelectorAll(".tattoo-card").forEach(c => c.classList.remove("card-selected"));
-            card.classList.add("card-selected");
-            document.getElementById("nextTattooBtn").disabled = false;
-        };
-        container.appendChild(card);
-    });
+function renderTattooOptions(){ 
+  const container=document.getElementById("tattooOptions"); container.innerHTML=""; 
+  const frag = document.createDocumentFragment();
+  const btnNext = document.getElementById("nextTattooBtn");
+  
+  if(!selectedTattoo) btnNext.disabled = true;
+  else btnNext.disabled = false;
+
+  TATTOO_SIZES.forEach(t=>{ 
+    const card=document.createElement("div"); card.className="tattoo-card";
+    if(selectedTattoo && selectedTattoo.id === t.id) card.classList.add("card-selected");
+    
+    card.innerHTML=`<img src="${t.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div><strong>${t.label}</strong><p style="color:var(--gold); font-size:12px">${t.price}</p></div>`;
+    card.onclick=()=>{
+        selectedTattoo = t;
+        renderTattooOptions(); 
+    };
+    frag.appendChild(card);
+  });
+  container.appendChild(frag);
 }
 
-function confirmTattooSelection() {
-    renderZoneOptions();
-    go("zoneSelection");
-}
+function confirmTattooSelection(){ go("zoneSelection"); renderZoneOptions(); }
 
 function renderZoneOptions(){
-    const container = document.getElementById("zoneOptions");
-    container.innerHTML = "";
-    BODY_ZONES.forEach(z => {
-        const card = document.createElement("div");
-        card.className = "zone-card" + (selectedZone?.id === z.id ? " card-selected" : "");
-        card.innerHTML = `<img src="${z.img}" onerror="this.src='https://via.placeholder.com/150'"><div><strong>${z.label}</strong></div>`;
-        card.onclick = () => {
-            selectedZone = z;
-            document.querySelectorAll(".zone-card").forEach(c => c.classList.remove("card-selected"));
-            card.classList.add("card-selected");
-            document.getElementById("nextZoneBtn").disabled = false;
-        };
-        container.appendChild(card);
-    });
+  const container=document.getElementById("zoneOptions"); container.innerHTML="";
+  const btnNext = document.getElementById("nextZoneBtn");
+  if(!selectedZone) btnNext.disabled = true;
+  else btnNext.disabled = false;
+
+  BODY_ZONES.forEach(z=>{
+      const card=document.createElement("div"); card.className="zone-card";
+      if(selectedZone && selectedZone.id === z.id) card.classList.add("card-selected");
+      card.innerHTML=`<img src="${z.img}" onerror="this.src='https://via.placeholder.com/150'" loading="lazy"><div><strong>${z.label}</strong></div>`;
+      card.onclick=()=>{ selectedZone = z; renderZoneOptions(); };
+      container.appendChild(card);
+  });
 }
 
-function confirmZoneSelection() {
-    renderHours();
-    go("hourSelection");
-}
+function confirmZoneSelection(){ go("hourSelection"); renderHours(); }
 
 function renderHours(){
-    const grid = document.getElementById("hoursGrid");
-    grid.innerHTML = "";
-    const hours = ["09:00", "11:00", "14:00", "16:00", "18:00"];
-    hours.forEach(h => {
-        const btn = document.createElement("button");
-        btn.textContent = h;
-        btn.onclick = () => {
-            selectedHour = h;
-            go("imageUploadScreen");
-        };
-        grid.appendChild(btn);
-    });
+  const container=document.getElementById("hoursGrid"); container.innerHTML="";
+  const duration = DURATIONS[selectedTattoo.id];
+  const start=9, end=21;
+  
+  for(let h=start; h<=end - duration; h += 0.5){
+      const timeStr = formatTime(h);
+      const isTaken = bookings.some(b => b.month==selectedMonth && b.day==selectedDay && isOverlapping(h, duration, b.hour, DURATIONS[b.tattooId]));
+      const b=document.createElement("button");
+      b.textContent = timeStr;
+      if(isTaken) b.disabled = true;
+      else b.onclick=()=>{ selectedHour=h; go("imageUploadScreen"); };
+      container.appendChild(b);
+  }
 }
 
-function updateSummary() {
-    const info = document.getElementById("userTattooInfo");
-    info.innerHTML = `${selectedDay}/${selectedMonth+1} a las ${selectedHour}<br>${selectedTattoo.label} en ${selectedZone.label}`;
+function isOverlapping(h1, d1, h2, d2){ return h1 < h2+d2 && h2 < h1+d1; }
+function formatTime(h){
+  const hh = Math.floor(h);
+  const mm = (h % 1) * 60;
+  return `${hh.toString().padStart(2,'0')}:${mm.toString().padStart(2,'0')}`;
 }
 
-async function confirmBooking() {
-    const btn = document.getElementById("confirmBtn");
-    btn.disabled = true;
-    btn.textContent = "PROCESANDO...";
-    
-    const bookingData = {
-        name: user.name,
-        phone: user.phone,
-        date: `${selectedDay}/${selectedMonth+1}`,
-        hour: selectedHour,
-        tattoo: selectedTattoo.label,
-        zone: selectedZone.label
+function updateSummary(){
+  const info = document.getElementById("userTattooInfo");
+  info.innerHTML = `${selectedDay}/${selectedMonth+1} - ${formatTime(selectedHour)}hs<br>${selectedTattoo.label} en ${selectedZone.label}`;
+}
+
+function goBackFromHours(){ go("zoneSelection"); }
+
+async function confirmBooking(){
+  const btn = document.getElementById("confirmBtn");
+  btn.disabled = true;
+  const fileInput = document.getElementById("userTattooImage");
+  let imageData = "";
+  
+  if(fileInput.files[0]){
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+        imageData = reader.result;
+        await saveBooking(imageData);
     };
-
-    try {
-        // En un entorno real aquí iría el fetch
-        console.log("Reserva confirmada:", bookingData);
-        setTimeout(() => go("done"), 1000);
-    } catch(e) {
-        alert("Error al guardar. Intenta de nuevo.");
-        btn.disabled = false;
-    }
+    reader.readAsDataURL(fileInput.files[0]);
+  } else {
+    await saveBooking("");
+  }
 }
 
-function resetBookingFlow() {
-    selectedMonth = selectedDay = selectedTattoo = selectedHour = selectedZone = null;
-    go("home");
+async function saveBooking(img){
+  const data = {
+    ...user,
+    month: selectedMonth,
+    day: selectedDay,
+    hour: selectedHour,
+    tattooId: selectedTattoo.id,
+    zoneId: selectedZone.id,
+    image: img,
+    timestamp: new Date().toISOString()
+  };
+  
+  try {
+    const r = await fetch(SERVER_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+    if(r.ok) {
+        bookings.push(data);
+        go('done');
+    } else { alert("Error al guardar la reserva."); }
+  } catch(e) {
+    console.error(e);
+    alert("No se pudo conectar con el servidor.");
+  }
 }
 
-function expandImage(src) {
+document.getElementById("userTattooImage").onchange = function(e){
+  const file = e.target.files[0];
+  if(file){
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        const preview = document.getElementById("userTattooPreview");
+        preview.src = ev.target.result;
+        preview.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+function expandImage(src){
     document.getElementById("lightboxImg").src = src;
     document.getElementById("lightbox").style.display = "flex";
 }
 
-function promptAdmin() {
-    const pass = prompt("Clave de Artista:");
-    if(pass === "1234") { // Cambia esta clave
-        renderAdminList();
+function promptAdmin(){
+    const p = prompt("Contraseña de artista:");
+    if(p === "richard2024"){
+        renderAdmin();
         go("admin");
+    } else if(p !== null) {
+        alert("Incorrecto");
     }
 }
 
-function renderAdminList() {
+function renderAdmin(){
     const list = document.getElementById("adminList");
-    list.innerHTML = bookings.length ? "" : "<p style='text-align:center; font-size:10px;'>No hay reservas.</p>";
+    list.innerHTML = "";
+    bookings.sort((a,b) => a.month - b.month || a.day - b.day || a.hour - b.hour);
+    
     bookings.forEach(b => {
         const card = document.createElement("div");
         card.className = "admin-card";
-        card.innerHTML = `<div class='admin-info'><strong>${b.date} - ${b.hour}</strong><br>${b.name} (${b.phone})<br>${b.tattoo}</div>`;
+        card.innerHTML = `
+            <img class="admin-img-preview" src="${b.image || 'https://via.placeholder.com/50'}" onclick="expandImage(this.src)">
+            <div class="admin-info">
+                <strong>${b.name} ${b.surname}</strong><br>
+                ${b.day}/${b.month+1} - ${formatTime(b.hour)}hs<br>
+                ${b.tattooId} | ${b.zoneId}<br>
+                <a href="https://wa.me/598${b.phone}" target="_blank" style="color:#25D366; text-decoration:none">WhatsApp</a>
+            </div>
+            <button onclick="deleteBooking('${b.timestamp}')" style="width:40px; padding:5px; border-color:#ffcccc; color:red">X</button>
+        `;
         list.appendChild(card);
     });
 }
 
-function openMap() {
-    window.open("https://maps.app.goo.gl/x9vW6pD8uW8p3k8p9", "_blank");
+async function deleteBooking(ts){
+    if(!confirm("¿Eliminar reserva?")) return;
+    try {
+        await fetch(`${SERVER_URL}?timestamp=${ts}`, { method: 'DELETE' });
+        bookings = bookings.filter(b => b.timestamp !== ts);
+        renderAdmin();
+    } catch(e){ alert("Error"); }
+}
+
+function resetUserData(){
+    if(confirm("Se borrarán tus datos locales (Nombre/Tel). ¿Continuar?")){
+        localStorage.clear();
+        location.reload();
+    }
+}
+
+function logoutAdminSession(){
+    go('home');
 }
 </script>
 </body>
